@@ -509,6 +509,7 @@
 	name = "electrochromic window"
 	desc = "Adjusts its tint with voltage. Might take a few good hits to shatter it."
 	var/id
+	var/glass_amount = 2
 
 /obj/machinery/button/windowtint
 	name = "window tint control"
@@ -675,6 +676,7 @@
 	name = "electrochromic window"
 	desc = "Adjusts its tint with voltage. Might take a few good hits to shatter it."
 	var/id
+	var/glass_amount = 4
 	
 /obj/structure/window/full/reinforced/tinted
 	name = "tinted window"
