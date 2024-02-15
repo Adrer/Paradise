@@ -457,7 +457,7 @@ Look for code examples on how to properly use it.
 
 #### Bitflags
 
-* We prefer using bitshift operators instead of directly typing out the value. I.E:
+* It is required to use bitshift operators instead of directly typing out the value. I.E:
 
 ```dm
     #define MACRO_ONE (1<<0)
@@ -465,13 +465,15 @@ Look for code examples on how to properly use it.
     #define MACRO_THREE (1<<2)
 ```
 
-Is preferable to:
+Is accepted, whereas:
 
 ```dm
     #define MACRO_ONE 1
     #define MACRO_TWO 2
     #define MACRO_THREE 4
 ```
+
+Is not.
 
 While it may initially look intimidating, `(1<<x)` is actually very simple and, as the name implies, shifts the bits of a given binary number over by one digit.
 
