@@ -137,17 +137,13 @@
 "aC" = (
 /obj/structure/cable{
 	d2 = 2;
-	icon_state = "0-2";
-	pixel_y = 1
+	icon_state = "0-2"
 	},
-/obj/machinery/power/apc/off_station{
-	dir = 1;
+/obj/machinery/power/apc/off_station/directional/north{
 	environment_channel = 2;
 	equipment_channel = 0;
 	lighting_channel = 0;
-	locked = 0;
-	pixel_y = 24;
-	req_access = ""
+	locked = 0
 	},
 /obj/effect/turf_decal/stripes/line{
 	dir = 1
@@ -191,8 +187,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 2;
-	icon_state = "1-2";
-	tag = ""
+	icon_state = "1-2"
 	},
 /turf/simulated/floor/plating,
 /area/ruin/unpowered/BMPship/Delta)
@@ -282,8 +277,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 2;
-	icon_state = "1-2";
-	tag = ""
+	icon_state = "1-2"
 	},
 /turf/simulated/floor/plating,
 /area/ruin/unpowered/BMPship/Delta)
@@ -443,8 +437,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 2;
-	icon_state = "1-2";
-	tag = ""
+	icon_state = "1-2"
 	},
 /obj/effect/turf_decal/stripes/line,
 /turf/simulated/floor/plating,
@@ -460,14 +453,11 @@
 	d2 = 2;
 	icon_state = "0-2"
 	},
-/obj/machinery/power/apc/off_station{
-	dir = 1;
+/obj/machinery/power/apc/off_station/directional/north{
 	equipment_channel = 0;
 	lighting_channel = 0;
 	locked = 0;
-	operating = 0;
-	pixel_y = 24;
-	req_access = ""
+	operating = 0
 	},
 /turf/simulated/floor/carpet,
 /area/ruin/unpowered/BMPship/Fore)
@@ -608,8 +598,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 2;
-	icon_state = "1-2";
-	tag = ""
+	icon_state = "1-2"
 	},
 /obj/machinery/door/poddoor/shutters{
 	dir = 2;
@@ -696,8 +685,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 2;
-	icon_state = "1-2";
-	tag = ""
+	icon_state = "1-2"
 	},
 /turf/simulated/floor/plasteel,
 /area/ruin/unpowered/BMPship/Aft)
@@ -708,8 +696,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 4;
-	icon_state = "1-4";
-	tag = ""
+	icon_state = "1-4"
 	},
 /turf/simulated/floor/carpet,
 /area/ruin/unpowered/BMPship/Fore)
@@ -717,8 +704,7 @@
 /obj/structure/cable{
 	d1 = 2;
 	d2 = 8;
-	icon_state = "2-8";
-	tag = ""
+	icon_state = "2-8"
 	},
 /turf/simulated/floor/carpet,
 /area/ruin/unpowered/BMPship/Fore)
@@ -795,16 +781,12 @@
 "cU" = (
 /obj/structure/cable{
 	d2 = 2;
-	icon_state = "0-2";
-	pixel_y = 1
+	icon_state = "0-2"
 	},
-/obj/machinery/power/apc/off_station{
-	dir = 1;
+/obj/machinery/power/apc/off_station/directional/north{
 	environment_channel = 0;
 	locked = 0;
-	operating = 0;
-	pixel_y = 24;
-	req_access = ""
+	operating = 0
 	},
 /turf/simulated/floor/plating,
 /area/ruin/unpowered/BMPship/Aft)
@@ -850,8 +832,7 @@
 /obj/structure/cable{
 	d1 = 4;
 	d2 = 8;
-	icon_state = "4-8";
-	tag = ""
+	icon_state = "4-8"
 	},
 /turf/simulated/floor/plasteel{
 	icon_state = "bar"
@@ -861,8 +842,7 @@
 /obj/structure/cable{
 	d1 = 2;
 	d2 = 8;
-	icon_state = "2-8";
-	tag = ""
+	icon_state = "2-8"
 	},
 /turf/simulated/floor/plasteel{
 	icon_state = "bar"
@@ -889,20 +869,17 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 4;
-	icon_state = "1-4";
-	tag = ""
+	icon_state = "1-4"
 	},
 /obj/structure/cable{
 	d1 = 2;
 	d2 = 4;
-	icon_state = "2-4";
-	tag = ""
+	icon_state = "2-4"
 	},
 /obj/structure/cable{
 	d1 = 4;
 	d2 = 8;
-	icon_state = "4-8";
-	tag = ""
+	icon_state = "4-8"
 	},
 /turf/simulated/floor/plasteel,
 /area/ruin/unpowered/BMPship/Aft)
@@ -910,8 +887,7 @@
 /obj/structure/cable{
 	d1 = 4;
 	d2 = 8;
-	icon_state = "4-8";
-	tag = ""
+	icon_state = "4-8"
 	},
 /turf/simulated/floor/plating,
 /area/ruin/unpowered/BMPship/Aft)
@@ -919,8 +895,7 @@
 /obj/structure/cable{
 	d1 = 4;
 	d2 = 8;
-	icon_state = "4-8";
-	tag = ""
+	icon_state = "4-8"
 	},
 /obj/structure/cable{
 	d1 = 2;
@@ -933,14 +908,12 @@
 /obj/structure/cable{
 	d1 = 4;
 	d2 = 8;
-	icon_state = "4-8";
-	tag = ""
+	icon_state = "4-8"
 	},
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 4;
-	icon_state = "1-4";
-	tag = ""
+	icon_state = "1-4"
 	},
 /turf/simulated/floor/plating,
 /area/ruin/unpowered/BMPship/Aft)
@@ -948,8 +921,7 @@
 /obj/structure/cable{
 	d1 = 2;
 	d2 = 8;
-	icon_state = "2-8";
-	tag = ""
+	icon_state = "2-8"
 	},
 /obj/machinery/light/small{
 	dir = 4
@@ -994,8 +966,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 2;
-	icon_state = "1-2";
-	tag = ""
+	icon_state = "1-2"
 	},
 /turf/simulated/floor/carpet,
 /area/ruin/unpowered/BMPship/Fore)
@@ -1011,8 +982,7 @@
 /obj/structure/cable{
 	d1 = 2;
 	d2 = 4;
-	icon_state = "2-4";
-	tag = ""
+	icon_state = "2-4"
 	},
 /turf/simulated/floor/plasteel{
 	icon_state = "bar"
@@ -1022,8 +992,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 2;
-	icon_state = "1-2";
-	tag = ""
+	icon_state = "1-2"
 	},
 /turf/simulated/floor/plasteel{
 	icon_state = "bar"
@@ -1044,8 +1013,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 2;
-	icon_state = "1-2";
-	tag = ""
+	icon_state = "1-2"
 	},
 /turf/simulated/floor/plasteel{
 	icon_state = "showroomfloor"
@@ -1071,15 +1039,6 @@
 "dG" = (
 /turf/simulated/floor/plating,
 /area/ruin/unpowered/BMPship/Aft)
-"dH" = (
-/obj/structure/cable{
-	d1 = 1;
-	d2 = 2;
-	icon_state = "1-2";
-	tag = ""
-	},
-/turf/simulated/floor/plating,
-/area/ruin/unpowered/BMPship/Aft)
 "dI" = (
 /obj/machinery/door/airlock/titanium,
 /turf/simulated/floor/plating,
@@ -1103,14 +1062,12 @@
 /obj/structure/cable{
 	d1 = 2;
 	d2 = 4;
-	icon_state = "2-4";
-	tag = ""
+	icon_state = "2-4"
 	},
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 4;
-	icon_state = "1-4";
-	tag = ""
+	icon_state = "1-4"
 	},
 /turf/simulated/floor/carpet,
 /area/ruin/unpowered/BMPship/Fore)
@@ -1119,8 +1076,7 @@
 /obj/structure/cable{
 	d1 = 4;
 	d2 = 8;
-	icon_state = "4-8";
-	tag = ""
+	icon_state = "4-8"
 	},
 /turf/simulated/floor/carpet,
 /area/ruin/unpowered/BMPship/Midship)
@@ -1128,8 +1084,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 8;
-	icon_state = "1-8";
-	tag = ""
+	icon_state = "1-8"
 	},
 /turf/simulated/floor/plasteel{
 	icon_state = "bar"
@@ -1147,14 +1102,12 @@
 /obj/structure/cable{
 	d1 = 2;
 	d2 = 8;
-	icon_state = "2-8";
-	tag = ""
+	icon_state = "2-8"
 	},
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 2;
-	icon_state = "1-2";
-	tag = ""
+	icon_state = "1-2"
 	},
 /turf/simulated/floor/plasteel{
 	icon_state = "bar"
@@ -1165,12 +1118,9 @@
 	d2 = 2;
 	icon_state = "0-2"
 	},
-/obj/machinery/power/apc/off_station{
-	dir = 1;
+/obj/machinery/power/apc/off_station/directional/north{
 	locked = 0;
-	operating = 0;
-	pixel_y = 24;
-	req_access = ""
+	operating = 0
 	},
 /turf/simulated/floor/plasteel{
 	icon_state = "bar"
@@ -1226,9 +1176,8 @@
 	},
 /area/ruin/unpowered/BMPship/Midship)
 "dZ" = (
-/obj/structure/disposalpipe/segment{
-	dir = 2;
-	icon_state = "pipe-c"
+/obj/structure/disposalpipe/segment/corner{
+	dir = 2
 	},
 /turf/simulated/floor/plasteel{
 	icon_state = "bar"
@@ -1272,8 +1221,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 2;
-	icon_state = "1-2";
-	tag = ""
+	icon_state = "1-2"
 	},
 /turf/simulated/floor/plasteel{
 	icon_state = "hydrofloor"
@@ -1290,10 +1238,6 @@
 	icon_state = "0-2"
 	},
 /obj/structure/cable,
-/obj/structure/cable{
-	d2 = 2;
-	icon_state = "0-2"
-	},
 /turf/simulated/floor/plating,
 /area/ruin/unpowered/BMPship/Aft)
 "eg" = (
@@ -1339,8 +1283,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 2;
-	icon_state = "1-2";
-	tag = ""
+	icon_state = "1-2"
 	},
 /turf/simulated/floor/carpet,
 /area/ruin/unpowered/BMPship/Fore)
@@ -1377,9 +1320,8 @@
 	},
 /area/ruin/unpowered/BMPship/Midship)
 "es" = (
-/obj/structure/disposalpipe/segment{
-	dir = 1;
-	icon_state = "pipe-c"
+/obj/structure/disposalpipe/segment/corner{
+	dir = 1
 	},
 /turf/simulated/floor/plasteel{
 	icon_state = "bar"
@@ -1408,8 +1350,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 2;
-	icon_state = "1-2";
-	tag = ""
+	icon_state = "1-2"
 	},
 /obj/structure/disposalpipe/segment{
 	dir = 4
@@ -1462,8 +1403,7 @@
 /obj/structure/cable{
 	d1 = 2;
 	d2 = 4;
-	icon_state = "2-4";
-	tag = ""
+	icon_state = "2-4"
 	},
 /turf/simulated/floor/carpet,
 /area/ruin/unpowered/BMPship/Fore)
@@ -1471,8 +1411,7 @@
 /obj/structure/cable{
 	d1 = 4;
 	d2 = 8;
-	icon_state = "4-8";
-	tag = ""
+	icon_state = "4-8"
 	},
 /turf/simulated/floor/carpet,
 /area/ruin/unpowered/BMPship/Fore)
@@ -1480,8 +1419,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 8;
-	icon_state = "1-8";
-	tag = ""
+	icon_state = "1-8"
 	},
 /turf/simulated/floor/carpet,
 /area/ruin/unpowered/BMPship/Fore)
@@ -1489,15 +1427,14 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 4;
-	icon_state = "1-4";
-	tag = ""
+	icon_state = "1-4"
 	},
 /obj/structure/cable{
 	d1 = 2;
 	d2 = 4;
-	icon_state = "2-4";
-	tag = ""
+	icon_state = "2-4"
 	},
+/mob/living/simple_animal/hostile/pirate/ranged,
 /turf/simulated/floor/plasteel{
 	icon_state = "bar"
 	},
@@ -1506,14 +1443,12 @@
 /obj/structure/cable{
 	d1 = 4;
 	d2 = 8;
-	icon_state = "4-8";
-	tag = ""
+	icon_state = "4-8"
 	},
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 4;
-	icon_state = "1-4";
-	tag = ""
+	icon_state = "1-4"
 	},
 /turf/simulated/floor/plasteel{
 	icon_state = "bar"
@@ -1587,8 +1522,7 @@
 /obj/structure/cable{
 	d1 = 4;
 	d2 = 8;
-	icon_state = "4-8";
-	tag = ""
+	icon_state = "4-8"
 	},
 /turf/simulated/floor/plasteel{
 	icon_state = "bar"
@@ -1598,8 +1532,7 @@
 /obj/structure/cable{
 	d1 = 4;
 	d2 = 8;
-	icon_state = "4-8";
-	tag = ""
+	icon_state = "4-8"
 	},
 /turf/simulated/floor/plasteel{
 	icon_state = "showroomfloor"
@@ -1615,7 +1548,6 @@
 	name = "power storage unit";
 	outputting = 0
 	},
-/obj/structure/cable,
 /obj/structure/cable,
 /turf/simulated/floor/plating,
 /area/ruin/unpowered/BMPship/Aft)
@@ -1652,9 +1584,8 @@
 /turf/simulated/floor/plating,
 /area/ruin/unpowered/BMPship/Midship)
 "fh" = (
-/obj/structure/disposalpipe/segment{
-	dir = 4;
-	icon_state = "pipe-c"
+/obj/structure/disposalpipe/segment/corner{
+	dir = 4
 	},
 /turf/simulated/floor/plasteel{
 	icon_state = "bar"
@@ -1687,8 +1618,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 2;
-	icon_state = "1-2";
-	tag = ""
+	icon_state = "1-2"
 	},
 /obj/machinery/door/airlock/titanium,
 /turf/simulated/floor/carpet,
@@ -1730,9 +1660,8 @@
 /turf/simulated/floor/plating,
 /area/ruin/unpowered/BMPship/Midship)
 "fs" = (
-/obj/structure/disposalpipe/segment{
-	dir = 8;
-	icon_state = "pipe-c"
+/obj/structure/disposalpipe/segment/corner{
+	dir = 8
 	},
 /turf/simulated/floor/plasteel{
 	icon_state = "bar"
@@ -1792,8 +1721,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 4;
-	icon_state = "1-4";
-	tag = ""
+	icon_state = "1-4"
 	},
 /turf/simulated/floor/plating/airless,
 /area/ruin/unpowered/BMPship/Fore)
@@ -1804,8 +1732,7 @@
 /obj/structure/cable{
 	d1 = 4;
 	d2 = 8;
-	icon_state = "4-8";
-	tag = ""
+	icon_state = "4-8"
 	},
 /turf/simulated/floor/plating/airless,
 /area/ruin/unpowered/BMPship/Fore)
@@ -1813,8 +1740,7 @@
 /obj/structure/cable{
 	d1 = 4;
 	d2 = 8;
-	icon_state = "4-8";
-	tag = ""
+	icon_state = "4-8"
 	},
 /obj/effect/landmark/burnturf,
 /turf/simulated/floor/plating/airless,
@@ -1823,8 +1749,7 @@
 /obj/structure/cable{
 	d1 = 2;
 	d2 = 8;
-	icon_state = "2-8";
-	tag = ""
+	icon_state = "2-8"
 	},
 /obj/effect/landmark/damageturf,
 /turf/simulated/floor/plating/airless,
@@ -1833,8 +1758,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 8;
-	icon_state = "1-8";
-	tag = ""
+	icon_state = "1-8"
 	},
 /obj/item/kitchen/knife,
 /turf/simulated/floor/plasteel{
@@ -1853,8 +1777,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 4;
-	icon_state = "1-4";
-	tag = ""
+	icon_state = "1-4"
 	},
 /turf/simulated/floor/plasteel{
 	icon_state = "showroomfloor"
@@ -1864,8 +1787,7 @@
 /obj/structure/cable{
 	d1 = 2;
 	d2 = 8;
-	icon_state = "2-8";
-	tag = ""
+	icon_state = "2-8"
 	},
 /turf/simulated/floor/plasteel{
 	icon_state = "showroomfloor"
@@ -1908,8 +1830,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 2;
-	icon_state = "1-2";
-	tag = ""
+	icon_state = "1-2"
 	},
 /turf/simulated/floor/plating/airless,
 /area/ruin/unpowered/BMPship/Fore)
@@ -1981,8 +1902,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 2;
-	icon_state = "1-2";
-	tag = ""
+	icon_state = "1-2"
 	},
 /turf/simulated/floor/plasteel,
 /area/ruin/unpowered/BMPship/Aft)
@@ -1991,8 +1911,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 2;
-	icon_state = "1-2";
-	tag = ""
+	icon_state = "1-2"
 	},
 /turf/simulated/floor/plasteel,
 /area/ruin/unpowered/BMPship/Aft)
@@ -2010,8 +1929,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 2;
-	icon_state = "1-2";
-	tag = ""
+	icon_state = "1-2"
 	},
 /obj/machinery/door/airlock/silver,
 /turf/simulated/floor/plating/airless,
@@ -2106,8 +2024,7 @@
 /obj/structure/cable{
 	d1 = 4;
 	d2 = 8;
-	icon_state = "4-8";
-	tag = ""
+	icon_state = "4-8"
 	},
 /turf/simulated/floor/plating/airless,
 /area/ruin/powered)
@@ -2136,14 +2053,12 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 4;
-	icon_state = "1-4";
-	tag = ""
+	icon_state = "1-4"
 	},
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 2;
-	icon_state = "1-2";
-	tag = ""
+	icon_state = "1-2"
 	},
 /turf/simulated/floor/plasteel,
 /area/ruin/unpowered/BMPship/Aft)
@@ -2151,8 +2066,7 @@
 /obj/structure/cable{
 	d1 = 4;
 	d2 = 8;
-	icon_state = "4-8";
-	tag = ""
+	icon_state = "4-8"
 	},
 /turf/simulated/floor/plasteel,
 /area/ruin/unpowered/BMPship/Aft)
@@ -2160,14 +2074,12 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 4;
-	icon_state = "1-4";
-	tag = ""
+	icon_state = "1-4"
 	},
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 8;
-	icon_state = "1-8";
-	tag = ""
+	icon_state = "1-8"
 	},
 /turf/simulated/floor/plasteel,
 /area/ruin/unpowered/BMPship/Aft)
@@ -2224,8 +2136,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 2;
-	icon_state = "1-2";
-	tag = ""
+	icon_state = "1-2"
 	},
 /turf/simulated/floor/plasteel,
 /area/ruin/unpowered/BMPship/Aft)
@@ -2264,8 +2175,7 @@
 /obj/structure/cable{
 	d1 = 4;
 	d2 = 8;
-	icon_state = "4-8";
-	tag = ""
+	icon_state = "4-8"
 	},
 /turf/simulated/floor/plating,
 /area/ruin/unpowered/BMPship/Aft)
@@ -2273,8 +2183,7 @@
 /obj/structure/cable{
 	d1 = 1;
 	d2 = 8;
-	icon_state = "1-8";
-	tag = ""
+	icon_state = "1-8"
 	},
 /turf/simulated/floor/plasteel,
 /area/ruin/unpowered/BMPship/Aft)
@@ -2419,6 +2328,47 @@
 	},
 /turf/simulated/floor/plating,
 /area/ruin/unpowered/BMPship/Aft)
+"hE" = (
+/obj/effect/landmark/damageturf,
+/mob/living/simple_animal/hostile/pirate,
+/turf/simulated/floor/plating,
+/area/ruin/unpowered/BMPship/Midship)
+"qM" = (
+/obj/machinery/conveyor{
+	dir = 4;
+	id = "meatConvey2"
+	},
+/obj/item/salvage/ruin/pirate,
+/turf/simulated/floor/plating,
+/area/ruin/unpowered/BMPship/Midship)
+"uK" = (
+/mob/living/simple_animal/hostile/pirate,
+/turf/simulated/floor/plasteel{
+	icon_state = "bar"
+	},
+/area/ruin/unpowered/BMPship/Midship)
+"uT" = (
+/turf/simulated/mineral/random/high_chance,
+/area/ruin/powered)
+"BC" = (
+/obj/structure/cable{
+	d1 = 4;
+	d2 = 8;
+	icon_state = "4-8"
+	},
+/mob/living/simple_animal/hostile/pirate,
+/turf/simulated/floor/plasteel{
+	icon_state = "bar"
+	},
+/area/ruin/unpowered/BMPship/Midship)
+"Ht" = (
+/obj/machinery/conveyor{
+	dir = 4;
+	id = "meatConvey1"
+	},
+/obj/item/salvage/ruin/pirate,
+/turf/simulated/floor/plating,
+/area/ruin/unpowered/BMPship/Midship)
 "IM" = (
 /obj/structure/closet/crate/freezer,
 /obj/item/food/snacks/meat,
@@ -2782,7 +2732,7 @@ aJ
 aJ
 aK
 aK
-aK
+uT
 aK
 aK
 aK
@@ -2834,9 +2784,9 @@ aJ
 aK
 aK
 aK
-aK
-aK
-aK
+uT
+uT
+uT
 aK
 aK
 aa
@@ -2888,7 +2838,7 @@ aK
 aK
 aK
 aK
-aK
+uT
 aK
 aK
 aa
@@ -3135,8 +3085,8 @@ aD
 aK
 aK
 aK
-aK
-aK
+uT
+uT
 aK
 aK
 aK
@@ -3186,8 +3136,8 @@ aD
 aK
 aK
 aK
-aK
-aK
+uT
+uT
 aK
 aK
 aK
@@ -3236,9 +3186,9 @@ fA
 aD
 aK
 aK
-aK
-aK
-aK
+uT
+uT
+uT
 aK
 aK
 aK
@@ -3287,8 +3237,8 @@ gs
 aK
 aK
 aK
-aK
-aK
+uT
+uT
 aK
 aK
 aK
@@ -3339,11 +3289,11 @@ gs
 aK
 aK
 aK
+uT
+uT
 aK
 aK
-aK
-aK
-aK
+uT
 aK
 aK
 aK
@@ -3389,12 +3339,12 @@ gs
 bc
 aK
 aK
+uT
+uT
 aK
 aK
-aK
-aK
-aK
-aK
+uT
+uT
 aK
 aK
 aK
@@ -3441,10 +3391,10 @@ aK
 aK
 aK
 aK
+uT
 aK
-aK
-aK
-aK
+uT
+uT
 aK
 aK
 aK
@@ -3490,12 +3440,12 @@ gs
 gs
 aK
 aK
-aK
-aK
-aK
-aK
-aK
-aK
+uT
+uT
+uT
+uT
+uT
+uT
 aK
 aK
 aK
@@ -3543,9 +3493,9 @@ aK
 aK
 aK
 aK
-aK
-aK
-aK
+uT
+uT
+uT
 aK
 aK
 aK
@@ -3585,7 +3535,7 @@ eo
 fn
 dC
 ca
-gb
+hE
 bF
 aK
 aK
@@ -3594,13 +3544,13 @@ aK
 aK
 bc
 aK
+uT
 aK
 aK
 aK
 aK
-aK
-aK
-aK
+uT
+uT
 aK
 aK
 aK
@@ -3650,9 +3600,9 @@ aK
 aK
 aK
 aK
-aK
-aK
-aK
+uT
+uT
+uT
 aK
 aK
 aK
@@ -3703,8 +3653,8 @@ aK
 aK
 aK
 aK
-aK
-aK
+uT
+uT
 aK
 aK
 aK
@@ -3755,7 +3705,7 @@ aK
 aK
 aK
 aK
-aK
+uT
 aK
 aK
 aK
@@ -3883,7 +3833,7 @@ cr
 cJ
 ca
 ca
-ca
+uK
 ca
 dg
 ca
@@ -3936,7 +3886,7 @@ ca
 ca
 dT
 ca
-dg
+BC
 ca
 ca
 dT
@@ -4138,7 +4088,7 @@ ca
 ca
 ca
 dC
-dU
+Ht
 dC
 dg
 ca
@@ -4216,7 +4166,7 @@ aJ
 aJ
 aK
 aK
-aK
+uT
 aK
 aa
 "}
@@ -4245,7 +4195,7 @@ dC
 dg
 ca
 dC
-fr
+qM
 dC
 ca
 ca
@@ -4266,8 +4216,8 @@ aa
 aa
 aa
 aK
-aK
-aK
+uT
+uT
 aK
 aa
 "}
@@ -4318,7 +4268,7 @@ aa
 aa
 aa
 aK
-aK
+uT
 aa
 aa
 "}
@@ -5063,7 +5013,7 @@ cB
 cB
 ee
 cB
-dH
+eA
 ge
 cB
 gG
@@ -5157,7 +5107,7 @@ ad
 cl
 cT
 dm
-dH
+eA
 ef
 eA
 eA
@@ -5259,9 +5209,9 @@ aa
 cl
 cV
 do
-dH
+eA
 eh
-dH
+eA
 eA
 fb
 dG

@@ -1,17 +1,7 @@
 import { sortBy } from 'common/collections';
 import { createSearch } from 'common/string';
 import { useBackend, useLocalState } from '../backend';
-import {
-  Box,
-  Button,
-  Dropdown,
-  Input,
-  NanoMap,
-  Section,
-  Stack,
-  Table,
-  Tabs,
-} from '../components';
+import { Box, Button, Dropdown, Input, NanoMap, Section, Stack, Table, Tabs } from '../components';
 import { TableCell } from '../components/Table';
 import { COLORS } from '../constants';
 import { Window } from '../layouts';
@@ -66,20 +56,10 @@ export const CrewMonitor = (props, context) => {
         <Stack fill vertical fillPositionedParent>
           <Stack.Item>
             <Tabs>
-              <Tabs.Tab
-                key="DataView"
-                icon="table"
-                selected={0 === tabIndex}
-                onClick={() => setTabIndex(0)}
-              >
+              <Tabs.Tab key="DataView" icon="table" selected={0 === tabIndex} onClick={() => setTabIndex(0)}>
                 Data View
               </Tabs.Tab>
-              <Tabs.Tab
-                key="MapView"
-                icon="map-marked-alt"
-                selected={1 === tabIndex}
-                onClick={() => setTabIndex(1)}
-              >
+              <Tabs.Tab key="MapView" icon="map-marked-alt" selected={1 === tabIndex} onClick={() => setTabIndex(1)}>
                 Map View
               </Tabs.Tab>
             </Tabs>
@@ -136,7 +116,7 @@ const CrewMonitorDataView = (_properties, context) => {
               <Box inline color={getStatColor(cm, data.critThreshold)}>
                 {getStatText(cm, data.critThreshold)}
               </Box>
-              {cm.sensor_type >= 2 ? (
+              {cm.sensor_type >= 2 || data.ignoreSensors ? (
                 <Box inline ml={1}>
                   {'('}
                   <Box inline color={COLORS.damageType.oxy}>
@@ -159,8 +139,8 @@ const CrewMonitorDataView = (_properties, context) => {
               ) : null}
             </TableCell>
             <TableCell>
-              {cm.sensor_type === 3 ? (
-                data.isAI ? (
+              {cm.sensor_type === 3 || data.ignoreSensors ? (
+                data.isAI || data.isObserver ? (
                   <Button
                     fluid
                     icon="location-arrow"
@@ -188,13 +168,13 @@ const CrewMonitorDataView = (_properties, context) => {
 };
 
 const CrewMonitorMapView = (_properties, context) => {
-  const { data } = useBackend(context);
+  const { act, data } = useBackend(context);
   const [zoom, setZoom] = useLocalState(context, 'zoom', 1);
   return (
     <Box height="526px" mb="0.5rem" overflow="hidden">
       <NanoMap onZoom={(v) => setZoom(v)}>
         {data.crewmembers
-          .filter((x) => x.sensor_type === 3)
+          .filter((x) => x.sensor_type === 3 || data.ignoreSensors)
           .map((cm) => (
             <NanoMap.Marker
               key={cm.ref}
@@ -204,6 +184,13 @@ const CrewMonitorMapView = (_properties, context) => {
               icon="circle"
               tooltip={cm.name + ' (' + cm.assignment + ')'}
               color={getStatColor(cm, data.critThreshold)}
+              onClick={() =>
+                data.isObserver
+                  ? act('track', {
+                      track: cm.ref,
+                    })
+                  : null
+              }
             />
           ))}
       </NanoMap>

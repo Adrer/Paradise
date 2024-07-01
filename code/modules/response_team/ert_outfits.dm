@@ -377,7 +377,7 @@
 	mask = /obj/item/clothing/mask/gas/sechailer/swat
 	back = /obj/item/mod/control/pre_equipped/responsory/medic
 	belt = /obj/item/storage/belt/medical //No need for belt defib, they got the built in ones. This gives them some extra storage.
-	l_pocket = /obj/item/reagent_containers/hypospray/combat/nanites
+	l_pocket = /obj/item/reagent_containers/hypospray/combat/syndicate_nanites
 	r_pocket = /obj/item/reagent_containers/hypospray/autoinjector/epinephrine
 
 	backpack_contents = list(
@@ -447,6 +447,13 @@
 	r_pocket = /obj/item/nullrod/ert
 	glasses = /obj/item/clothing/glasses/sunglasses
 
+	backpack_contents = list(
+		/obj/item/clothing/shoes/magboots = 1,
+		/obj/item/storage/box/zipties = 1,
+		/obj/item/flashlight/seclite = 1,
+		/obj/item/storage/bible = 1
+	)
+
 	cybernetic_implants = list(
 		/obj/item/organ/internal/cyberimp/eyes/hud/security,
 		/obj/item/organ/internal/cyberimp/chest/nutriment/hardened
@@ -505,6 +512,12 @@
 		/obj/item/storage/box/lights/mixed = 1,
 		/obj/item/melee/flyswatter = 1
 	)
+
+/datum/outfit/job/centcom/response_team/janitorial/post_equip(mob/living/carbon/human/H, visualsOnly = FALSE)
+	..()
+	if(visualsOnly)
+		return
+	ADD_TRAIT(H, TRAIT_NEVER_MISSES_DISPOSALS, ROUNDSTART_TRAIT)
 
 /datum/outfit/job/centcom/response_team/janitorial/amber
 	name = "RT Janitor (Amber)"

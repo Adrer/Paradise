@@ -118,7 +118,8 @@ export class NanoMap extends Component {
       top: '50%',
       left: '50%',
       transform: 'translate(-50%, -50%)',
-      '-ms-interpolation-mode': 'nearest-neighbor',
+      '-ms-interpolation-mode': 'nearest-neighbor', // TODO: Remove with 516
+      'image-rendering': 'pixelated',
     };
 
     return (
@@ -140,13 +141,7 @@ const NanoMapMarker = (props, context) => {
   return (
     <div>
       <Tooltip content={tooltip}>
-        <Box
-          position="absolute"
-          className="NanoMap__marker"
-          lineHeight="0"
-          bottom={ry + 'px'}
-          left={rx + 'px'}
-        >
+        <Box position="absolute" className="NanoMap__marker" lineHeight="0" bottom={ry + 'px'} left={rx + 'px'}>
           <Icon name={icon} color={color} fontSize="6px" />
         </Box>
       </Tooltip>

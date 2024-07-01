@@ -4,6 +4,8 @@
 	var/level = 2
 	var/flags = NONE
 	var/flags_2 = NONE
+	/// how the atom should handle ricochet behavior
+	var/flags_ricochet = NONE
 	var/list/fingerprints
 	var/list/fingerprintshidden
 	var/fingerprintslast = null
@@ -15,28 +17,32 @@
 
 	var/list/blood_DNA
 	var/blood_color
+	/// Will the atom spread blood when touched?
+	var/should_spread_blood = FALSE
 	var/pass_flags = 0
-	var/germ_level = GERM_LEVEL_AMBIENT // The higher the germ level, the more germ on the atom.
-	var/simulated = TRUE //filter for actions - used by lighting overlays
+	/// The higher the germ level, the more germ on the atom.
+	var/germ_level = GERM_LEVEL_AMBIENT
+	/// Filter for actions - used by lighting overlays
+	var/simulated = TRUE
 	var/atom_say_verb = "says"
-	var/bubble_icon = "default" ///what icon the mob uses for speechbubbles
-	var/dont_save = FALSE // For atoms that are temporary by necessity - like lighting overlays
+	/// What icon the mob uses for speechbubbles
+	var/bubble_icon = "default"
 
-	///Chemistry.
+	// Chemistry.
 	var/container_type = NONE
 	var/datum/reagents/reagents = null
 
-	//This atom's HUD (med/sec, etc) images. Associative list.
+	/// This atom's HUD (med/sec, etc) images. Associative list.
 	var/list/image/hud_list
-	//HUD images that this atom can provide.
+	/// HUD images that this atom can provide.
 	var/list/hud_possible
 
-	//Value used to increment ex_act() if reactionary_explosions is on
+	/// Value used to increment ex_act() if reactionary_explosions is on
 	var/explosion_block = 0
 
-	//Detective Work, used for the duplicate data points kept in the scanners
+	// Detective Work, used for the duplicate data points kept in the scanners
 	var/list/original_atom
-	/// Materials scannable by detective
+	/// List of fibers that this atom has
 	var/list/suit_fibers
 
 	var/admin_spawned = FALSE	//was this spawned by an admin? used for stat tracking stuff.
@@ -60,6 +66,9 @@
 	/// Last color calculated for the the chatmessage overlays. Used for caching.
 	var/chat_color
 
+	/*
+	Smoothing Vars
+	*/
 	///Icon-smoothing behavior.
 	var/smoothing_flags = NONE
 	///Smoothing variable
@@ -78,6 +87,34 @@
 	var/smoothing_junction = null //This starts as null for us to know when it's first set, but after that it will hold a 8-bit mask ranging from 0 to 255.
 	///Used for changing icon states for different base sprites.
 	var/base_icon_state
+	/// This var isn't actually used for anything, but is present so that DM's map reader doesn't forfeit on reading a JSON-serialized map. AKA DO NOT FUCK WITH
+	var/map_json_data
+
+	/*
+	Lighting Vars
+	*/
+	/// Intensity of the light. Can be negative to remove light
+	var/light_power = 1
+	// Range in tiles of the light.
+	var/light_range = 0
+	// Hexadecimal RGB string representing the colour of the light. ALWAYS REMEMBER TO MAKE SURE THIS CAN'T BE NULL/NEGATIVE
+	var/light_color
+
+	// Our light source. Don't fuck with this directly unless you have a good reason!
+	var/tmp/datum/light_source/light
+	// Any light sources that are "inside" of us, for example, if src here was a mob that's carrying a flashlight, that flashlight's light source would be part of this list.
+	var/tmp/list/light_sources
+	/// The alternate appearances we own. Lazylist
+	var/list/alternate_appearances
+	/// The alternate appearances we're viewing, stored here to reestablish them after Logout()s. Lazylist
+	var/list/viewing_alternate_appearances
+	/// Contains the world.time of when we start dragging something with our mouse. Used to prevent weird situations where you fail to click on something
+	var/drag_start = 0
+
+	///When a projectile tries to ricochet off this atom, the projectile ricochet chance is multiplied by this
+	var/receive_ricochet_chance_mod = 1
+	///When a projectile ricochets off this atom, it deals the normal damage * this modifier to this atom
+	var/receive_ricochet_damage_coeff = 0.33
 
 /atom/New(loc, ...)
 	SHOULD_CALL_PARENT(TRUE)
@@ -248,19 +285,9 @@
 				L.unEquip(M)
 			M.forceMove(src)
 
-/atom/proc/assume_air(datum/gas_mixture/giver)
-	qdel(giver)
+///Return the air if we can analyze it
+/atom/proc/return_analyzable_air()
 	return null
-
-/atom/proc/remove_air(amount)
-	return null
-
-/atom/proc/return_air()
-	RETURN_TYPE(/datum/gas_mixture)
-	if(loc)
-		return loc.return_air()
-	else
-		return null
 
 /atom/proc/check_eye(mob/user)
 	return
@@ -342,7 +369,7 @@
 				pass |= istype(A, type)
 			if(!pass)
 				continue
-		if(A.contents.len)
+		if(length(A.contents))
 			found += A.search_contents_for(path, filter_path)
 	return found
 
@@ -364,24 +391,53 @@
 
 /atom/proc/build_reagent_description(mob/user)
 	. = list()
-	if(reagents)
+	if(!reagents)
+		return
+	var/one_percent = reagents.total_volume / 100
+	var/blood_type = ""
+	if(user.advanced_reagent_vision())	// You can see absolute unit concentrations in transparent containers and % concentrations in opaque containers. You can also see blood types.
+		. += "<span class='notice'>It contains:</span>"
+		if(!length(reagents.reagent_list))
+			. += "<span class='notice'>Nothing.</span>"
+			return
 		if(container_type & TRANSPARENT)
-			. += "<span class='notice'>It contains:</span>"
-			if(reagents.reagent_list.len)
-				if(user.can_see_reagents()) //Show each individual reagent
-					for(var/I in reagents.reagent_list)
-						var/datum/reagent/R = I
-						. += "<span class='notice'>[R.volume] units of [R.name]</span>"
-				else //Otherwise, just show the total volume
-					if(reagents && reagents.reagent_list.len)
-						. += "<span class='notice'>[reagents.total_volume] units of various reagents.</span>"
+			for(var/I in reagents.reagent_list)
+				var/datum/reagent/R = I
+				if(R.id != "blood")
+					. += "<span class='notice'>[R.volume] units of [R] ([round(R.volume / one_percent)]%)</span>"
+				else
+					blood_type = R.data["blood_type"]
+					. += "<span class='notice'>[R.volume] units of [R] ([blood_type ? "[blood_type]" : ""]) ([round(R.volume / one_percent)]%)</span>"
+			return
+		// Opaque containers
+		for(var/datum/reagent/R in reagents.reagent_list)
+			if(R.id != "blood")
+				. += "<span class='notice'>[R] ([round(R.volume / one_percent)]%)</span>"
 			else
-				. += "<span class='notice'>Nothing.</span>"
-		else if(container_type & AMOUNT_VISIBLE)
-			if(reagents.total_volume)
-				. += "<span class='notice'>It has [reagents.total_volume] unit\s left.</span>"
-			else
-				. += "<span class='danger'>It's empty.</span>"
+				blood_type = R.data["blood_type"]
+				. += "<span class='notice'>[R] ([blood_type ? "[blood_type]" : ""]) ([round(R.volume / one_percent)]%)</span>"
+		return
+
+	if(container_type & TRANSPARENT)
+		. += "<span class='notice'>It contains:</span>"
+		if(user.reagent_vision())	// You can see absolute unit quantities of reagents in transparent containers.
+			for(var/I in reagents.reagent_list)
+				var/datum/reagent/R = I
+				. += "<span class='notice'>[R.volume] units of [R] ([round(R.volume / one_percent)]%)</span>"
+			return
+
+		//Otherwise, just show the total volume
+		if(length(reagents?.reagent_list))
+			. += "<span class='notice'>[reagents.total_volume] units of various reagents.</span>"
+		else
+			. += "<span class='notice'>Nothing.</span>"
+		return
+
+	if(container_type & AMOUNT_VISIBLE)
+		if(reagents.total_volume)
+			. += "<span class='notice'>It has [reagents.total_volume] unit\s left.</span>"
+		else
+			. += "<span class='danger'>It's empty.</span>"
 
 /atom/proc/examine(mob/user, infix = "", suffix = "")
 	. = build_base_description(infix, suffix)
@@ -389,7 +445,8 @@
 
 	SEND_SIGNAL(src, COMSIG_PARENT_EXAMINE, user, .)
 
-/atom/proc/examine_more(mob/user) ///Extended description of an object. Allows you to double examine objects and have them give you a second description of an item. Useful for writing flavourful stuff.
+/// Extended description of an object. Allows you to double examine objects and have them give you a second description of an item. Useful for writing flavourful stuff.
+/atom/proc/examine_more(mob/user)
 	SHOULD_CALL_PARENT(TRUE)
 	RETURN_TYPE(/list)
 
@@ -476,6 +533,7 @@
 	if(reagents)
 		reagents.temperature_reagents(exposed_temperature)
 
+/// If it returns TRUE, attack chain stops
 /atom/proc/tool_act(mob/living/user, obj/item/I, tool_type)
 	switch(tool_type)
 		if(TOOL_CROWBAR)
@@ -549,9 +607,10 @@
 	// Atoms that return TRUE prevent RPDs placing any kind of pipes on their turf.
 	return FALSE
 
-/atom/proc/hitby(atom/movable/AM, skipcatch, hitpush, blocked, datum/thrownthing/throwingdatum)
-	if(density && !has_gravity(AM)) //thrown stuff bounces off dense stuff in no grav, unless the thrown stuff ends up inside what it hit(embedding, bola, etc...).
-		addtimer(CALLBACK(src, PROC_REF(hitby_react), AM), 2)
+/atom/proc/hitby(atom/movable/hitting_atom, skipcatch, hitpush, blocked, datum/thrownthing/throwingdatum)
+	SEND_SIGNAL(src, COMSIG_ATOM_HITBY, hitting_atom, skipcatch, hitpush, blocked, throwingdatum)
+	if(density && !has_gravity(hitting_atom)) //thrown stuff bounces off dense stuff in no grav, unless the thrown stuff ends up inside what it hit(embedding, bola, etc...).
+		addtimer(CALLBACK(src, PROC_REF(hitby_react), hitting_atom), 2)
 
 /// This proc applies special effects of a carbon mob hitting something, be it a wall, structure, or window. You can set mob_hurt to false to avoid double dipping through subtypes if returning ..()
 /atom/proc/hit_by_thrown_mob(mob/living/C, datum/thrownthing/throwingdatum, damage, mob_hurt = FALSE, self_hurt = FALSE)
@@ -605,7 +664,7 @@
 	. = ..()
 	for(var/X in actions)
 		var/datum/action/A = X
-		A.UpdateButtonIcon()
+		A.UpdateButtons()
 
 /atom/proc/get_filter(name)
 	if(filter_data && filter_data[name])
@@ -722,7 +781,6 @@
 				if(fingerprintslast != H.ckey)
 					fingerprintshidden += "\[[all_timestamps()]\] (Wearing gloves). Real name: [H.real_name], Key: [H.key]"
 					fingerprintslast = H.ckey
-				H.gloves.add_fingerprint(M)
 				return FALSE
 
 		//More adminstuffz
@@ -818,9 +876,9 @@ GLOBAL_LIST_EMPTY(blood_splatter_icons)
 /atom/proc/transfer_blood_dna(list/blood_dna)
 	if(!blood_DNA)
 		blood_DNA = list()
-	var/old_length = blood_DNA.len
+	var/old_length = length(blood_DNA)
 	blood_DNA |= blood_dna
-	if(blood_DNA.len > old_length)
+	if(length(blood_DNA) > old_length)
 		return TRUE//some new blood DNA was added
 
 //to add blood from a mob onto something, and transfer their dna info
@@ -839,12 +897,11 @@ GLOBAL_LIST_EMPTY(blood_splatter_icons)
 /atom/proc/add_blood(list/blood_dna, b_color)
 	return FALSE
 
-/obj/add_blood(list/blood_dna, b_color)
-	return transfer_blood_dna(blood_dna)
-
 /obj/item/add_blood(list/blood_dna, b_color)
+	if(isnull(b_color))
+		b_color = "#A10808"
 	var/blood_count = !blood_DNA ? 0 : length(blood_DNA)
-	if(!..())
+	if(!transfer_blood_dna(blood_dna))
 		return FALSE
 	blood_color = b_color // update the blood color
 	if(!blood_count) //apply the blood-splatter overlay if it isn't already in there
@@ -856,6 +913,8 @@ GLOBAL_LIST_EMPTY(blood_splatter_icons)
 	transfer_blood = rand(2, 4)
 
 /turf/add_blood(list/blood_dna, b_color)
+	if(isnull(b_color))
+		b_color = "#A10808"
 	var/obj/effect/decal/cleanable/blood/splatter/B = locate() in src
 	if(!B)
 		B = new /obj/effect/decal/cleanable/blood/splatter(src)
@@ -879,12 +938,12 @@ GLOBAL_LIST_EMPTY(blood_splatter_icons)
 	if(gloves)
 		var/obj/item/clothing/gloves/G = gloves
 		G.add_blood(blood_dna, b_color)
-		verbs += /mob/living/carbon/human/proc/bloody_doodle
+		add_verb(src, /mob/living/carbon/human/proc/bloody_doodle)
 	else
 		hand_blood_color = b_color
 		bloody_hands = rand(2, 4)
 		transfer_blood_dna(blood_dna)
-		verbs += /mob/living/carbon/human/proc/bloody_doodle
+		add_verb(src, /mob/living/carbon/human/proc/bloody_doodle)
 
 	update_inv_gloves()	//handles bloody hands overlays and updating
 	return TRUE
@@ -1000,7 +1059,7 @@ GLOBAL_LIST_EMPTY(blood_splatter_icons)
 	var/cur_x = null
 	var/cur_y = null
 	var/list/y_arr = null
-	for(cur_x in 1 to GLOB.global_map.len)
+	for(cur_x in 1 to length(GLOB.global_map))
 		y_arr = GLOB.global_map[cur_x]
 		cur_y = y_arr.Find(src.z)
 		if(cur_y)
@@ -1058,8 +1117,20 @@ GLOBAL_LIST_EMPTY(blood_splatter_icons)
 /atom/proc/zap_act(power, zap_flags)
 	return
 
-/atom/proc/handle_ricochet(obj/item/projectile/P)
-	return
+/atom/proc/handle_ricochet(obj/item/projectile/ricocheting_projectile)
+	var/turf/p_turf = get_turf(ricocheting_projectile)
+	var/face_direction = get_dir(src, p_turf) || get_dir(src, ricocheting_projectile)
+	var/face_angle = dir2angle(face_direction)
+	var/incidence_s = GET_ANGLE_OF_INCIDENCE(face_angle, (ricocheting_projectile.Angle + 180))
+	var/a_incidence_s = abs(incidence_s)
+	if(a_incidence_s > 90 && a_incidence_s < 270)
+		return FALSE
+	if((ricocheting_projectile.flag in list(BULLET, BOMB)) && ricocheting_projectile.ricochet_incidence_leeway)
+		if((a_incidence_s < 90 && a_incidence_s < 90 - ricocheting_projectile.ricochet_incidence_leeway) || (a_incidence_s > 270 && a_incidence_s -270 > ricocheting_projectile.ricochet_incidence_leeway))
+			return FALSE
+	var/new_angle_s = SIMPLIFY_DEGREES(face_angle + incidence_s)
+	ricocheting_projectile.set_angle(new_angle_s)
+	return TRUE
 
 //This proc is called on the location of an atom when the atom is Destroy()'d
 /atom/proc/handle_atom_del(atom/A)
@@ -1069,7 +1140,7 @@ GLOBAL_LIST_EMPTY(blood_splatter_icons)
 	if(!message)
 		return
 	var/list/speech_bubble_hearers = list()
-	for(var/mob/M in get_mobs_in_view(7, src))
+	for(var/mob/M as anything in get_mobs_in_view(7, src))
 		M.show_message("<span class='game say'><span class='name'>[src]</span> [atom_say_verb], \"[message]\"</span>", 2, null, 1)
 		if(M.client)
 			speech_bubble_hearers += M.client
@@ -1101,6 +1172,7 @@ GLOBAL_LIST_EMPTY(blood_splatter_icons)
 	if(curturf)
 		.["Jump to turf"] = "?_src_=holder;adminplayerobservecoodjump=1;X=[curturf.x];Y=[curturf.y];Z=[curturf.z]"
 	.["Add reagent"] = "?_src_=vars;addreagent=[UID()]"
+	.["Edit reagents"] = "?_src_=vars;editreagents=[UID()]"
 	.["Trigger explosion"] = "?_src_=vars;explode=[UID()]"
 	.["Trigger EM pulse"] = "?_src_=vars;emp=[UID()]"
 
@@ -1128,12 +1200,12 @@ GLOBAL_LIST_EMPTY(blood_splatter_icons)
 	Adds an instance of colour_type to the atom's atom_colours list
 */
 /atom/proc/add_atom_colour(coloration, colour_priority)
-	if(!atom_colours || !atom_colours.len)
+	if(!atom_colours || !length(atom_colours))
 		atom_colours = list()
 		atom_colours.len = COLOUR_PRIORITY_AMOUNT //four priority levels currently.
 	if(!coloration)
 		return
-	if(colour_priority > atom_colours.len)
+	if(colour_priority > length(atom_colours))
 		return
 	atom_colours[colour_priority] = coloration
 	update_atom_colour()
@@ -1145,7 +1217,7 @@ GLOBAL_LIST_EMPTY(blood_splatter_icons)
 	if(!atom_colours)
 		atom_colours = list()
 		atom_colours.len = COLOUR_PRIORITY_AMOUNT //four priority levels currently.
-	if(colour_priority > atom_colours.len)
+	if(colour_priority > length(atom_colours))
 		return
 	if(coloration && atom_colours[colour_priority] != coloration)
 		return //if we don't have the expected color (for a specific priority) to remove, do nothing
@@ -1164,7 +1236,7 @@ GLOBAL_LIST_EMPTY(blood_splatter_icons)
 	for(var/C in atom_colours)
 		if(islist(C))
 			var/list/L = C
-			if(L.len)
+			if(length(L))
 				color = L
 				return
 		else if(C)
@@ -1210,7 +1282,7 @@ GLOBAL_LIST_EMPTY(blood_splatter_icons)
 	if(!use_prefix)
 		default_value = name
 	else if(findtext(name, prefix) != 0)
-		default_value = copytext(name, length(prefix) + 1)
+		default_value = copytext_char(name, length_char(prefix) + 1)
 	else
 		// Either the thing has a non-conforming name due to being set in the map
 		// OR (much more likely) the thing is unlabeled yet.
@@ -1237,7 +1309,7 @@ GLOBAL_LIST_EMPTY(blood_splatter_icons)
 		return null
 
 
-	t = sanitize(copytext(t, 1, MAX_NAME_LEN))
+	t = sanitize(copytext_char(t, 1, MAX_NAME_LEN))
 
 	// Logging
 	var/logged_name = initial(name)
@@ -1291,3 +1363,46 @@ GLOBAL_LIST_EMPTY(blood_splatter_icons)
 	if(caller && (caller.pass_flags & pass_flags_self))
 		return TRUE
 	. = !density
+
+/atom/proc/atom_prehit(obj/item/projectile/P)
+	return SEND_SIGNAL(src, COMSIG_ATOM_PREHIT, P)
+
+/// Passes Stat Browser Panel clicks to the game and calls client click on an atom
+/atom/Topic(href, list/href_list)
+	. = ..()
+	if(!usr?.client)
+		return
+
+	if(href_list["statpanel_item_click"])
+		var/client/usr_client = usr.client
+		var/list/paramslist = list()
+		switch(href_list["statpanel_item_click"])
+			if("left")
+				paramslist[LEFT_CLICK] = "1"
+			if("right")
+				paramslist[RIGHT_CLICK] = "1"
+			if("middle")
+				paramslist[MIDDLE_CLICK] = "1"
+			else
+				return
+
+		if(href_list["statpanel_item_shiftclick"])
+			paramslist[SHIFT_CLICK] = "1"
+		if(href_list["statpanel_item_ctrlclick"])
+			paramslist[CTRL_CLICK] = "1"
+		if(href_list["statpanel_item_altclick"])
+			paramslist[ALT_CLICK] = "1"
+
+		var/mouseparams = list2params(paramslist)
+		usr_client.Click(src, loc, null, mouseparams)
+		return TRUE
+
+/**
+ * A special case of relaymove() in which the person relaying the move may be "driving" this atom
+ *
+ * This is a special case for vehicles and ridden animals where the relayed movement may be handled
+ * by the riding component attached to this atom. Returns TRUE as long as there's nothing blocking
+ * the movement, or FALSE if the signal gets a reply that specifically blocks the movement
+ */
+/atom/proc/relaydrive(mob/living/user, direction)
+	return !(SEND_SIGNAL(src, COMSIG_RIDDEN_DRIVER_MOVE, user, direction) & COMPONENT_DRIVER_BLOCK_MOVE)

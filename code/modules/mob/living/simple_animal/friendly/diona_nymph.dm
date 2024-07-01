@@ -56,8 +56,8 @@
 
 /datum/action/innate/diona/merge
 	name = "Merge with gestalt"
-	icon_icon = 'icons/mob/human_races/r_diona.dmi'
-	button_icon_state = "preview"
+	button_overlay_icon = 'icons/mob/human_races/r_diona.dmi'
+	button_overlay_icon_state = "preview"
 
 /datum/action/innate/diona/merge/Activate()
 	var/mob/living/simple_animal/diona/user = owner
@@ -65,8 +65,8 @@
 
 /datum/action/innate/diona/evolve
 	name = "Evolve"
-	icon_icon = 'icons/obj/cloning.dmi'
-	button_icon_state = "pod_cloning"
+	button_overlay_icon = 'icons/obj/cloning.dmi'
+	button_overlay_icon_state = "pod_cloning"
 
 /datum/action/innate/diona/evolve/Activate()
 	var/mob/living/simple_animal/diona/user = owner
@@ -74,8 +74,8 @@
 
 /datum/action/innate/diona/steal_blood
 	name = "Steal blood"
-	icon_icon = 'icons/goonstation/objects/iv.dmi'
-	button_icon_state = "bloodbag"
+	button_overlay_icon = 'icons/goonstation/objects/iv.dmi'
+	button_overlay_icon_state = "bloodbag"
 
 /datum/action/innate/diona/steal_blood/Activate()
 	var/mob/living/simple_animal/diona/user = owner
@@ -107,8 +107,8 @@
 		if(isdiona(M))
 			to_chat(M, "You feel your being twine with that of [src] as it merges with your biomass.")
 			to_chat(src, "You feel your being twine with that of [M] as you merge with its biomass.")
-			throw_alert(GESTALT_ALERT, /obj/screen/alert/nymph, new_master = src) //adds a screen alert that can call resist
-			M.throw_alert(NYMPH_ALERT, /obj/screen/alert/gestalt, new_master = src)
+			throw_alert(GESTALT_ALERT, /atom/movable/screen/alert/nymph, new_master = src) //adds a screen alert that can call resist
+			M.throw_alert(NYMPH_ALERT, /atom/movable/screen/alert/gestalt, new_master = src)
 			forceMove(M)
 		else if(isrobot(M))
 			M.visible_message("<span class='notice'>[M] playfully boops [src] on the head!</span>", "<span class='notice'>You playfully boop [src] on the head!</span>")
@@ -141,8 +141,8 @@
 		M.status_flags |= PASSEMOTES
 		to_chat(src, "You feel your being twine with that of [M] as you merge with its biomass.")
 		forceMove(M)
-		throw_alert(GESTALT_ALERT, /obj/screen/alert/nymph, new_master = src) //adds a screen alert that can call resist
-		M.throw_alert(NYMPH_ALERT, /obj/screen/alert/gestalt, new_master = src)
+		throw_alert(GESTALT_ALERT, /atom/movable/screen/alert/nymph, new_master = src) //adds a screen alert that can call resist
+		M.throw_alert(NYMPH_ALERT, /atom/movable/screen/alert/gestalt, new_master = src)
 		return TRUE
 	else
 		return FALSE
@@ -173,7 +173,7 @@
 	if(stat != CONSCIOUS)
 		return FALSE
 
-	if(donors.len < evolve_donors)
+	if(length(donors) < evolve_donors)
 		to_chat(src, "<span class='warning'>You need more blood in order to ascend to a new state of consciousness...</span>")
 		return FALSE
 
@@ -259,12 +259,12 @@
 		update_progression()
 
 /mob/living/simple_animal/diona/proc/update_progression()
-	if(stat != CONSCIOUS || !donors.len)
+	if(stat != CONSCIOUS || !length(donors))
 		return FALSE
 
-	if(donors.len == evolve_donors)
+	if(length(donors) == evolve_donors)
 		to_chat(src, "<span class='noticealien'>You feel ready to move on to your next stage of growth.</span>")
-	else if(donors.len == awareness_donors)
+	else if(length(donors) == awareness_donors)
 		universal_understand = TRUE
 		to_chat(src, "<span class='noticealien'>You feel your awareness expand, and realize you know how to understand the creatures around you.</span>")
 	else

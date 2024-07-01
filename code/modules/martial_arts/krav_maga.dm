@@ -9,7 +9,7 @@
 
 /datum/action/neutral_stance
 	name = "Neutral Stance - You relax, cancelling your last Krav Maga stance attack."
-	button_icon_state = "neutralstance"
+	button_overlay_icon_state = "neutralstance"
 
 /datum/action/neutral_stance/Trigger(left_click)
 	var/mob/living/carbon/human/H = owner
@@ -23,7 +23,7 @@
 
 /datum/action/neck_chop
 	name = "Neck Chop - Injures the neck, stopping the victim from speaking for a while."
-	button_icon_state = "neckchop"
+	button_overlay_icon_state = "neckchop"
 
 /datum/action/neck_chop/Trigger(left_click)
 	var/mob/living/carbon/human/H = owner //This is a janky solution, but I want to refactor krav anyway and un-jank this (written in may 2023)
@@ -41,7 +41,7 @@
 	H.mind.martial_art.in_stance = TRUE
 /datum/action/leg_sweep
 	name = "Leg Sweep - Trips the victim, rendering them prone and unable to move for a short time."
-	button_icon_state = "legsweep"
+	button_overlay_icon_state = "legsweep"
 
 /datum/action/leg_sweep/Trigger(left_click)
 	var/mob/living/carbon/human/H = owner
@@ -63,7 +63,7 @@
 
 /datum/action/lung_punch//referred to internally as 'quick choke'
 	name = "Lung Punch - Delivers a strong punch just above the victim's abdomen, constraining the lungs. The victim will be unable to breathe for a short time."
-	button_icon_state = "lungpunch"
+	button_overlay_icon_state = "lungpunch"
 
 /datum/action/lung_punch/Trigger(left_click)
 	var/mob/living/carbon/human/H = owner
@@ -171,7 +171,8 @@
 	. = ..()
 	RegisterSignal(src, COMSIG_PARENT_QDELETING, PROC_REF(alert_admins_on_destroy))
 
-/obj/item/clothing/gloves/color/black/krav_maga/combat // for nukies
+/// for nukies
+/obj/item/clothing/gloves/color/black/krav_maga/combat
 	name = "Combat gloves plus"
 	desc = "These combat gloves have been upgraded with nanochips that teach the wearer Krav Maga."
 	icon_state = "combat"

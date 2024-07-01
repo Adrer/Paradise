@@ -148,7 +148,7 @@
 	var/rate = 0.04
 
 /datum/plant_gene/reagent/get_name()
-	return "[name] production [rate*100]%"
+	return "[name] production [rate * 200]%" // Yes 200 is correct
 
 /datum/plant_gene/reagent/proc/set_reagent(reag_id)
 	reagent_id = reag_id
@@ -156,7 +156,10 @@
 
 	var/datum/reagent/R = GLOB.chemical_reagents_list[reag_id]
 	if(R && R.id == reagent_id)
-		name = R.name
+		if(reagent_id == "holywater")
+			name = "Holy Water"
+		else
+			name = R.name
 
 /datum/plant_gene/reagent/New(reag_id = null, reag_rate = 0)
 	..()
@@ -173,6 +176,8 @@
 
 /datum/plant_gene/reagent/can_add(obj/item/seeds/S)
 	if(!..())
+		return FALSE
+	if(!S)
 		return FALSE
 	for(var/datum/plant_gene/reagent/R in S.genes)
 		if(R.reagent_id == reagent_id)
@@ -195,7 +200,8 @@
 /datum/plant_gene/trait/can_add(obj/item/seeds/S)
 	if(!..())
 		return FALSE
-
+	if(!S)
+		return FALSE
 	for(var/datum/plant_gene/trait/R in S.genes)
 		if(trait_id && R.trait_id == trait_id)
 			return FALSE
@@ -299,6 +305,7 @@
 				C.update_icon()
 				batteries_recharged = 1
 		if(batteries_recharged)
+			target.reagents.add_reagent("teslium", 2)
 			to_chat(target, "<span class='notice'>Your batteries are recharged!</span>")
 
 
@@ -439,17 +446,18 @@
 			to_chat(target, "<span class='danger'>You are pricked by [G]!</span>")
 
 /datum/plant_gene/trait/smoke
-	name = "gaseous decomposition"
+	name = "Gaseous Decomposition"
 	dangerous = TRUE
 
 /datum/plant_gene/trait/smoke/on_squash(obj/item/food/snacks/grown/G, atom/target)
-	var/datum/effect_system/smoke_spread/chem/S = new
+	var/datum/effect_system/smoke_spread/chem/plant/S = new()
 	var/splat_location = get_turf(target)
 	var/smoke_amount = round(sqrt(G.seed.potency * 0.1), 1)
 	S.set_up(G.reagents, splat_location)
 	S.start(smoke_amount)
 
-/datum/plant_gene/trait/fire_resistance // Lavaland
+/// Lavaland
+/datum/plant_gene/trait/fire_resistance
 	name = "Fire Resistance"
 
 /datum/plant_gene/trait/fire_resistance/apply_vars(obj/item/seeds/S)
@@ -460,7 +468,8 @@
 	if(!(G.resistance_flags & FIRE_PROOF))
 		G.resistance_flags |= FIRE_PROOF
 
-/datum/plant_gene/trait/plant_type // Parent type
+/// Parent type
+/datum/plant_gene/trait/plant_type
 	name = "you shouldn't see this"
 	trait_id = "plant_type"
 

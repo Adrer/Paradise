@@ -149,10 +149,7 @@
 	name = "\improper Dormitories"
 	icon_state = "dorms"
 	sound_environment = SOUND_AREA_STANDARD_STATION
-
-
-/area/crew_quarters/toilet/aux
-	name = "\improper Auxiliary Toilets"
+	request_console_name = "Crew Quarters"
 
 /area/station/public/sleep
 	name = "\improper Primary Cryogenic Dormitories"
@@ -163,28 +160,15 @@
 	name = "\improper Secondary Cryogenic Dormitories"
 	icon_state = "Sleep"
 
-/area/station/public/sleep_male
-	name = "\improper Male Dorm"
-	icon_state = "Sleep"
-
-/area/station/public/sleep_female
-	name = "\improper Female Dorm"
-	icon_state = "Sleep"
-
 /area/station/public/locker
 	name = "\improper Locker Room"
 	icon_state = "locker"
+	request_console_name = "Crew Quarters"
 
 /area/station/public/toilet
 	name = "\improper Dormitory Toilets"
 	icon_state = "toilet"
 	sound_environment = SOUND_AREA_SMALL_ENCLOSED
-
-/area/station/public/toilet/male
-	name = "\improper Male Toilets"
-
-/area/station/public/toilet/female
-	name = "\improper Female Toilets"
 
 /area/station/public/toilet/unisex
 	name = "\improper Unisex Restroom"
@@ -195,6 +179,7 @@
 /area/station/public/fitness
 	name = "\improper Fitness Room"
 	icon_state = "fitness"
+	request_console_name = "Crew Quarters"
 
 /area/station/public/arcade
 	name = "\improper Arcade"
@@ -204,10 +189,6 @@
 	name = "\improper Mr Chang's"
 	icon_state = "changs"
 
-/area/station/public/clothing
-	name = "\improper Clothing Shop"
-	icon_state = "Theatre"
-
 /area/station/public/pet_store
 	name = "\improper Pet Store"
 	icon_state = "pet_store"
@@ -215,8 +196,6 @@
 /area/station/public/vacant_office
 	name = "\improper Vacant Office"
 	icon_state = "vacantoffice"
-
-/area/station/public/vacant_office/secondary
 
 //Storage
 /area/station/public/storage
@@ -229,10 +208,7 @@
 /area/station/public/storage/tools
 	name = "Primary Tool Storage"
 	icon_state = "primarystorage"
-
-/area/station/public/storage/autolathe
-	name = "Autolathe Storage"
-	icon_state = "storage"
+	request_console_name = "Tool Storage"
 
 /area/station/public/storage/art
 	name = "Art Supply Storage"
@@ -249,9 +225,6 @@
 /area/station/public/storage/office
 	name = "Office Supplies"
 	icon_state = "office_supplies"
-
-/area/station/public/recreation
-	name = "\improper Recreation Area"
 
 /area/station/public/construction
 	name = "\improper Construction Area"
@@ -270,3 +243,9 @@
 
 /area/station/public/quantum/cargo
 	name = "Cargo Quantum Pad"
+
+/area/station/public/quantum/service
+	name = "Service Quantum Pad"
+
+/area/station/public/quantum/medbay
+	name = "Medbay Quantum Pad"

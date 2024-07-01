@@ -94,10 +94,7 @@ export class TextArea extends Component {
         if (keyCode === KEY_TAB) {
           e.preventDefault();
           const { value, selectionStart, selectionEnd } = e.target;
-          e.target.value =
-            value.substring(0, selectionStart) +
-            '\t' +
-            value.substring(selectionEnd);
+          e.target.value = value.substring(0, selectionStart) + '\t' + value.substring(selectionEnd);
           e.target.selectionEnd = selectionStart + 1;
         }
       }
@@ -125,6 +122,16 @@ export class TextArea extends Component {
     const input = this.textareaRef.current;
     if (input) {
       input.value = toInputValue(nextValue);
+    }
+
+    if (this.props.autoFocus || this.props.autoSelect) {
+      setTimeout(() => {
+        input.focus();
+
+        if (this.props.autoSelect) {
+          input.select();
+        }
+      }, 1);
     }
   }
 
@@ -156,16 +163,14 @@ export class TextArea extends Component {
       onBlur,
       onEnter,
       value,
+      maxLength,
       placeholder,
       ...boxProps
     } = this.props;
     // Box props
     const { className, fluid, ...rest } = boxProps;
     return (
-      <Box
-        className={classes(['TextArea', fluid && 'TextArea--fluid', className])}
-        {...rest}
-      >
+      <Box className={classes(['TextArea', fluid && 'TextArea--fluid', className])} {...rest}>
         <textarea
           ref={this.textareaRef}
           className="TextArea__textarea"
@@ -176,6 +181,7 @@ export class TextArea extends Component {
           onInput={this.handleOnInput}
           onFocus={this.handleFocus}
           onBlur={this.handleBlur}
+          maxLength={maxLength}
         />
       </Box>
     );

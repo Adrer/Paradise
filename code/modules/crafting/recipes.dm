@@ -221,6 +221,21 @@
 	..()
 	blacklist += subtypesof(/obj/item/gun/energy/laser)
 
+/datum/crafting_recipe/sparker
+	name = "SPRK-12 Pistol"
+	tools = list(TOOL_SCREWDRIVER, TOOL_WIRECUTTER)
+	result = list(/obj/item/gun/energy/sparker)
+	reqs = list(/obj/item/gun/energy/gun/mini = 1,
+				/obj/item/stack/cable_coil = 5,
+				/obj/item/weaponcrafting/gunkit/sparker = 1)
+	time = 10 SECONDS
+	category = CAT_WEAPONRY
+	subcategory = CAT_WEAPON
+
+/datum/crafting_recipe/sparker/New()
+	..()
+	blacklist += subtypesof(/obj/item/gun/energy/gun/mini)
+
 /datum/crafting_recipe/teslarevolver
 	name = "Arc Revolver"
 	tools = list(TOOL_SCREWDRIVER, TOOL_WIRECUTTER)
@@ -473,9 +488,28 @@
 	reqs = list(/obj/item/restraints/handcuffs/cable = 1,
 				/obj/item/shard = 1,
 				/obj/item/stack/rods = 1)
+	parts = list(/obj/item/shard = 1)
 	time = 40
 	category = CAT_WEAPONRY
 	subcategory = CAT_WEAPON
+
+/datum/crafting_recipe/skateboard
+	name = "Skateboard"
+	result = list(/obj/tgvehicle/scooter/skateboard/improvised)
+	time = 1.5 SECONDS
+	reqs = list(/obj/item/stack/sheet/metal = 5,
+				/obj/item/stack/rods = 10)
+	tools = list(TOOL_WELDER, TOOL_WRENCH)
+	category = CAT_MISC
+
+/datum/crafting_recipe/spear_primal // alternative recipe for Ash Walkers
+	name = "Spear"
+	result = list(/obj/item/spear)
+	reqs = list(/obj/item/restraints/handcuffs/sinew = 1,
+				/obj/item/shard = 1,
+				/obj/item/stack/rods = 1)
+	time = 4 SECONDS
+	category = CAT_PRIMAL
 
 /datum/crafting_recipe/spooky_camera
 	name = "Camera Obscura"
@@ -818,7 +852,8 @@
 	category = CAT_PRIMAL
 	alert_admins_on_craft = TRUE
 
-/datum/crafting_recipe/rake //Category resorting incoming
+/// Category resorting incoming
+/datum/crafting_recipe/rake
 	name = "Rake"
 	time = 30
 	reqs = list(/obj/item/stack/sheet/wood = 5)
@@ -882,6 +917,16 @@
 				/datum/reagent/paint/black = 30,
 				/obj/item/storage/toolbox = 1) //Paint in reagents so it doesnt take the container up, yet still take it from the beaker
 	pathtools = list(/obj/item/reagent_containers/glass/rag = 1) //need something to paint with it
+	category = CAT_MISC
+
+/datum/crafting_recipe/fake_tactical_medkit
+	name = "Tactical First-Aid Kit"
+	result = list(/obj/item/storage/firstaid/fake_tactical)
+	time = 40
+	reqs = list(/datum/reagent/paint/blue = 10,
+				/datum/reagent/paint/black = 30,
+				/obj/item/storage/firstaid = 1)
+	pathtools = list(/obj/item/reagent_containers/glass/rag = 1)
 	category = CAT_MISC
 
 /datum/crafting_recipe/snowman

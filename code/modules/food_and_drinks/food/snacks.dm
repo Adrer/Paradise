@@ -50,6 +50,8 @@
 	return
 
 /obj/item/food/snacks/attack(mob/M, mob/user, def_zone)
+	if(user.a_intent == INTENT_HARM && force)
+		return ..()
 	if(reagents && !reagents.total_volume)						//Shouldn't be needed but it checks to see if it has anything left in it.
 		to_chat(user, "<span class='warning'>None of [src] left, oh no!</span>")
 		M.unEquip(src)	//so icons update :[
@@ -90,7 +92,7 @@
 
 		var/obj/item/kitchen/utensil/U = W
 
-		if(U.contents.len >= U.max_contents)
+		if(length(U.contents) >= U.max_contents)
 			to_chat(user, "<span class='warning'>You cannot fit anything else on your [U].")
 			return
 
@@ -172,12 +174,18 @@
 				N.visible_message("[N] nibbles away at [src].", "")
 			N.adjustHealth(-2)
 			N.taste(reagents)
+		else if(iscaterpillar(M))
+			var/mob/living/simple_animal/nian_caterpillar/W = M
+			W.taste(reagents)
+			W.consume(src)
 
 /obj/item/food/snacks/sliceable/examine(mob/user)
 	. = ..()
 	. += "<span class='notice'>Alt-click to put something small inside.</span>"
 
 /obj/item/food/snacks/sliceable/AltClick(mob/user)
+	if(!Adjacent(user))
+		return
 	var/obj/item/I = user.get_active_hand()
 	if(!I)
 		return
