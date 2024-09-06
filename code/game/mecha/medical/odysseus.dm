@@ -13,6 +13,15 @@
 	normal_step_energy_drain = 6
 	var/builtin_hud_user = 0
 
+/obj/mecha/medical/odysseus/loaded/Initialize(mapload)
+	. = ..()
+	var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/medical/rescue_jaw()
+	ME.attach(src)
+	ME = new /obj/item/mecha_parts/mecha_equipment/medical/syringe_gun()
+	ME.attach(src)
+	ME = new /obj/item/mecha_parts/mecha_equipment/medical/sleeper()
+	ME.attach(src)
+
 /obj/mecha/medical/odysseus/moved_inside(mob/living/carbon/human/H)
 	. = ..()
 	if(. && ishuman(H))

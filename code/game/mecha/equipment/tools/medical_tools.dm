@@ -36,9 +36,10 @@
 	energy_drain = 20
 	range = MECHA_MELEE
 	equip_cooldown = 20
-	var/mob/living/carbon/patient = null
+	var/mob/living/carbon/human/patient = null
 	var/inject_amount = 10
 	salvageable = 0
+	var/amounts = list(5, 10)
 
 /obj/item/mecha_parts/mecha_equipment/medical/sleeper/AllowDrop()
 	return FALSE
@@ -114,97 +115,157 @@
 	if(afilter.get("eject"))
 		go_out()
 	if(afilter.get("view_stats"))
-		chassis.occupant << browse(get_patient_stats(),"window=msleeper")
-		onclose(chassis.occupant, "msleeper")
-		return
-	if(afilter.get("inject"))
-		inject_reagent(afilter.getType("inject",/datum/reagent),afilter.getObj("source"))
+		ui_interact(usr) //TODO: Switch to user
 	return
 
-/obj/item/mecha_parts/mecha_equipment/medical/sleeper/proc/get_patient_stats()
-	if(!patient)
-		return
-	return {"<html><meta charset='utf-8'>
-				<head>
-				<title>[patient] statistics</title>
-				<script language='javascript' type='text/javascript'>
-				[JS_BYJAX]
-				</script>
-				<style>
-				h3 {margin-bottom:2px;font-size:14px;}
-				#lossinfo, #reagents, #injectwith {padding-left:15px;}
-				</style>
-				</head>
-				<body>
-				<h3>Health statistics</h3>
-				<div id="lossinfo">
-				[get_patient_dam()]
-				</div>
-				<h3>Reagents in bloodstream</h3>
-				<div id="reagents">
-				[get_patient_reagents()]
-				</div>
-				<div id="injectwith">
-				[get_available_reagents()]
-				</div>
-				</body>
-				</html>"}
+/obj/item/mecha_parts/mecha_equipment/medical/sleeper/ui_interact(mob/user, datum/tgui/ui = null)
+	// update the ui if it exists, returns null if no ui is passed/found
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "MechSleeper", "Mounted Sleeper")
+		ui.open()
 
-/obj/item/mecha_parts/mecha_equipment/medical/sleeper/proc/get_patient_dam()
-	var/t1
-	switch(patient.stat)
-		if(0)
-			t1 = "Conscious"
-		if(1)
-			t1 = "Unconscious"
-		if(2)
-			t1 = "*dead*"
-		else
-			t1 = "Unknown"
-	return {"<font color="[patient.health > 50 ? "blue" : "red"]"><b>Health:</b> [patient.stat == DEAD ? "[t1]" : "[patient.health]% ([t1])"]</font><br />
-				<font color="[patient.bodytemperature > 50 ? "blue" : "red"]"><b>Core Temperature:</b> [patient.bodytemperature-T0C]&deg;C ([patient.bodytemperature*1.8-459.67]&deg;F)</font><br />
-				<font color="[patient.getBruteLoss() < 60 ? "blue" : "red"]"><b>Brute Damage:</b> [patient.getBruteLoss()]%</font><br />
-				<font color="[patient.getOxyLoss() < 60 ? "blue" : "red"]"><b>Respiratory Damage:</b> [patient.getOxyLoss()]%</font><br />
-				<font color="[patient.getToxLoss() < 60 ? "blue" : "red"]"><b>Toxin Content:</b> [patient.getToxLoss()]%</font><br />
-				<font color="[patient.getFireLoss() < 60 ? "blue" : "red"]"><b>Burn Severity:</b> [patient.getFireLoss()]%</font><br />
-				<font color="red">[patient.getCloneLoss() ? "Subject appears to have cellular damage." : ""]</font><br />
-				<font color="red">[patient.getBrainLoss() ? "Significant brain damage detected." : ""]</font><br />
-				"}
+/obj/item/mecha_parts/mecha_equipment/medical/sleeper/ui_data(mob/user)
+	var/list/data = list()
+	data["amounts"] = amounts
+	data["hasOccupant"] = patient ? 1 : 0
+	var/occupantData[0]
+	if(patient)
+		occupantData["name"] = patient.name
+		occupantData["stat"] = patient.stat
+		occupantData["health"] = patient.health
+		occupantData["maxHealth"] = patient.maxHealth
+		occupantData["minHealth"] = HEALTH_THRESHOLD_DEAD
+		occupantData["bruteLoss"] = patient.getBruteLoss()
+		occupantData["oxyLoss"] = patient.getOxyLoss()
+		occupantData["toxLoss"] = patient.getToxLoss()
+		occupantData["fireLoss"] = patient.getFireLoss()
+		occupantData["paralysis"] = patient.AmountParalyzed()
+		occupantData["hasBlood"] = 0
+		occupantData["bodyTemperature"] = patient.bodytemperature
+		occupantData["maxTemp"] = 1000
+		// Because we can put simple_animals in here, we need to do something tricky to get things working nice
+		occupantData["temperatureSuitability"] = 0 // 0 is the baseline
+		if(ishuman(patient) && patient.dna.species)
+			// I wanna do something where the bar gets bluer as the temperature gets lower
+			// For now, I'll just use the standard format for the temperature status
+			var/datum/species/sp = patient.dna.species
+			if(patient.bodytemperature < sp.cold_level_3)
+				occupantData["temperatureSuitability"] = -3
+			else if(patient.bodytemperature < sp.cold_level_2)
+				occupantData["temperatureSuitability"] = -2
+			else if(patient.bodytemperature < sp.cold_level_1)
+				occupantData["temperatureSuitability"] = -1
+			else if(patient.bodytemperature > sp.heat_level_3)
+				occupantData["temperatureSuitability"] = 3
+			else if(patient.bodytemperature > sp.heat_level_2)
+				occupantData["temperatureSuitability"] = 2
+			else if(patient.bodytemperature > sp.heat_level_1)
+				occupantData["temperatureSuitability"] = 1
+		else if(isanimal(patient))
+			var/mob/living/simple_animal/silly = patient
+			if(silly.bodytemperature < silly.minbodytemp)
+				occupantData["temperatureSuitability"] = -3
+			else if(silly.bodytemperature > silly.maxbodytemp)
+				occupantData["temperatureSuitability"] = 3
+		// Blast you, imperial measurement system
+		occupantData["btCelsius"] = patient.bodytemperature - T0C
+		occupantData["btFaren"] = ((patient.bodytemperature - T0C) * (9.0/5.0))+ 32
 
-/obj/item/mecha_parts/mecha_equipment/medical/sleeper/proc/get_patient_reagents()
-	if(patient.reagents)
-		for(var/datum/reagent/R in patient.reagents.reagent_list)
-			if(R.volume > 0)
-				. += "[R]: [round(R.volume,0.01)]<br />"
-	return . || "None"
+
+		// I'm not sure WHY you'd want to put a simple_animal in a sleeper, but precedent is precedent
+		// Runtime is aptly named, isn't she?
+		if(ishuman(patient) && !(NO_BLOOD in patient.dna.species.species_traits))
+			occupantData["pulse"] = patient.get_pulse()
+			occupantData["hasBlood"] = 1
+			occupantData["bloodLevel"] = round(patient.blood_volume)
+			occupantData["bloodMax"] = patient.max_blood
+			occupantData["bloodPercent"] = round(100*(patient.blood_volume/patient.max_blood), 0.01)
+
+	data["occupant"] = occupantData
+	data["maxchem"] = 300
+	data["dialysis"] = FALSE
+	data["auto_eject_dead"] = FALSE
+	data["isBeakerLoaded"] = FALSE
+
+	var/chemicals[0]
+
+	var/available_reagents = get_available_reagents()
+	for(var/re in available_reagents)
+		var/datum/reagent/temp = GLOB.chemical_reagents_list[re]
+		if(temp)
+			var/reagent_amount = 0
+			var/pretty_amount
+			var/injectable = patient ? 1 : 0
+			var/overdosing = 0
+			var/caution = 0 // To make things clear that you're coming close to an overdose
+
+			if(patient && patient.reagents)
+				reagent_amount = patient.reagents.get_reagent_amount(temp.id)
+				// If they're mashing the highest concentration, they get one warning
+				if(temp.overdose_threshold && reagent_amount + 10 > temp.overdose_threshold)
+					caution = 1
+				if(temp.id in patient.reagents.overdose_list())
+					overdosing = 1
+
+			pretty_amount = round(reagent_amount, 0.05)
+
+			chemicals.Add(list(list("title" = temp.name, "id" = temp.id, "commands" = list("chemical" = temp.id), "occ_amount" = reagent_amount, "pretty_amount" = pretty_amount, "injectable" = injectable, "overdosing" = overdosing, "od_warning" = caution)))
+
+	data["chemicals"] = chemicals
+	return data
 
 /obj/item/mecha_parts/mecha_equipment/medical/sleeper/proc/get_available_reagents()
-	var/output
+	var/output = list()
 	var/obj/item/mecha_parts/mecha_equipment/medical/syringe_gun/SG = locate(/obj/item/mecha_parts/mecha_equipment/medical/syringe_gun) in chassis
 	if(SG && SG.reagents && islist(SG.reagents.reagent_list))
 		for(var/datum/reagent/R in SG.reagents.reagent_list)
 			if(R.volume > 0)
-				output += "<a href='byond://?src=[UID()];inject=\ref[R];source=\ref[SG]'>Inject [R.name]</a><br />"
+				output += R.id
+				output[R.id] = R.volume
 	return output
 
-
-/obj/item/mecha_parts/mecha_equipment/medical/sleeper/proc/inject_reagent(datum/reagent/R,obj/item/mecha_parts/mecha_equipment/medical/syringe_gun/SG)
-	if(!R || !patient || !SG || !(SG in chassis.equipment))
-		return
-	var/to_inject = min(R.volume, inject_amount)
-	if(to_inject && patient.reagents.get_reagent_amount(R.id) + to_inject <= inject_amount*2)
-		occupant_message("Injecting [patient] with [to_inject] units of [R.name].")
-		log_message("Injecting [patient] with [to_inject] units of [R.name].")
-		add_attack_logs(chassis.occupant, patient, "Injected with [name] containing [R], transferred [to_inject] units", R.harmless ? ATKLOG_ALMOSTALL : null)
-		SG.reagents.trans_id_to(patient,R.id,to_inject)
-		update_equip_info()
-
-/obj/item/mecha_parts/mecha_equipment/medical/sleeper/update_equip_info()
+/obj/item/mecha_parts/mecha_equipment/medical/sleeper/ui_act(action, params, datum/tgui/ui)
 	if(..())
-		if(patient)
-			send_byjax(chassis.occupant,"msleeper.browser","lossinfo",get_patient_dam())
-			send_byjax(chassis.occupant,"msleeper.browser","reagents",get_patient_reagents())
-			send_byjax(chassis.occupant,"msleeper.browser","injectwith",get_available_reagents())
+		return
+	// TODO: ADD CHECK FOR NO POWER
+	. = TRUE
+	switch(action)
+		if("chemical")
+			if(!patient)
+				return
+			if(patient.stat == DEAD)
+				to_chat(usr, "<span class='danger'>This person has no life to preserve anymore. Take [patient.p_them()] to a department capable of reanimating them.</span>")
+				return
+			var/chemical = params["chemid"]
+			var/amount = text2num(params["amount"])
+			if(!length(chemical) || amount <= 0)
+				return
+			var/reagent_list = get_available_reagents()
+			inject_chemical(usr, chemical, min(amount, reagent_list[chemical]))
+		if("ejectify")
+			go_out()
+		else
+			return FALSE
+
+/obj/item/mecha_parts/mecha_equipment/medical/sleeper/proc/inject_chemical(mob/living/user, chemical, amount)
+	// if(!(chemical in possible_chems))
+	// 	to_chat(user, "<span class='notice'>The sleeper does not offer that chemical!</span>")
+	// 	return
+	if(!(amount in amounts))
+		return
+
+	if(patient)
+		if(patient.reagents)
+			if(patient.reagents.get_reagent_amount(chemical) + amount <= 300) //TODO: ACTUALLY DEFINE MAX_CHEM
+				var/obj/item/mecha_parts/mecha_equipment/medical/syringe_gun/SG = locate(/obj/item/mecha_parts/mecha_equipment/medical/syringe_gun) in chassis
+				SG.reagents.trans_id_to(patient, chemical, amount)
+			else
+				to_chat(user, "You can not inject any more of this chemical.")
+		else
+			to_chat(user, "The patient rejects the chemicals!")
+	else
+		to_chat(user, "There's no occupant in the sleeper!")
 
 /obj/item/mecha_parts/mecha_equipment/medical/sleeper/container_resist()
 	go_out()
