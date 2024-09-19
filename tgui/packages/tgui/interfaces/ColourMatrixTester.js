@@ -12,6 +12,7 @@ export const ColourMatrixTester = (props, context) => {
       { name: 'RG', idx: 1 },
       { name: 'RB', idx: 2 },
       { name: 'RA', idx: 3 },
+      
     ],
     [
       { name: 'GR', idx: 4 },
@@ -30,6 +31,12 @@ export const ColourMatrixTester = (props, context) => {
       { name: 'AG', idx: 13 },
       { name: 'AB', idx: 14 },
       { name: 'AA', idx: 15 },
+    ],
+    [
+      { name: 'CR', idx: 16 },
+      { name: 'CG', idx: 17 },
+      { name: 'CB', idx: 18 },
+      { name: 'CA', idx: 19 },
     ],
   ];
 

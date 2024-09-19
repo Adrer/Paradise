@@ -7,7 +7,8 @@
 		1, 0, 0, 0,
 		0, 1, 0, 0,
 		0, 0, 1, 0,
-		0, 0, 0, 1
+		0, 0, 0, 1,
+		0, 0, 0, 0
 	)
 
 /datum/ui_module/colour_matrix_tester/New(datum/_host, datum/target)
@@ -31,7 +32,10 @@
 
 /datum/ui_module/colour_matrix_tester/ui_data(mob/user)
 	var/list/data = list()
-	data["colour_data"] = target_matrix
+	if(islist(target_datum:color))
+		data["colour_data"] = target_datum:color
+	else
+		data["colour_data"] = target_matrix
 	return data
 
 /datum/ui_module/colour_matrix_tester/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
