@@ -44,7 +44,7 @@ export const BlueSpaceArtilleryControl = (props, context) => {
                     onClick={() => act('recalibrate')}
                   />
                 </LabeledList.Item>
-                {data.ready === 1 && !!data.target && (
+                {!!data.target && (
                   <LabeledList.Item label="Firing">
                     <Button icon="skull" content="FIRE!" color="red" onClick={() => act('fire')} />
                   </LabeledList.Item>

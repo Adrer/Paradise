@@ -1,5 +1,5 @@
 import { useBackend } from '../backend';
-import { Box, Button, Section, Dropdown, Stack } from '../components';
+import { Box, Button, Section, Dropdown, Stack, NumberInput } from '../components';
 import { Window } from '../layouts';
 
 export const Teleporter = (props, context) => {
@@ -19,6 +19,9 @@ export const Teleporter = (props, context) => {
     adv_beacon_allowed,
     advanced_beacon_locking,
   } = data;
+  let x = 50;
+  let y = 50;
+  let z = 1;
   return (
     <Window width={350} height={270}>
       <Window.Content>
@@ -39,23 +42,21 @@ export const Teleporter = (props, context) => {
                 buttons={
                   // eslint-disable-next-line react/jsx-no-useless-fragment
                   <>
-                    {!!adv_beacon_allowed && (
-                      <>
-                        <Box inline color="label">
-                          Advanced Beacon Locking:&nbsp;
-                        </Box>
-                        <Button
-                          selected={advanced_beacon_locking}
-                          icon={advanced_beacon_locking ? 'toggle-on' : 'toggle-off'}
-                          content={advanced_beacon_locking ? 'Enabled' : 'Disabled'}
-                          onClick={() =>
-                            act('advanced_beacon_locking', {
-                              on: advanced_beacon_locking ? 0 : 1,
-                            })
-                          }
-                        />
-                      </>
-                    )}
+                    <>
+                      <Box inline color="label">
+                        Advanced Beacon Locking:&nbsp;
+                      </Box>
+                      <Button
+                        selected={advanced_beacon_locking}
+                        icon={advanced_beacon_locking ? 'toggle-on' : 'toggle-off'}
+                        content={advanced_beacon_locking ? 'Enabled' : 'Disabled'}
+                        onClick={() =>
+                          act('advanced_beacon_locking', {
+                            on: advanced_beacon_locking ? 0 : 1,
+                          })
+                        }
+                      />
+                    </>
                   </>
                 }
               >
@@ -68,21 +69,35 @@ export const Teleporter = (props, context) => {
                   updates of selected not affecting the state
                   of the dropdown */}
                     {regime === REGIME_TELEPORT && (
-                      <Dropdown
-                        width={18.2}
-                        selected={target}
-                        disabled={calibrating}
-                        options={Object.keys(targetsTeleport)}
-                        color={target !== 'None' ? 'default' : 'bad'}
-                        onSelected={(val) =>
-                          act('settarget', {
-                            x: targetsTeleport[val]['x'],
-                            y: targetsTeleport[val]['y'],
-                            z: targetsTeleport[val]['z'],
-                            tptarget: targetsTeleport[val]['pretarget'],
-                          })
-                        }
-                      />
+                      <>
+                        <Dropdown
+                          width={18.2}
+                          selected={target}
+                          disabled={calibrating}
+                          options={Object.keys(targetsTeleport)}
+                          color={target !== 'None' ? 'default' : 'bad'}
+                          onSelected={(val) =>
+                            act('settarget', {
+                              x: x,
+                              y: y,
+                              z: z,
+                              tptarget: targetsTeleport[val]['pretarget'],
+                            })
+                          }
+                        />
+                        <Button
+                          mt={1}
+                          fluid
+                          content="Set target"
+                          onClick={() =>
+                            act('settarget', {
+                              x: x,
+                              y: y,
+                              z: z,
+                            })
+                          }
+                        />
+                      </>
                     )}
                     {regime === REGIME_GATE && (
                       <Dropdown
@@ -137,6 +152,41 @@ export const Teleporter = (props, context) => {
                       color={regime === REGIME_GPS ? 'good' : null}
                       disabled={locked ? false : true}
                       onClick={() => act('setregime', { regime: REGIME_GPS })}
+                    />
+                  </Stack.Item>
+                </Stack>
+                <Stack>
+                  <Stack.Item width={8.5} color="label">
+                    Regime:
+                  </Stack.Item>
+                  <Stack.Item grow textAlign="center">
+                    <NumberInput
+                      unit="x"
+                      step={1}
+                      value={x}
+                      onChange={(e, value) => {
+                        x = value;
+                      }}
+                    />
+                  </Stack.Item>
+                  <Stack.Item grow textAlign="center">
+                    <NumberInput
+                      unit="y"
+                      step={1}
+                      value={y}
+                      onChange={(e, value) => {
+                        y = value;
+                      }}
+                    />
+                  </Stack.Item>
+                  <Stack.Item grow textAlign="center">
+                    <NumberInput
+                      unit="z"
+                      step={1}
+                      value={z}
+                      onChange={(e, value) => {
+                        z = value;
+                      }}
                     />
                   </Stack.Item>
                 </Stack>
