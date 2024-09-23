@@ -367,7 +367,6 @@ const StationAnnouncement = (props, context) => {
             textAlign="center"
             content="Send Announcement"
             icon="bullhorn"
-            disabled={!(announceAuth && message)}
             onClick={() => act('sendAnnouncement')}
           />
         </Section>

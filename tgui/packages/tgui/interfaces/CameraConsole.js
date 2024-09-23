@@ -104,6 +104,10 @@ export const CameraConsoleContent = (props, context) => {
   return (
     <Stack fill vertical>
       <Stack.Item>
+        <Input fluid 
+        placeholder="Camera name" onEnter={(e, value) => act('switch_camera', { name: value })} />
+      </Stack.Item>
+      <Stack.Item>
         <Input fluid placeholder="Search for a camera" onInput={(e, value) => setSearchText(value)} />
       </Stack.Item>
       <Stack.Item grow m={0}>

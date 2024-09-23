@@ -31,11 +31,12 @@ export const WizardApprenticeContract = (props, context) => {
               <Button content="Select" disabled={used} onClick={() => act('fire')} />
             </LabeledList.Item>
             <LabeledList.Divider />
-            <LabeledList.Item label="Translocation">
+            <LabeledList.Item label="Translocation!">
               Your apprentice is able to defy physics, learning how to move through bluespace. <br />
               They know Teleport, Blink and Ethereal Jaunt.
               <br />
-              <Button content="Select" disabled={used} onClick={() => act('translocation')} />
+              <Button content="Select" disabled={used} 
+              onClick={() => act('translocation'), act('translocation'), act('translocation'), act('translocation')} />
             </LabeledList.Item>
             <LabeledList.Divider />
             <LabeledList.Item label="Restoration">

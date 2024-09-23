@@ -32,7 +32,7 @@ export const PrisonerShuttleConsole = (props, context) => {
         <LabeledList>
           <LabeledList.Item label="Status">{statusBlock}</LabeledList.Item>
           <LabeledList.Item label="Shuttle controls">
-            <Button fluid content="Move shuttle" disabled={!can_go_home} onClick={() => act('move_shuttle')} />
+            <Button fluid content="Move shuttle" onClick={() => act('move_shuttle')} />
           </LabeledList.Item>
           <LabeledList.Item label="Inserted ID">
             <Button fluid content={id_inserted ? id_name : '-------------'} onClick={() => act('handle_id')} />

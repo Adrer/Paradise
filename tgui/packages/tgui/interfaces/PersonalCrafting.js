@@ -29,6 +29,11 @@ export const PersonalCrafting = (props, context) => {
           buttons={
             <>
               <Button
+                icon="hammer"
+                content="Throwing croissant"
+                onClick={() => act('make', { make : '/datum/crafting_recipe/throwing_croissant' })}
+              />
+              <Button
                 content="Show Craftable Only"
                 icon={display_craftable_only ? 'check-square-o' : 'square-o'}
                 selected={display_craftable_only}

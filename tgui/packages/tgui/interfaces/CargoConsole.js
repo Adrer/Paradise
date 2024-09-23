@@ -83,7 +83,7 @@ const StatusPane = (_properties, context) => {
           <LabeledList.Item label="Shuttle Status">{statusText}</LabeledList.Item>
           {is_public === 0 && (
             <LabeledList.Item label="Controls">
-              <Button content={shuttleButtonText} disabled={moving} onClick={() => act('moveShuttle')} />
+              <Button content={shuttleButtonText} onClick={() => act('moveShuttle')} />
               <Button content="View Central Command Messages" onClick={() => act('showMessages')} />
             </LabeledList.Item>
           )}

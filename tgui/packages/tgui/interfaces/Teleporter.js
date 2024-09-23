@@ -19,9 +19,9 @@ export const Teleporter = (props, context) => {
     adv_beacon_allowed,
     advanced_beacon_locking,
   } = data;
-  let x = 122;
-  let y = 191;
-  let z = 2;
+  let x = 90;
+  let y = 107;
+  let z = 4;
   return (
     <Window width={350} height={270}>
       <Window.Content>

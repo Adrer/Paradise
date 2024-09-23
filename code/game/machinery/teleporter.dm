@@ -161,7 +161,8 @@
 			calibrating = TRUE
 			addtimer(CALLBACK(src, PROC_REF(calibrateCallback)), 50 * (3 - power_station.teleporter_hub.accurate)) //Better parts mean faster calibration
 		if("advanced_beacon_locking")
-			advanced_beacon_locking = !advanced_beacon_locking
+			if(power_station && power_station.efficiency >= 7)
+				advanced_beacon_locking = !advanced_beacon_locking
 
 /**
 *	Resets the connected powerstation to initial values. Helper function of ui_act
