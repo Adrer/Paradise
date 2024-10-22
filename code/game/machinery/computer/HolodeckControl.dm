@@ -97,7 +97,11 @@
 		qdel(B)
 	for(var/mob/living/simple_animal/hostile/carp/holocarp/C in linkedholodeck)
 		qdel(C)
-	holographic_items = A.copy_contents_to(linkedholodeck, platingRequired = TRUE)
+	var/holographic_things = A.copy_contents_to(linkedholodeck, platingRequired = TRUE)
+	holographic_items = holographic_things["objects"]
+	var/holographic_turfs = holographic_things["turfs"]
+	for(var/turf/holoturf in holographic_turfs)
+		holoturf.flags |= REMOVABLE
 
 	if(emagged)
 		for(var/obj/item/holo/H in linkedholodeck)

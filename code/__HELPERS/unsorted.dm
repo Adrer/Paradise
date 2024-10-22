@@ -953,6 +953,7 @@ Returns 1 if the chain up to the area contains the given typepath
 		C.x_pos = (T.x - trg_min_x)
 		C.y_pos = (T.y - trg_min_y)
 
+	var/list/copied_turfs = list()
 	var/list/to_update = list()
 	var/list/copied_objects = list()
 
@@ -975,6 +976,7 @@ Returns 1 if the chain up to the area contains the given typepath
 					X.dir = old_dir1
 					X.icon_state = old_icon_state1
 					X.icon = old_icon1 // Shuttle floors are in shuttle.dmi while the defaults are floors.dmi
+					copied_turfs += X
 
 					var/list/newobjs = list()
 					var/list/newmobs = list()
@@ -1000,7 +1002,8 @@ Returns 1 if the chain up to the area contains the given typepath
 					refined_trg -= B
 					continue moving
 
-	return copied_objects
+	var/list/copied_things = list("turfs" = copied_turfs, "objects" = copied_objects)
+	return copied_things
 
 
 /proc/get_cardinal_dir(atom/A, atom/B)

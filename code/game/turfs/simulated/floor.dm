@@ -211,6 +211,8 @@ GLOBAL_LIST_INIT(icons_to_ignore_at_floor_init, list("damaged1","damaged2","dama
 	return remove_tile(user, silent)
 
 /turf/simulated/floor/proc/remove_tile(mob/user, silent = FALSE, make_tile = TRUE)
+	if(flags & REMOVABLE)
+		return
 	if(broken || burnt)
 		broken = FALSE
 		burnt = FALSE
