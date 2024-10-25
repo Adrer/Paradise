@@ -45,16 +45,14 @@
 
 	//abstract these onto machinery eventually
 	var/state_open = FALSE
+	var/opening = FALSE
+	var/opening_time = 0.8 SECONDS
 	/// If set, turned into typecache in Initialize, other wise, defaults to mob/living typecache
 	var/list/occupant_typecache
 	var/atom/movable/occupant = null
 	var/board_type = /obj/item/circuitboard/suit_storage_unit
 
-/obj/machinery/suit_storage_unit/industrial
-	name = "industrial suit storage unit"
-	icon_state = "industrial"
-	base_icon_state = "industrial"
-	board_type = /obj/item/circuitboard/suit_storage_unit/industrial
+
 
 /obj/machinery/suit_storage_unit/standard_unit
 	suit_type = /obj/item/clothing/suit/space/eva
@@ -82,32 +80,6 @@
 	req_access = list(ACCESS_BLUESHIELD)
 
 /obj/machinery/suit_storage_unit/blueshield/secure
-	secure = TRUE
-
-/obj/machinery/suit_storage_unit/engine
-	name = "engineering suit storage unit"
-	icon_state = "industrial"
-	base_icon_state = "industrial"
-	mask_type = /obj/item/clothing/mask/breath
-	boots_type = /obj/item/clothing/shoes/magboots
-	suit_type = /obj/item/mod/control/pre_equipped/engineering
-	req_access = list(ACCESS_ENGINE_EQUIP)
-	board_type = /obj/item/circuitboard/suit_storage_unit/industrial
-
-/obj/machinery/suit_storage_unit/engine/secure
-	secure = TRUE
-
-/obj/machinery/suit_storage_unit/ce
-	name = "chief engineer's suit storage unit"
-	icon_state = "industrial"
-	base_icon_state = "industrial"
-	mask_type = /obj/item/clothing/mask/gas
-	boots_type = /obj/item/clothing/shoes/magboots/advance
-	suit_type = /obj/item/mod/control/pre_equipped/advanced
-	req_access = list(ACCESS_CE)
-	board_type = /obj/item/circuitboard/suit_storage_unit/industrial
-
-/obj/machinery/suit_storage_unit/ce/secure
 	secure = TRUE
 
 /obj/machinery/suit_storage_unit/rd
@@ -193,6 +165,7 @@
 	mask_type = /obj/item/clothing/mask/gas/explorer
 	suit_type = /obj/item/mod/control/pre_equipped/standard/explorer
 	req_access = list(ACCESS_EXPEDITION)
+
 /obj/machinery/suit_storage_unit/cmo
 	name = "chief medical officer's suit storage unit"
 	mask_type = /obj/item/clothing/mask/breath
@@ -243,6 +216,36 @@
 	suit_type = /obj/item/clothing/suit/radiation
 	helmet_type = /obj/item/clothing/head/radiation
 	storage_type = /obj/item/geiger_counter
+
+/obj/machinery/suit_storage_unit/industrial
+	name = "industrial suit storage unit"
+	icon_state = "industrial"
+	base_icon_state = "industrial"
+	opening_time = 1 SECONDS
+	board_type = /obj/item/circuitboard/suit_storage_unit/industrial
+
+/obj/machinery/suit_storage_unit/industrial/engine
+	name = "engineering suit storage unit"
+	mask_type = /obj/item/clothing/mask/breath
+	boots_type = /obj/item/clothing/shoes/magboots
+	suit_type = /obj/item/mod/control/pre_equipped/engineering
+	req_access = list(ACCESS_ENGINE_EQUIP)
+
+/obj/machinery/suit_storage_unit/industrial/engine/secure
+	secure = TRUE
+
+/obj/machinery/suit_storage_unit/industrial/ce
+	name = "chief engineer's suit storage unit"
+	icon_state = "industrial"
+	base_icon_state = "industrial"
+	mask_type = /obj/item/clothing/mask/gas
+	boots_type = /obj/item/clothing/shoes/magboots/advance
+	suit_type = /obj/item/mod/control/pre_equipped/advanced
+	req_access = list(ACCESS_CE)
+	board_type = /obj/item/circuitboard/suit_storage_unit/industrial
+
+/obj/machinery/suit_storage_unit/industrial/ce/secure
+	secure = TRUE
 
 /obj/machinery/suit_storage_unit/Initialize()
 	. = ..()
@@ -304,8 +307,9 @@
 		. += "[base_icon_state]_lights_red"
 		return
 
-	if(state_open)
+	if(state_open || opening)
 		. += "[base_icon_state]_open"
+		. += "[base_icon_state]_lights_open"
 		if(suit)
 			. += "[base_icon_state]_suit"
 		if(helmet)
@@ -314,6 +318,7 @@
 			. += "[base_icon_state]_storage"
 	else
 		. += "[base_icon_state]_lights_closed"
+
 
 	. += "[base_icon_state]_[occupant ? "body" : "ready"]"
 
@@ -709,13 +714,26 @@
 		storage = null
 
 /obj/machinery/suit_storage_unit/proc/toggle_open(mob/user as mob)
-	if(locked || uv)
+	if(locked || uv || opening)
 		to_chat(user, "<span class='danger'>Unable to open unit.</span>")
 		return
 	if(occupant)
 		eject_occupant(user)
 		return
+	opening = TRUE
 	state_open = !state_open
+	SStgui.update_uis(src)
+	if(state_open && opening)
+		flick_overlay_view(image(icon, src, "[base_icon_state]_opening"), src, opening_time+0.1)
+		flick_overlay_view(image(icon, src, "[base_icon_state]_lights_opening"), src, opening_time+0.1)
+	else if(!state_open && opening)
+		flick_overlay_view(image(icon, src, "[base_icon_state]_closing"), src, opening_time+0.1)
+		flick_overlay_view(image(icon, src, "[base_icon_state]_lights_closing"), src, opening_time+0.1)
+	addtimer(CALLBACK(src, PROC_REF(handle_opening)), opening_time)
+	
+/obj/machinery/suit_storage_unit/proc/handle_opening()
+	opening = FALSE
+	update_icon(UPDATE_OVERLAYS)
 
 /obj/machinery/suit_storage_unit/proc/toggle_lock(mob/user as mob)
 	if(occupant && safeties)
