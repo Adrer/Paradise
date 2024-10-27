@@ -103,9 +103,56 @@
 /datum/action/item_action/chameleon/change/ui_state(mob/user)
 	return GLOB.physical_state
 
-/datum/action/item_action/chameleon/change/ui_data(mob/user)
+/datum/action/item_action/chameleon/change/ui_data(mob/living/carbon/human/user)
 	var/list/data = list()
+
+	var/list/items = list()
+
 	data["selected_appearance"] = "[holder.name]_[holder.icon_state]"
+
+	for(var/strippable_key in GLOB.chameleon_clothing_items)
+		var/datum/strippable_item/item_data = GLOB.chameleon_clothing_items[strippable_key]
+
+		if(!item_data.should_show(owner, user))
+			continue
+
+		var/list/result
+		
+		var/obj/item/item = item_data.get_item(owner)
+
+		if(item && (item.flags & ABSTRACT))
+			items[strippable_key] = result
+			continue
+
+		if(isnull(item))
+			items[strippable_key] = result
+			continue
+
+		LAZYINITLIST(result)
+
+		result["selected"] = FALSE
+		if(item?.name == holder.name)
+			result["selected"] = TRUE
+
+		// var/key = "[item.icon],[item.icon_state]"
+		// if(!(key in base64_cache))
+		// 	base64_cache[key] = icon2base64(icon(item.icon, item.icon_state, dir = SOUTH, frame = 1, moving = FALSE))
+		// result["icon"] = base64_cache[key]
+		result["name"] = item.name
+		result["icon"] = item.icon
+		result["icon_state"] = item.icon_state
+
+		items[strippable_key] = result
+
+	data["items"] = items
+
+	// While most `\the`s are implicit, this one is not.
+	// In this case, `\The` would otherwise be used.
+	// This doesn't match with what it's used for, which is to say "Stripping the alien drone",
+	// as opposed to "Stripping The alien drone".
+	// Human names will still show without "the", as they are proper nouns.
+	data["name"] = "\the [owner]"
+	data["show_mode"] = 0
 	return data
 
 /datum/action/item_action/chameleon/change/ui_static_data(mob/user, datum/tgui/ui = null)
@@ -121,6 +168,11 @@
 
 	data["chameleon_skins"] = chameleon_skins
 	return data
+
+/datum/action/item_action/chameleon/change/ui_assets(mob/user)
+	return list(
+		get_asset_datum(/datum/asset/simple/inventory),
+	)
 
 /datum/action/item_action/chameleon/change/ui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)

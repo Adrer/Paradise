@@ -24,6 +24,22 @@ GLOBAL_LIST_INIT(strippable_human_items, create_strippable_list(list(
 	/datum/strippable_item/mob_item_slot/legcuffs,
 )))
 
+GLOBAL_LIST_INIT(chameleon_clothing_items, create_strippable_list(list(
+	/datum/strippable_item/mob_item_slot/head,
+	/datum/strippable_item/mob_item_slot/back,
+	/datum/strippable_item/mob_item_slot/mask,
+	/datum/strippable_item/mob_item_slot/eyes,
+	/datum/strippable_item/mob_item_slot/left_ear,
+	/datum/strippable_item/mob_item_slot/right_ear,
+	/datum/strippable_item/mob_item_slot/jumpsuit,
+	/datum/strippable_item/mob_item_slot/suit,
+	/datum/strippable_item/mob_item_slot/gloves,
+	/datum/strippable_item/mob_item_slot/feet,
+	/datum/strippable_item/mob_item_slot/id,
+	/datum/strippable_item/mob_item_slot/pda,
+	/datum/strippable_item/mob_item_slot/belt,
+)))
+
 /datum/strippable_item/mob_item_slot/eyes
 	key = STRIPPABLE_ITEM_EYES
 	item_slot = SLOT_HUD_GLASSES

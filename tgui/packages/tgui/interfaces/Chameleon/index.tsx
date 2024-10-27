@@ -1,9 +1,10 @@
 import { createSearch } from 'common/string';
 import { flow } from 'common/fp';
 import { filter } from 'common/collections';
-import { useBackend, useLocalState } from '../backend';
-import { Section, Stack, ImageButton, Input } from '../components';
-import { Window } from '../layouts';
+import { useBackend, useLocalState } from '../../backend';
+import { Section, Stack, ImageButton, Input, Box } from '../../components';
+import { Window } from '../../layouts';
+import { SelectionMenu } from './Selection';
 
 type Data = {
   chameleon_skins: ChameleonSkin[];
@@ -20,9 +21,20 @@ type ChameleonSkin = {
 
 export const Chameleon = (props, context) => {
   return (
-    <Window width={431} height={500} theme="syndicate">
+    <Window width={715} height={500} theme="syndicate">
       <Window.Content>
-        <ChameleonAppearances />
+        <Stack>
+          <Stack.Item fill>
+            <Section textAlign="center" horizontal fill>
+              <SelectionMenu textAlign="center" />
+            </Section>
+          </Stack.Item>
+          <Stack.Item grow>
+            <Section textAlign="center" vertical grow fill>
+              <ChameleonAppearances />
+            </Section>
+          </Stack.Item>
+        </Stack>
       </Window.Content>
     </Window>
   );
@@ -44,7 +56,13 @@ export const ChameleonAppearances = (props, context) => {
   const chameleon_skins = selectSkins(data.chameleon_skins, searchText);
   const { selected_appearance } = data;
   return (
-    <Stack fill vertical>
+    <Stack
+      fill
+      vertical
+      style={{
+        position: 'center',
+      }}
+    >
       <Stack.Item>
         <Input fluid placeholder="Search for an appearance" onInput={(e, value) => setSearchText(value)} />
       </Stack.Item>
