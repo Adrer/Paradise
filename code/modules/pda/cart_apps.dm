@@ -55,8 +55,8 @@
 		var/obj/item/assembly/signaler/S = pda.cartridge.integ_signaler // Simpler access
 		data["frequency"] = S.frequency
 		data["code"] = S.code
-		data["minFrequency"] = PUBLIC_LOW_FREQ
-		data["maxFrequency"] = PUBLIC_HIGH_FREQ
+		data["minFrequency"] = FREQ_PUBLIC_LOW
+		data["maxFrequency"] = FREQ_PUBLIC_HIGH
 
 /datum/data/pda/app/signaller/ui_act(action, list/params)
 	if(..())

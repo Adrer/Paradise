@@ -22,22 +22,22 @@
 /obj/item/radio/intercom/interrogation
 	name = "station intercom (Interrogation)"
 	custom_name = TRUE
-	frequency  = AIRLOCK_FREQ
+	frequency  = FREQ_AIRLOCK
 
 /obj/item/radio/intercom/private
 	name = "station intercom (Private)"
 	custom_name = TRUE
-	frequency = AI_FREQ
+	frequency = FREQ_AI
 
 /obj/item/radio/intercom/command
 	name = "station intercom (Command)"
 	custom_name = TRUE
-	frequency = COMM_FREQ
+	frequency = FREQ_COMM
 
 /obj/item/radio/intercom/specops
 	name = "\improper Special Operations intercom"
 	custom_name = TRUE
-	frequency = ERT_FREQ
+	frequency = FREQ_ERT
 
 /obj/item/radio/intercom/department
 	canhear_range = 5
@@ -47,11 +47,11 @@
 
 /obj/item/radio/intercom/department/medbay
 	name = "station intercom (Medbay)"
-	frequency = MED_I_FREQ
+	frequency = FREQ_MED_I
 
 /obj/item/radio/intercom/department/security
 	name = "station intercom (Security)"
-	frequency = SEC_I_FREQ
+	frequency = FREQ_SEC_I
 
 /obj/item/radio/intercom/New(turf/loc, direction, building = 3)
 	. = ..()
@@ -79,19 +79,19 @@
 /obj/item/radio/intercom/department/security/New()
 	..()
 	internal_channels = list(
-		num2text(PUB_FREQ) = list(),
-		num2text(SEC_I_FREQ) = list(ACCESS_SECURITY)
+		num2text(FREQ_PUB) = list(),
+		num2text(FREQ_SEC_I) = list(ACCESS_SECURITY)
 	)
 
 /obj/item/radio/intercom/syndicate
 	name = "illicit intercom"
 	desc = "Communicate with your minions. Evilly"
-	frequency = SYND_FREQ
+	frequency = FREQ_SYND
 	syndiekey = new /obj/item/encryptionkey/syndicate/nukeops
 
 /obj/item/radio/intercom/syndicate/New()
 	..()
-	internal_channels[num2text(SYND_FREQ)] = list(ACCESS_SYNDICATE)
+	internal_channels[num2text(FREQ_SYND)] = list(ACCESS_SYNDICATE)
 
 /obj/item/radio/intercom/pirate
 	name = "pirate radio intercom"
@@ -101,17 +101,17 @@
 	..()
 	internal_channels.Cut()
 	internal_channels = list(
-		num2text(PUB_FREQ) = list(),
-		num2text(AI_FREQ)  = list(),
-		num2text(COMM_FREQ)= list(),
-		num2text(ENG_FREQ) = list(),
-		num2text(MED_FREQ) = list(),
-		num2text(MED_I_FREQ)=list(),
-		num2text(SEC_FREQ) = list(),
-		num2text(SEC_I_FREQ)=list(),
-		num2text(SCI_FREQ) = list(),
-		num2text(SUP_FREQ) = list(),
-		num2text(SRV_FREQ) = list()
+		num2text(FREQ_PUB) = list(),
+		num2text(FREQ_AI)  = list(),
+		num2text(FREQ_COMM)= list(),
+		num2text(FREQ_ENG) = list(),
+		num2text(FREQ_MED) = list(),
+		num2text(FREQ_MED_I)=list(),
+		num2text(FREQ_SEC) = list(),
+		num2text(FREQ_SEC_I)=list(),
+		num2text(FREQ_SCI) = list(),
+		num2text(FREQ_SUP) = list(),
+		num2text(FREQ_SRV) = list()
 	)
 
 /obj/item/radio/intercom/Destroy()
@@ -293,7 +293,7 @@
 
 /obj/item/radio/intercom/locked/ai_private
 	name = "\improper AI intercom"
-	frequency = AI_FREQ
+	frequency = FREQ_AI
 
 /obj/item/radio/intercom/locked/confessional
 	name = "confessional intercom"

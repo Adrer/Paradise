@@ -67,7 +67,7 @@
 
 	var/obj/item/radio/R = H.l_ear
 	if(istype(R))
-		R.set_frequency(SYND_FREQ)
+		R.set_frequency(FREQ_SYND)
 	H.faction += "syndicate"
 
 /datum/outfit/admin/syndicate_infiltrator
@@ -1464,7 +1464,7 @@
 	// Setup their headset
 	var/obj/item/radio/R = H.l_ear
 	if(istype(R))
-		R.set_frequency(DTH_FREQ) // Clowns can be part of "special operations"
+		R.set_frequency(FREQ_DTH) // Clowns can be part of "special operations"
 
 	// And their PDA
 	var/obj/item/pda/P = H.wear_pda

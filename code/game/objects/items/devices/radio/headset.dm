@@ -92,7 +92,7 @@
 
 /obj/item/radio/headset/alt/deathsquad/Initialize(mapload)
 	. = ..()
-	set_frequency(DTH_FREQ)
+	set_frequency(FREQ_DTH)
 
 /obj/item/radio/headset/syndicate
 	origin_tech = "syndicate=3"
@@ -121,7 +121,7 @@
 
 /obj/item/radio/headset/syndicate/alt/nocommon/New()
 	. = ..()
-	set_frequency(SYND_FREQ)
+	set_frequency(FREQ_SYND)
 
 /obj/item/radio/headset/soviet
 	name = "soviet bowman headset"

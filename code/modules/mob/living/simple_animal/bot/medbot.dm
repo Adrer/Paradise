@@ -92,7 +92,7 @@
 	treatment_tox = "charcoal"
 	syndicate_aligned = TRUE
 	req_access = list(ACCESS_SYNDICATE)
-	control_freq = BOT_FREQ + 1000 // make it not show up on lists
+	control_freq = FREQ_BOT + 1000 // make it not show up on lists
 	radio_channel = "Syndicate"
 	radio_config = list("Common" = 1, "Medical" = 1, "Syndicate" = 1)
 

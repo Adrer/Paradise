@@ -8,9 +8,9 @@
 
 	// the name of the channel
 	switch(display_freq)
-		if(SYND_FREQ)
+		if(FREQ_SYND)
 			freq_text = "#unkn"
-		if(SYNDTEAM_FREQ)
+		if(FREQ_SYNDTEAM)
 			freq_text = "#unid"
 		else
 			for(var/channel in SSradio.radiochannels)

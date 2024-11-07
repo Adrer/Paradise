@@ -94,8 +94,8 @@
 	data["power"] = integrated_signaler.receiving
 	data["frequency"] = integrated_signaler.frequency
 	data["code"] = integrated_signaler.code
-	data["minFrequency"] = PUBLIC_LOW_FREQ
-	data["maxFrequency"] = PUBLIC_HIGH_FREQ
+	data["minFrequency"] = FREQ_PUBLIC_LOW
+	data["maxFrequency"] = FREQ_PUBLIC_HIGH
 	return data
 
 /obj/item/electropack/ui_act(action, list/params)
@@ -136,7 +136,7 @@
 
 // Electropack signaller type
 /obj/item/assembly/signaler/electropack
-	frequency = AIRLOCK_FREQ
+	frequency = FREQ_AIRLOCK
 	code = 2
 	receiving = TRUE
 

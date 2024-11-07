@@ -23,7 +23,7 @@
 	anchored = TRUE
 	idle_power_consumption = 50
 
-	var/freq = AIRLOCK_FREQ		// radio frequency
+	var/freq = FREQ_AIRLOCK		// radio frequency
 	var/electricity_level = MIN_ELECTRICITY_LEVEL // intensity of the magnetic pull
 	var/magnetic_field = MIN_MAGNETIC_FIELD // the range of magnetic attraction
 	var/code = 0 // frequency code, they should be different unless you have a group of magnets working together or something
@@ -182,7 +182,7 @@
 	idle_power_consumption = 45
 
 	// this is a temp measure
-	var/frequency = AIRLOCK_FREQ
+	var/frequency = FREQ_AIRLOCK
 	var/datum/radio_frequency/radio_connection
 	var/code = 0
 	var/list/magnets = list()

@@ -264,7 +264,7 @@
 	return 1
 
 //Ensure the frequency is within bounds of what it should be sending/recieving at
-/proc/sanitize_frequency(f, low = PUBLIC_LOW_FREQ, high = PUBLIC_HIGH_FREQ)
+/proc/sanitize_frequency(f, low = FREQ_PUBLIC_LOW, high = FREQ_PUBLIC_HIGH)
 	f = round(f)
 	f = max(low, f)
 	f = min(high, f)

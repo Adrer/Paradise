@@ -227,9 +227,9 @@ RESTRICT_TYPE(/datum/antagonist/traitor)
 	if(isradio(R))
 		// generate list of radio freqs
 		var/obj/item/radio/target_radio = R
-		var/freq = PUBLIC_LOW_FREQ
+		var/freq = FREQ_PUBLIC_LOW
 		var/list/freqlist = list()
-		while(freq <= PUBLIC_HIGH_FREQ)
+		while(freq <= FREQ_PUBLIC_HIGH)
 			if(freq < 1451 || freq > 1459)
 				freqlist += freq
 			freq += 2

@@ -166,7 +166,7 @@ GLOBAL_VAR_INIT(sent_syndicate_infiltration_team, 0)
 
 	// Radio & PDA
 	var/obj/item/radio/R = new /obj/item/radio/headset/syndicate/syndteam(src)
-	R.set_frequency(SYNDTEAM_FREQ)
+	R.set_frequency(FREQ_SYNDTEAM)
 	equip_to_slot_or_del(R, SLOT_HUD_LEFT_EAR)
 	equip_or_collect(new /obj/item/pda(src), SLOT_HUD_IN_BACKPACK)
 

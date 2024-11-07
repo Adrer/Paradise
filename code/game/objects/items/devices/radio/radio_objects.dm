@@ -1,23 +1,23 @@
 GLOBAL_LIST_INIT(default_internal_channels, list(
-	num2text(PUB_FREQ) = list(),
-	num2text(AI_FREQ)  = list(ACCESS_CAPTAIN),
-	num2text(ERT_FREQ) = list(ACCESS_CENT_SPECOPS),
-	num2text(COMM_FREQ)= list(ACCESS_HEADS),
-	num2text(ENG_FREQ) = list(ACCESS_ENGINE, ACCESS_ATMOSPHERICS),
-	num2text(MED_FREQ) = list(ACCESS_MEDICAL),
-	num2text(MED_I_FREQ)=list(ACCESS_MEDICAL),
-	num2text(SEC_FREQ) = list(ACCESS_SECURITY),
-	num2text(SEC_I_FREQ)=list(ACCESS_SECURITY),
-	num2text(SCI_FREQ) = list(ACCESS_RESEARCH),
-	num2text(SUP_FREQ) = list(ACCESS_CARGO),
-	num2text(SRV_FREQ) = list(ACCESS_HOP, ACCESS_BAR, ACCESS_KITCHEN, ACCESS_HYDROPONICS, ACCESS_JANITOR, ACCESS_CLOWN, ACCESS_MIME),
-	num2text(PROC_FREQ)= list(ACCESS_MAGISTRATE, ACCESS_NTREP, ACCESS_INTERNAL_AFFAIRS)
+	num2text(FREQ_PUB) = list(),
+	num2text(FREQ_AI)  = list(ACCESS_CAPTAIN),
+	num2text(FREQ_ERT) = list(ACCESS_CENT_SPECOPS),
+	num2text(FREQ_COMM)= list(ACCESS_HEADS),
+	num2text(FREQ_ENG) = list(ACCESS_ENGINE, ACCESS_ATMOSPHERICS),
+	num2text(FREQ_MED) = list(ACCESS_MEDICAL),
+	num2text(FREQ_MED_I)=list(ACCESS_MEDICAL),
+	num2text(FREQ_SEC) = list(ACCESS_SECURITY),
+	num2text(FREQ_SEC_I)=list(ACCESS_SECURITY),
+	num2text(FREQ_SCI) = list(ACCESS_RESEARCH),
+	num2text(FREQ_SUP) = list(ACCESS_CARGO),
+	num2text(FREQ_SRV) = list(ACCESS_HOP, ACCESS_BAR, ACCESS_KITCHEN, ACCESS_HYDROPONICS, ACCESS_JANITOR, ACCESS_CLOWN, ACCESS_MIME),
+	num2text(FREQ_PROC)= list(ACCESS_MAGISTRATE, ACCESS_NTREP, ACCESS_INTERNAL_AFFAIRS)
 ))
 
 GLOBAL_LIST_INIT(default_medbay_channels, list(
-	num2text(PUB_FREQ) = list(),
-	num2text(MED_FREQ) = list(ACCESS_MEDICAL),
-	num2text(MED_I_FREQ) = list(ACCESS_MEDICAL)
+	num2text(FREQ_PUB) = list(),
+	num2text(FREQ_MED) = list(ACCESS_MEDICAL),
+	num2text(FREQ_MED_I) = list(ACCESS_MEDICAL)
 ))
 
 GLOBAL_LIST_EMPTY(deadsay_radio_systems)
@@ -32,7 +32,7 @@ GLOBAL_LIST_EMPTY(deadsay_radio_systems)
 	/// boolean for radio enabled or not
 	var/on = TRUE
 	var/last_transmission
-	var/frequency = PUB_FREQ
+	var/frequency = FREQ_PUB
 	/// tune to frequency to unlock traitor supplies
 	var/traitor_frequency = 0
 	/// the range which mobs can hear this radio from
@@ -111,8 +111,8 @@ GLOBAL_LIST_EMPTY(deadsay_radio_systems)
 
 /obj/item/radio/Initialize(mapload)
 	. = ..()
-	if(frequency < RADIO_LOW_FREQ || frequency > RADIO_HIGH_FREQ)
-		frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
+	if(frequency < FREQ_RADIO_LOW || frequency > FREQ_RADIO_HIGH)
+		frequency = sanitize_frequency(frequency, FREQ_RADIO_LOW, FREQ_RADIO_HIGH)
 	set_frequency(frequency)
 
 	for(var/ch_name in channels)
@@ -163,8 +163,8 @@ GLOBAL_LIST_EMPTY(deadsay_radio_systems)
 	data["broadcasting"] = broadcasting
 	data["listening"] = listening
 	data["frequency"] = frequency
-	data["minFrequency"] = freerange ? RADIO_LOW_FREQ : PUBLIC_LOW_FREQ
-	data["maxFrequency"] = freerange ? RADIO_HIGH_FREQ : PUBLIC_HIGH_FREQ
+	data["minFrequency"] = freerange ? FREQ_RADIO_LOW : FREQ_PUBLIC_LOW
+	data["maxFrequency"] = freerange ? FREQ_RADIO_HIGH : FREQ_PUBLIC_HIGH
 	data["canReset"] = frequency == initial(frequency) ? FALSE : TRUE
 	data["freqlock"] = freqlock
 	data["schannels"] = list_secure_channels(user)
@@ -436,7 +436,7 @@ GLOBAL_LIST_EMPTY(deadsay_radio_systems)
 		if(H.voice != M.real_name)
 			voicemask = TRUE
 
-	if(syndiekey && syndiekey.change_voice && connection.frequency == SYND_FREQ)
+	if(syndiekey && syndiekey.change_voice && connection.frequency == FREQ_SYND)
 		displayname = syndiekey.fake_name
 		jobname = "Unknown"
 		rankname = "Unknown"
@@ -651,14 +651,14 @@ GLOBAL_LIST_EMPTY(deadsay_radio_systems)
 /obj/item/radio/borg/syndicate/New()
 	..()
 	syndiekey = keyslot
-	set_frequency(SYND_FREQ)
+	set_frequency(FREQ_SYND)
 	freqlock = TRUE
 
 /obj/item/radio/borg/deathsquad
 
 /obj/item/radio/borg/deathsquad/New()
 	..()
-	set_frequency(DTH_FREQ)
+	set_frequency(FREQ_DTH)
 	freqlock = TRUE
 
 /obj/item/radio/borg/ert
@@ -666,7 +666,7 @@ GLOBAL_LIST_EMPTY(deadsay_radio_systems)
 
 /obj/item/radio/borg/ert/New()
 	..()
-	set_frequency(ERT_FREQ)
+	set_frequency(FREQ_ERT)
 	freqlock = TRUE
 
 /obj/item/radio/borg/ert/specops
@@ -776,7 +776,7 @@ GLOBAL_LIST_EMPTY(deadsay_radio_systems)
 	dog_fashion = null
 
 /obj/item/radio/phone/medbay
-	frequency = MED_I_FREQ
+	frequency = FREQ_MED_I
 
 /obj/item/radio/phone/medbay/New()
 	..()

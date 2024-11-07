@@ -15,7 +15,7 @@ GLOBAL_LIST_EMPTY(remote_signalers)
 	/// Signal code
 	var/code = 30
 	/// Signal freqency itself
-	var/frequency = RSD_FREQ
+	var/frequency = FREQ_RSD
 
 /obj/item/assembly/signaler/Initialize(mapload)
 	. = ..()
@@ -92,8 +92,8 @@ GLOBAL_LIST_EMPTY(remote_signalers)
 	data["on"] = receiving
 	data["frequency"] = frequency
 	data["code"] = code
-	data["minFrequency"] = PUBLIC_LOW_FREQ
-	data["maxFrequency"] = PUBLIC_HIGH_FREQ
+	data["minFrequency"] = FREQ_PUBLIC_LOW
+	data["maxFrequency"] = FREQ_PUBLIC_HIGH
 	return data
 
 /obj/item/assembly/signaler/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)

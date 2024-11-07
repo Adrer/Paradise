@@ -38,7 +38,7 @@
 	aSignal.code = rand(1, 100)
 	aSignal.anomaly_type = type
 
-	var/frequency = rand(PUBLIC_LOW_FREQ, PUBLIC_HIGH_FREQ)
+	var/frequency = rand(FREQ_PUBLIC_LOW, FREQ_PUBLIC_HIGH)
 	if(ISMULTIPLE(frequency, 2))//signaller frequencies are always uneven!
 		frequency++
 	aSignal.frequency = frequency

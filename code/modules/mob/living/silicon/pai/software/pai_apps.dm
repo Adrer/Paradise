@@ -268,8 +268,8 @@
 /datum/pai_software/radio_config/get_app_data(mob/living/silicon/pai/user)
 	var/list/data = list()
 	data["frequency"] = user.radio.frequency
-	data["minFrequency"] = PUBLIC_LOW_FREQ
-	data["maxFrequency"] = PUBLIC_HIGH_FREQ
+	data["minFrequency"] = FREQ_PUBLIC_LOW
+	data["maxFrequency"] = FREQ_PUBLIC_HIGH
 	data["broadcasting"] = user.radio.broadcasting
 	return data
 
@@ -299,8 +299,8 @@
 
 	data["frequency"] = user.integ_signaler.frequency
 	data["code"] = user.integ_signaler.code
-	data["minFrequency"] = PUBLIC_LOW_FREQ
-	data["maxFrequency"] = PUBLIC_HIGH_FREQ
+	data["minFrequency"] = FREQ_PUBLIC_LOW
+	data["maxFrequency"] = FREQ_PUBLIC_HIGH
 
 	return data
 

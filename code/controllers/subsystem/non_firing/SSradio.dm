@@ -3,26 +3,26 @@ SUBSYSTEM_DEF(radio)
 	flags = SS_NO_FIRE
 
 	var/list/radiochannels = list(
-	"Common"		= PUB_FREQ,
-	"Science"		= SCI_FREQ,
-	"Command"		= COMM_FREQ,
-	"Procedure"		= PROC_FREQ,
-	"Medical"		= MED_FREQ,
-	"Engineering"	= ENG_FREQ,
-	"Security" 		= SEC_FREQ,
-	"Response Team" = ERT_FREQ,
-	"Special Ops" 	= DTH_FREQ,
-	"Syndicate" 	= SYND_FREQ,
-	"SyndTeam" 		= SYNDTEAM_FREQ,
-	"Supply" 		= SUP_FREQ,
-	"Service" 		= SRV_FREQ,
-	"AI Private"	= AI_FREQ,
-	"Medical(I)"	= MED_I_FREQ,
-	"Security(I)"	= SEC_I_FREQ
+	"Common"		= FREQ_PUB,
+	"Science"		= FREQ_SCI,
+	"Command"		= FREQ_COMM,
+	"Procedure"		= FREQ_PROC,
+	"Medical"		= FREQ_MED,
+	"Engineering"	= FREQ_ENG,
+	"Security" 		= FREQ_SEC,
+	"Response Team" = FREQ_ERT,
+	"Special Ops" 	= FREQ_DTH,
+	"Syndicate" 	= FREQ_SYND,
+	"SyndTeam" 		= FREQ_SYNDTEAM,
+	"Supply" 		= FREQ_SUP,
+	"Service" 		= FREQ_SRV,
+	"AI Private"	= FREQ_AI,
+	"Medical(I)"	= FREQ_MED_I,
+	"Security(I)"	= FREQ_SEC_I
 	)
-	var/list/CENT_FREQS = list(ERT_FREQ, DTH_FREQ)
-	var/list/ANTAG_FREQS = list(SYND_FREQ, SYNDTEAM_FREQ)
-	var/list/DEPT_FREQS = list(AI_FREQ, COMM_FREQ, ENG_FREQ, MED_FREQ, SEC_FREQ, SCI_FREQ, SRV_FREQ, SUP_FREQ, PROC_FREQ)
+	var/list/CENT_FREQS = list(FREQ_ERT, FREQ_DTH)
+	var/list/ANTAG_FREQS = list(FREQ_SYND, FREQ_SYNDTEAM)
+	var/list/DEPT_FREQS = list(FREQ_AI, FREQ_COMM, FREQ_ENG, FREQ_MED, FREQ_SEC, FREQ_SCI, FREQ_SRV, FREQ_SUP, FREQ_PROC)
 	var/list/datum/radio_frequency/frequencies = list()
 
 // This is a disgusting hack to stop this tripping CI when this thing needs to FUCKING DIE
@@ -39,23 +39,23 @@ SUBSYSTEM_DEF(radio)
 		return "centradio"
 	// This switch used to be a shit tonne of if statements. I am gonna find who made this and give them a kind talking to
 	switch(frequency)
-		if(COMM_FREQ)
+		if(FREQ_COMM)
 			return "comradio"
-		if(AI_FREQ)
+		if(FREQ_AI)
 			return "airadio"
-		if(SEC_FREQ)
+		if(FREQ_SEC)
 			return "secradio"
-		if(ENG_FREQ)
+		if(FREQ_ENG)
 			return "engradio"
-		if(SCI_FREQ)
+		if(FREQ_SCI)
 			return "sciradio"
-		if(MED_FREQ)
+		if(FREQ_MED)
 			return "medradio"
-		if(SUP_FREQ)
+		if(FREQ_SUP)
 			return "supradio"
-		if(SRV_FREQ)
+		if(FREQ_SRV)
 			return "srvradio"
-		if(PROC_FREQ)
+		if(FREQ_PROC)
 			return "proradio"
 
 	// If the above switch somehow failed. And it needs the SSradio. part otherwise it fails to compile
