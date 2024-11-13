@@ -28,6 +28,9 @@ GLOBAL_LIST_INIT(cable_coil_recipes, list (new/datum/stack_recipe/cable_restrain
 	usesound = 'sound/items/deconstruct.ogg'
 	toolspeed = 1
 
+	/// Handles the click foo.
+	var/datum/cable_click_manager/click_manager
+
 /obj/item/stack/cable_coil/New(location, length, paramcolor)
 	. = ..()
 	if(paramcolor)
@@ -38,6 +41,10 @@ GLOBAL_LIST_INIT(cable_coil_recipes, list (new/datum/stack_recipe/cable_restrain
 	update_icon()
 	recipes = GLOB.cable_coil_recipes
 	update_wclass()
+
+/obj/item/stack/cable_coil/Destroy(force)
+	QDEL_NULL(click_manager)
+	return ..()
 
 /obj/item/stack/cable_coil/random/change_stack(mob/user, amount)
 	var/obj/item/stack/cable_coil/new_stack = ..()
@@ -402,6 +409,18 @@ GLOBAL_LIST_INIT(cable_coil_recipes, list (new/datum/stack_recipe/cable_restrain
 	var/cablecolor = input(user,"Pick a cable color.","Cable Color") in list("red","yellow","green","blue","pink","orange","cyan","white")
 	color = cablecolor
 	update_icon()
+
+/obj/item/stack/cable_coil/equipped(mob/user, slot)
+	. = ..()
+	if(slot & ITEM_SLOT_BOTH_HANDS)
+		if(isnull(click_manager))
+			click_manager = new(src)
+
+		click_manager.set_user(user)
+
+/obj/item/stack/cable_coil/dropped()
+	. = ..()
+	click_manager?.set_user(null)
 
 #undef HEALPERCABLE
 #undef MAXCABLEPERHEAL

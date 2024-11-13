@@ -375,6 +375,7 @@
 #include "code\datums\atom_hud.dm"
 #include "code\datums\beam.dm"
 #include "code\datums\browser.dm"
+#include "code\datums\cable_click_manager.dm"
 #include "code\datums\callback.dm"
 #include "code\datums\chat_payload.dm"
 #include "code\datums\chatmessage.dm"
