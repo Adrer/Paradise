@@ -145,7 +145,7 @@
 	if(tracked_turf && !tracked_turf.Adjacent(user))
 		clear_state()
 		return
-
+	catcher.calculate_params()
 	var/list/params = params2list(catcher.mouse_params)
 	if(!length(params) || !params[SCREEN_LOC])
 		return
@@ -168,7 +168,7 @@
 	var/grid_cell = get_nonant_from_pixels(text2num(x_split[2]), text2num(y_split[2]))
 
 	if(isnull(position_1))
-		phantom_wire.icon_state = "0"
+		phantom_wire.icon_state = "0-1"
 		phantom_wire.loc = T
 		offset_image_to_nonant_cell(grid_cell, phantom_wire)
 		return
@@ -290,7 +290,7 @@
 	if(!catcher)
 		return
 
-	if(!params[RIGHT_CLICK])
+	if(!params[LEFT_CLICK])
 		return
 
 	if(catcher.mouse_opacity != MOUSE_OPACITY_OPAQUE)
@@ -301,3 +301,5 @@
 /atom/movable/screen/fullscreen/stretch/cursor_catcher/cable
 	alpha = 0
 	mouse_opacity = MOUSE_OPACITY_OPAQUE
+	icon = 'icons/mob/screen_kinesis.dmi'
+	icon_state = "kinesis"

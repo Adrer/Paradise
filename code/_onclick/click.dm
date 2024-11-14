@@ -31,6 +31,7 @@
 */
 /atom/Click(location,control,params)
 	usr.ClickOn(src, params)
+	SEND_SIGNAL(src, COMSIG_CLICK, location, control, params, usr)
 /atom/DblClick(location,control,params)
 	usr.DblClickOn(src,params)
 
@@ -60,6 +61,10 @@
 	changeNext_click(1)
 
 	var/list/modifiers = params2list(params)
+
+	if(SEND_SIGNAL(src, COMSIG_MOB_CLICKON, A, modifiers) & COMSIG_MOB_CANCEL_CLICKON)
+		return
+
 	var/dragged = modifiers["drag"]
 	if(dragged && !modifiers[dragged])
 		return
