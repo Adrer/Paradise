@@ -212,6 +212,7 @@
 #include "code\_globalvars\mapping_vars.dm"
 #include "code\_globalvars\misc_globals.dm"
 #include "code\_globalvars\traits.dm"
+#include "code\_globalvars\lists\cables.dm"
 #include "code\_globalvars\lists\dye_registry.dm"
 #include "code\_globalvars\lists\flavor_misc.dm"
 #include "code\_globalvars\lists\fortunes.dm"

@@ -34,6 +34,9 @@ By design, d1 is the smallest direction and d2 is the highest
 	plane = GAME_PLANE //is set to FLOOR_PLANE when spawned
 	layer = LOW_OBJ_LAYER //isset to WIRE_LAYER when spawned
 
+	/// What cable directions does this cable connect to. Uses a 0-255 bitmasking defined in 'globalvars\lists\cables.dm', with translation lists there aswell
+	var/linked_dirs
+
 	/// The direction of endpoint one of this cable
 	var/d1 = 0
 	/// The direction of enpoint two of this cable

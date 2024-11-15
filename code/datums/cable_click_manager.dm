@@ -14,14 +14,14 @@
 /datum/cable_click_manager/New(new_parent)
 	parent = new_parent
 
-	phantom_knot = image('icons/obj/power_cond/power_cond_yellow.dmi', "0")
+	phantom_knot = image('icons/obj/power_cond/cable.dmi', "0")
 	// phantom_knot.appearance_flags = APPEARANCE_UI
 	phantom_knot.plane = ABOVE_LIGHTING_PLANE
 	phantom_knot.color = parent.color
 	phantom_knot.alpha = 128
 	phantom_knot.filters += outline_filter(1, COLOR_RED)
 
-	phantom_wire = image('icons/obj/power_cond/power_cond_yellow.dmi')
+	phantom_wire = image('icons/obj/power_cond/cable.dmi')
 	// phantom_wire.appearance_flags = APPEARANCE_UI
 	phantom_wire.plane = GAME_PLANE
 	phantom_wire.layer = FLY_LAYER
@@ -168,7 +168,7 @@
 	var/grid_cell = get_nonant_from_pixels(text2num(x_split[2]), text2num(y_split[2]))
 
 	if(isnull(position_1))
-		phantom_wire.icon_state = "0-1"
+		phantom_wire.icon_state = "0"
 		phantom_wire.loc = T
 		offset_image_to_nonant_cell(grid_cell, phantom_wire)
 		return
@@ -214,9 +214,9 @@
 			nonant_column = 0
 
 	var/static/list/lookup = list(
-		NORTHWEST, NORTH, NORTHEAST,
-		WEST,      0    , EAST,
-		SOUTHWEST, SOUTH, SOUTHEAST
+		CABLE_NORTHWEST, CABLE_NORTH, CABLE_NORTHEAST,
+		CABLE_WEST,      0    		, CABLE_EAST,
+		CABLE_SOUTHWEST, CABLE_SOUTH, CABLE_SOUTHEAST
 	)
 
 	return lookup[nonant_row + nonant_column]

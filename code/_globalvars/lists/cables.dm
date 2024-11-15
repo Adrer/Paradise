@@ -1,13 +1,13 @@
-GLOBAL_LIST_INIT(cable_colors, list(
-	"blue" = COLOR_STRONG_BLUE,
-	"cyan" = COLOR_CYAN,
-	"green" = COLOR_DARK_LIME,
-	"orange" = COLOR_MOSTLY_PURE_ORANGE,
-	"pink" = COLOR_LIGHT_PINK,
-	"red" = COLOR_RED,
-	"white" = COLOR_WHITE,
-	"yellow" = COLOR_YELLOW
-	))
+// GLOBAL_LIST_INIT(cable_colors, list(
+// 	"blue" = COLOR_STRONG_BLUE,
+// 	"cyan" = COLOR_CYAN,
+// 	"green" = COLOR_DARK_LIME,
+// 	"orange" = COLOR_MOSTLY_PURE_ORANGE,
+// 	"pink" = COLOR_LIGHT_PINK,
+// 	"red" = COLOR_RED,
+// 	"white" = COLOR_WHITE,
+// 	"yellow" = COLOR_YELLOW
+// 	))
 
 #define CABLE_NORTH 1
 #define CABLE_SOUTH 2
