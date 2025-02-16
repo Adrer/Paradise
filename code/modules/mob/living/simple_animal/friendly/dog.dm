@@ -120,7 +120,7 @@
 /mob/living/simple_animal/pet/dog/corgi/UnarmedAttack(atom/A)
 	if(istype(inventory_back, /obj/item/extinguisher))
 		var/obj/item/extinguisher/E = inventory_back
-		if(E.AttemptRefill(A, src))
+		if(E.attempt_refill(A, src))
 			return
 	return ..()
 
@@ -534,7 +534,7 @@
 	minbodytemp = TCMB
 	maxbodytemp = T0C + 40
 
-/mob/living/simple_animal/pet/dog/corgi/puppy/void/Process_Spacemove(movement_dir = 0)
+/mob/living/simple_animal/pet/dog/corgi/puppy/void/Process_Spacemove(movement_dir = 0, continuous_move = FALSE)
 	return 1	//Void puppies can navigate space.
 
 //LISA! SQUEEEEEEEEE~
