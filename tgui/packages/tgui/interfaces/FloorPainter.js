@@ -1,5 +1,5 @@
 import { useBackend, useLocalState } from '../backend';
-import { Button, DmIcon, LabeledList, Section, Table, Dropdown, Flex, Icon, Box } from '../components';
+import { Button, LabeledList, Section, Table, Dropdown, Flex, Icon, Box, DmIcon, Stack } from '../components';
 import { Window } from '../layouts';
 
 const SelectableTile = (props, context) => {
@@ -31,16 +31,16 @@ const Dir = {
 
 export const FloorPainter = (props, context) => {
   const { act, data } = useBackend(context);
-  const { availableStyles, selectedStyle, selectedDir } = data;
+  const { availableStyles, selectedStyle, selectedDir, wideMode } = data;
   return (
     <Window width={405} height={475}>
       <Window.Content scrollable>
-        <Section title="Decal setup">
-          <Flex>
-            <Flex.Item>
+        <Section title="Floor setup">
+          <Stack>
+            <Stack.Item>
               <Button icon="chevron-left" onClick={() => act('cycle_style', { offset: -1 })} />
-            </Flex.Item>
-            <Flex.Item>
+            </Stack.Item>
+            <Stack.Item>
               <Dropdown
                 options={availableStyles}
                 selected={selectedStyle}
@@ -51,11 +51,16 @@ export const FloorPainter = (props, context) => {
                 nochevron
                 onSelected={(val) => act('select_style', { style: val })}
               />
-            </Flex.Item>
-            <Flex.Item>
+            </Stack.Item>
+            <Stack.Item>
               <Button icon="chevron-right" onClick={() => act('cycle_style', { offset: 1 })} />
-            </Flex.Item>
-          </Flex>
+            </Stack.Item>
+            <Stack.Item>
+              <Button icon="eraser" color={wideMode ? 'green' : 'transparent'} onClick={() => act('wide_mode')}>
+                Wide mode
+              </Button>
+            </Stack.Item>
+          </Stack>
 
           <Box mt="5px" mb="5px">
             <Flex

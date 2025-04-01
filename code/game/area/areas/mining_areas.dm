@@ -97,6 +97,10 @@
 	name = "Mining Station Storage"
 	icon_state = "storage"
 
+/area/mine/outpost/smith_workshop
+	name = "Smith's Workshop"
+	icon_state = "smith"
+
 /area/mine/outpost/maintenance
 	name = "Mining Station Maintenance"
 	icon_state = "maintcentral"
@@ -160,6 +164,9 @@
 	name = "Lavaland Wastes"
 	outdoors = TRUE
 
+/area/lavaland/surface/outdoors/legion_arena
+	name = "Legion Arena"
+
 /// monsters and ruins spawn here
 /area/lavaland/surface/outdoors/unexplored
 	icon_state = "unexplored"
@@ -169,3 +176,5 @@
 	icon_state = "danger"
 
 /area/lavaland/surface/outdoors/explored
+
+/area/lavaland/surface/outdoors/targetable
