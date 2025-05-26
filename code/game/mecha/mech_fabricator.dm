@@ -67,10 +67,14 @@
 	categories = list(
 		"Cyborg",
 		"Cyborg Repair",
+		"Cyborg Upgrades",
+		"IPC",
+		"IPC Upgrades",
 		"MODsuit Construction",
 		"MODsuit Modules",
 		"Ripley",
 		"Firefighter",
+		"Nkarrdem",
 		"Odysseus",
 		"Gygax",
 		"Durand",
@@ -78,7 +82,6 @@
 		"Reticence",
 		"Phazon",
 		"Exosuit Equipment",
-		"Cyborg Upgrade Modules",
 		"Medical",
 		"Misc"
 	)
@@ -246,6 +249,8 @@
 /obj/machinery/mecha_part_fabricator/proc/build_design_timer_finish(datum/design/D, list/final_cost)
 	// Spawn the item (in a lockbox if restricted) OR mob (e.g. IRC body)
 	var/atom/A = new D.build_path(get_step(src, output_dir))
+	if(is_station_level(z))
+		SSblackbox.record_feedback("tally", "station_mechfab_production", 1, "[D.type]")
 	if(isitem(A))
 		var/obj/item/I = A
 		I.materials = final_cost
@@ -307,13 +312,12 @@
 		return FALSE
 	return TRUE
 
-// Interaction code
-/obj/machinery/mecha_part_fabricator/attackby(obj/item/W, mob/user, params)
-	if(default_deconstruction_screwdriver(user, "fab-o", "fab-idle", W))
-		return
+/obj/machinery/mecha_part_fabricator/item_interaction(mob/living/user, obj/item/used, list/modifiers)
+	if(default_deconstruction_screwdriver(user, "fab-o", "fab-idle", used))
+		return ITEM_INTERACT_COMPLETE
 
-	if(default_deconstruction_crowbar(user, W))
-		return TRUE
+	if(default_deconstruction_crowbar(user, used))
+		return ITEM_INTERACT_COMPLETE
 
 	return ..()
 
@@ -454,6 +458,7 @@
 				var/user_pass = tgui_input_text(usr, "Please enter network password", "Password Entry")
 				// Check the password
 				if(user_pass == C.network_password)
+					C.mechfabs += UID()
 					network_manager_uid = C.UID()
 					to_chat(usr, "<span class='notice'>Successfully linked to <b>[C.network_name]</b>.</span>")
 				else
@@ -536,6 +541,8 @@
 	add_fingerprint(usr)
 
 /obj/machinery/mecha_part_fabricator/proc/unlink()
+	var/obj/machinery/computer/rnd_network_controller/RNC = locateUID(network_manager_uid)
+	RNC.mechfabs -= UID()
 	network_manager_uid = null
 	SStgui.update_uis(src)
 
