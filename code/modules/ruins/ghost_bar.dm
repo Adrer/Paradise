@@ -86,6 +86,7 @@ GLOBAL_LIST_EMPTY(occupants_by_key)
 	if(isgrey(H))
 		var/obj/item/organ/internal/cyberimp/brain/speech_translator/implant = new
 		implant.insert(H)
+		H.remove_language("Psionic Communication")
 	log_game("[ckey] has entered the ghost bar")
 	playsound(src, 'sound/machines/wooden_closet_open.ogg', 50)
 	var/mob/old_mob = GLOB.occupants_by_key["[H.ckey]"]
