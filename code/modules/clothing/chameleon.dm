@@ -4,6 +4,7 @@
 	name = "Select Chameleon Outfit"
 	button_overlay_icon_state = "chameleon_outfit"
 	var/list/outfit_options //By default, this list is shared between all instances. It is not static because if it were, subtypes would not be able to have their own. If you ever want to edit it, copy it first.
+	var/mob/living/carbon/human/owner = null
 
 /datum/action/chameleon_outfit/New()
 	..()
@@ -97,15 +98,14 @@
 	if(.)
 		button.name = "Change [chameleon_name] Appearance"
 
-/datum/action/item_action/chameleon/change/ui_host()
+/datum/action/item_action/chameleon_change/ui_host()
 	return holder
 
-/datum/action/item_action/chameleon/change/ui_state(mob/user)
+/datum/action/item_action/chameleon_change/ui_state(mob/user)
 	return GLOB.physical_state
 
-/datum/action/item_action/chameleon/change/ui_data(mob/living/carbon/human/user)
+/datum/action/item_action/chameleon_change/ui_data(mob/living/carbon/human/user)
 	var/list/data = list()
-
 	var/list/items = list()
 
 	data["selected_appearance"] = "[holder.name]_[holder.icon_state]"
@@ -155,48 +155,6 @@
 	data["show_mode"] = 0
 	return data
 
-/datum/action/item_action/chameleon/change/ui_static_data(mob/user, datum/tgui/ui = null)
-	var/list/data = list()
-	var/list/chameleon_skins = list()
-	for(var/chameleon_type in chameleon_list[chameleon_name])
-		var/obj/item/chameleon_item = chameleon_list[chameleon_name][chameleon_type]
-		chameleon_skins.Add(list(list(
-			"icon" = initial(chameleon_item.icon),
-			"icon_state" = initial(chameleon_item.icon_state),
-			"name" = initial(chameleon_item.name),
-		)))
-
-	data["chameleon_skins"] = chameleon_skins
-	return data
-
-/datum/action/item_action/chameleon/change/ui_assets(mob/user)
-	return list(
-		get_asset_datum(/datum/asset/simple/inventory),
-	)
-
-/datum/action/item_action/chameleon/change/ui_interact(mob/user, datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Chameleon", "Change [chameleon_name] Appearance")
-		ui.open()
-		ui.set_autoupdate(FALSE)
-
-/datum/action/item_action/chameleon/change/ui_act(action, list/params)
-	if(..())
-		return
-
-	switch(action)
-		if("change_appearance")
-			update_look(usr, chameleon_list[chameleon_name][params["new_appearance"]])
-
-/datum/action/item_action/chameleon_change/ui_state(mob/user)
-	return GLOB.physical_state
-
-/datum/action/item_action/chameleon_change/ui_data(mob/user)
-	var/list/data = list()
-	data["selected_appearance"] = "[holder.name]_[holder.icon_state]"
-	return data
-
 /datum/action/item_action/chameleon_change/ui_static_data(mob/user, datum/tgui/ui = null)
 	var/list/data = list()
 	var/list/chameleon_skins = list()
@@ -210,6 +168,11 @@
 
 	data["chameleon_skins"] = chameleon_skins
 	return data
+
+/datum/action/item_action/chameleon_change/ui_assets(mob/user)
+	return list(
+		get_asset_datum(/datum/asset/simple/inventory),
+	)
 
 /datum/action/item_action/chameleon_change/ui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -225,6 +188,10 @@
 	switch(action)
 		if("change_appearance")
 			update_look(usr, chameleon_list[chameleon_name][params["new_appearance"]])
+		
+		if("select_item")
+			to_chat(usr, "<span class='warning'>Testing!</span>")
+
 
 /datum/action/item_action/chameleon_change/proc/initialize_disguises()
 	UpdateButtons()
@@ -241,7 +208,7 @@
 			if(isnull(chameleon_list[chameleon_name][chameleon_item_name]))
 				chameleon_list[chameleon_name][chameleon_item_name] = I
 
-/datum/action/item_action/chameleon/change/proc/select_look(mob/user)
+/datum/action/item_action/chameleon_change/proc/select_look(mob/user)
 	ui_interact(user)
 
 /datum/action/item_action/chameleon_change/proc/random_look(mob/user)

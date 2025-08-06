@@ -386,6 +386,9 @@ export const SelectionMenu = (props, context) => {
                         padding: 0,
                         'background-color': disable_background_hover(item),
                       }}
+                      onClick={() => {
+                        act('select_item', {});
+                      }}
                     >
                       {slot.image && (
                         <Box

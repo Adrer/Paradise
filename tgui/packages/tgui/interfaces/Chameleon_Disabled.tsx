@@ -18,7 +18,7 @@ type ChameleonSkin = {
   icon_state: string;
 };
 
-export const Chameleon = (props, context) => {
+export const Chameleon_Disabled = (props, context) => {
   return (
     <Window width={431} height={500} theme="syndicate">
       <Window.Content>
