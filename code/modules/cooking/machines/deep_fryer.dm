@@ -8,10 +8,6 @@
 	name = "deep fryer"
 	desc = "A deep fryer that can hold two baskets."
 	icon_state = "deep_fryer"
-	density = TRUE
-	anchored = TRUE
-	layer = BELOW_OBJ_LAYER
-	cooking = FALSE
 	allowed_containers = list(
 		/obj/item/reagent_containers/cooking/deep_basket,
 	)
@@ -124,10 +120,18 @@
 /obj/item/circuitboard/cooking/deep_fryer
 	board_name = "Deep Fryer"
 	build_path = /obj/machinery/cooking/deepfryer
+	icon_state = "service"
 	board_type = "machine"
-	origin_tech = list(TECH_BIO = 1)
+	origin_tech = "biotech=1"
 	req_components = list(
 		/obj/item/stack/cable_coil = 5,
 		/obj/item/stock_parts/micro_laser = 2,
 		/obj/item/stock_parts/capacitor = 1,
 	)
+
+/obj/machinery/cooking/deepfryer/loaded/Initialize(mapload)
+	. = ..()
+	for(var/i in 1 to length(surfaces))
+		var/datum/cooking_surface/surface = surfaces[i]
+		surface.container = new /obj/item/reagent_containers/cooking/deep_basket(src)
+	update_appearance()

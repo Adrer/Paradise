@@ -23,6 +23,7 @@ GLOBAL_LIST_INIT(admin_verbs_admin, list(
 	/client/proc/cmd_admin_check_contents,	/*displays the contents of an instance*/
 	/client/proc/cmd_admin_open_logging_view,
 	/client/proc/getserverlogs,			/*allows us to fetch server logs (diary) for other days*/
+	/client/proc/get_server_logs_by_round_id,
 	/client/proc/Getmob,				/*teleports a mob to our location*/
 	/client/proc/Getkey,				/*teleports a mob with a certain ckey to our location*/
 	/client/proc/jump_to,				/*Opens a menu for jumping to an Area, Mob, Key or Coordinate*/
@@ -42,6 +43,7 @@ GLOBAL_LIST_INIT(admin_verbs_admin, list(
 	/datum/admins/proc/toggleemoji,     /*toggles using emoji in ooc for everyone*/
 	/client/proc/game_panel,			/*game panel, allows to change game-mode etc*/
 	/client/proc/cmd_admin_say,			/*admin-only ooc chat*/
+	/client/proc/cmd_staff_say,
 	/datum/admins/proc/PlayerNotes,
 	/client/proc/cmd_mentor_say,
 	/client/proc/cmd_dev_say,
@@ -54,6 +56,7 @@ GLOBAL_LIST_INIT(admin_verbs_admin, list(
 	/client/proc/view_asays,
 	/client/proc/view_msays,
 	/client/proc/view_devsays,
+	/client/proc/view_staffsays,
 	/client/proc/empty_ai_core_toggle_latejoin,
 	/client/proc/aooc,
 	/client/proc/freeze,
@@ -82,7 +85,7 @@ GLOBAL_LIST_INIT(admin_verbs_sounds, list(
 	/client/proc/play_intercomm_sound,
 	/client/proc/stop_global_admin_sounds,
 	/client/proc/stop_sounds_global,
-	/client/proc/play_web_sound
+	/client/proc/play_sound_tgchat
 	))
 GLOBAL_LIST_INIT(admin_verbs_event, list(
 	/client/proc/object_talk,
@@ -186,6 +189,7 @@ GLOBAL_LIST_INIT(admin_verbs_debug, list(
 	/client/proc/debug_atom_init,
 	/client/proc/debug_bloom,
 	/client/proc/cmd_mass_screenshot,
+	/client/proc/allow_browser_inspect,
 	))
 GLOBAL_LIST_INIT(admin_verbs_possess, list(
 	/proc/possess,
@@ -224,12 +228,21 @@ GLOBAL_LIST_INIT(admin_verbs_mentor, list(
 	/client/proc/admin_observe_target,
 	/client/proc/cmd_mentor_say,	/* mentor say*/
 	/client/proc/view_msays,
+	/client/proc/cmd_staff_say,
+	/client/proc/view_staffsays
 	// cmd_mentor_say is added/removed by the toggle_mentor_chat verb
+))
+GLOBAL_LIST_INIT(admin_verbs_dev, list(
+	/client/proc/cmd_dev_say,
+	/client/proc/view_devsays,
+	/client/proc/cmd_staff_say,
+	/client/proc/view_staffsays
 ))
 GLOBAL_LIST_INIT(admin_verbs_proccall, list(
 	/client/proc/callproc,
 	/client/proc/callproc_datum,
-	/client/proc/SDQL2_query
+	/client/proc/SDQL2_query,
+	/client/proc/load_sdql2_query,
 ))
 GLOBAL_LIST_INIT(admin_verbs_ticket, list(
 	/client/proc/openAdminTicketUI,
@@ -245,7 +258,6 @@ GLOBAL_LIST_INIT(admin_verbs_maintainer, list(
 	/client/proc/vv_by_ref, // This allows you to lookup **ANYTHING** in the server memory by spamming refs. Locked for security.
 	/client/proc/cinematic, // This will break everyone's screens in the round. Dont use this for adminbus.
 	/client/proc/throw_runtime, // Do I even need to explain why this is locked?
-	/client/proc/allow_browser_inspect, // XSS prevention
 ))
 GLOBAL_LIST_INIT(view_runtimes_verbs, list(
 	/client/proc/view_runtimes,
@@ -261,6 +273,10 @@ GLOBAL_LIST_INIT(view_runtimes_verbs, list(
 	/client/proc/teleport_interesting_turf,
 	/client/proc/visualize_interesting_turfs,
 	/client/proc/profile_code
+))
+GLOBAL_LIST_INIT(view_logs_verbs, list(
+	/client/proc/getserverlogs,
+	/client/proc/get_server_logs_by_round_id,
 ))
 
 /client/proc/add_admin_verbs()
@@ -310,7 +326,9 @@ GLOBAL_LIST_INIT(view_runtimes_verbs, list(
 			spawn(1) // This setting exposes the profiler for people with R_VIEWRUNTIMES. They must still have it set in cfg/admin.txt
 				control_freak = 0
 		if(holder.rights & R_DEV_TEAM)
-			add_verb(src, /client/proc/cmd_dev_say)
+			add_verb(src, GLOB.admin_verbs_dev)
+		if(holder.rights & R_VIEWLOGS)
+			add_verb(src, GLOB.view_logs_verbs)
 		if(is_connecting_from_localhost())
 			add_verb(src, /client/proc/export_current_character)
 
@@ -343,7 +361,8 @@ GLOBAL_LIST_INIT(view_runtimes_verbs, list(
 		GLOB.admin_verbs_proccall,
 		GLOB.admin_verbs_show_debug_verbs,
 		GLOB.admin_verbs_ticket,
-		GLOB.admin_verbs_maintainer
+		GLOB.admin_verbs_maintainer,
+		GLOB.admin_verbs_dev
 	))
 	add_verb(src, /client/proc/show_verbs)
 
@@ -483,8 +502,11 @@ GLOBAL_LIST_INIT(view_runtimes_verbs, list(
 		to_chat(src, "<span class='warning'>You can't observe a ghost.</span>")
 		return
 
-	if(cleanup_admin_observe(mob))
+	var/mob/dead/observer/observer = mob
+	if(istype(observer) && target == locateUID(observer.mob_observed))
+		cleanup_admin_observe(mob)
 		return
+	cleanup_admin_observe(mob)
 
 	if(isnull(target) || target == src)
 		// let the default one find the target if there isn't one
@@ -916,6 +938,9 @@ GLOBAL_LIST_INIT(view_runtimes_verbs, list(
 		log_admin("[key_name(usr)] re-adminned themselves.")
 		GLOB.de_admins -= ckey
 		GLOB.de_mentors -= ckey
+		if(istype(mob, /mob/dead/observer))
+			var/mob/dead/observer/O = mob
+			O.update_admin_actions()
 		SSblackbox.record_feedback("tally", "admin_verb", 1, "Re-admin")
 		return
 	else
@@ -1106,28 +1131,27 @@ GLOBAL_LIST_INIT(view_runtimes_verbs, list(
 	if(!check_rights(R_ADMIN))
 		return
 
-	var/alert_type = alert(src, "Do you wish to send an admin alert to [key_name(about_to_be_banned, FALSE)]?", null,"Yes", "No", "Custom Message")
+	var/default_text = "An admin is trying to talk to you!\nCheck your chat window and click their name to respond or you may be banned!"
+	var/new_text = tgui_input_text(src, "Input your message, or use the default.", "Admin Message - Text Selector", default_text, 500, TRUE)
 
-	switch(alert_type)
-		if("Yes")
-			var/message = "An admin is trying to talk to you!\nCheck your chat window and click their name to respond or you may be banned!"
-			show_blurb(about_to_be_banned, 15, message, null, "center", "center", COLOR_RED, null, null, 1)
-			log_admin("[key_name(src)] sent a default admin alert to [key_name(about_to_be_banned)].")
-			message_admins("[key_name(src)] sent a default admin alert to [key_name(about_to_be_banned)].")
+	if(!new_text)
+		return
 
-		if("Custom Message")
-			var/message = input(src, "Input your custom admin alert text:", "Message") as text|null
-			if(!message)
-				return
-			message = strip_html(message, 500)
+	if(default_text == new_text)
+		show_blurb(about_to_be_banned, 15, new_text, null, "center", "center", COLOR_RED, null, null, 1)
+		log_admin("[key_name(src)] sent a default admin alert to [key_name(about_to_be_banned)].")
+		message_admins("[key_name(src)] sent a default admin alert to [key_name(about_to_be_banned)].")
+		return
 
-			var/message_color = tgui_input_color(src, "Input your message color:", "Admin Message - Color Selector")
-			if(isnull(message_color))
-				return
+	new_text = strip_html(new_text, 500)
 
-			show_blurb(about_to_be_banned, 15, message, null, "center", "center", message_color, null, null, 1)
-			log_admin("[key_name(src)] sent an admin alert to [key_name(about_to_be_banned)] with custom message [message].")
-			message_admins("[key_name(src)] sent an admin alert to [key_name(about_to_be_banned)] with custom message [message].")
+	var/message_color = tgui_input_color(src, "Input your message color:", "Admin Message - Color Selector", COLOR_RED)
+	if(isnull(message_color))
+		return
+
+	show_blurb(about_to_be_banned, 15, new_text, null, "center", "center", message_color, null, null, 1)
+	log_admin("[key_name(src)] sent an admin alert to [key_name(about_to_be_banned)] with custom message \"[new_text]\".")
+	message_admins("[key_name(src)] sent an admin alert to [key_name(about_to_be_banned)] with custom message \"[new_text]\".")
 
 /client/proc/debugstatpanel()
 	set name = "Debug Stat Panel"
@@ -1283,3 +1307,23 @@ GLOBAL_LIST_INIT(view_runtimes_verbs, list(
 
 	B.to_backup_disk(get_turf(usr))
 
+/proc/ghost_follow_uid(mob/user, uid)
+	var/client/client = user.client
+	if(!isobserver(user))
+		if(!check_rights(R_ADMIN|R_MOD)) // Need to be mod or admin to aghost
+			return
+		user.client.admin_ghost()
+	var/datum/target = locateUID(uid)
+	if(QDELETED(target))
+		to_chat(user, "<span class='warning'>This datum has been deleted!</span>")
+		return
+
+	if(istype(target, /datum/mind))
+		var/datum/mind/mind = target
+		if(!ismob(mind.current))
+			to_chat(user, "<span class='warning'>This can only be used on instances of type /mob</span>")
+			return
+		target = mind.current
+
+	var/mob/dead/observer/A = client.mob
+	A.ManualFollow(target)

@@ -2,13 +2,11 @@
 /mob/living/silicon/robot/drone
 	name = "drone"
 	real_name = "drone"
-	icon = 'icons/mob/robots.dmi'
 	icon_state = "repairbot"
 	maxHealth = 35
 	health = 35
 	bubble_icon = "machine"
 	pass_flags = PASSTABLE
-	flags_2 = RAD_PROTECT_CONTENTS_2 | RAD_NO_CONTAMINATE_2
 	braintype = "Robot"
 	lawupdate = FALSE
 	density = FALSE
@@ -426,7 +424,7 @@
 		return FALSE // Pretty damn hard to path through space
 
 	var/turf/target
-	for(var/obj/machinery/drone_fabricator/DF in GLOB.machines)
+	for(var/obj/machinery/drone_fabricator/DF in SSmachines.get_by_type(/obj/machinery/drone_fabricator))
 		if(DF.z != z)
 			continue
 		target = get_turf(DF)

@@ -39,8 +39,6 @@
 	icon_state = "logs"
 	force = 5
 	throwforce = 5
-	w_class = WEIGHT_CLASS_NORMAL
-	throw_speed = 2
 	throw_range = 3
 	origin_tech = "materials=1"
 	attack_verb = list("bashed", "battered", "bludgeoned", "whacked")
@@ -130,7 +128,6 @@
 	var/heat_factor = 1000 // How much does this heat up the air?
 	var/light_strength = 6
 	light_color = "#ED9200"
-	density = FALSE
 	anchored = TRUE
 	new_attack_chain = TRUE
 
@@ -184,14 +181,14 @@
 			var/obj/O = A
 			if(dangerous)
 				O.fire_act(1000, 500)
-			else 
+			else
 				O.temperature_expose(exposed_temperature = 400)
 		else if(isliving(A))
 			var/mob/living/L = A
 			if(dangerous)
 				L.adjust_fire_stacks(fire_stack_strength)
 				L.IgniteMob()
-			else 
+			else
 				L.adjust_bodytemperature(10, 310)
 
 /obj/structure/lightable/process()
@@ -229,8 +226,6 @@
 	desc = "For grilling, broiling, charring, smoking, heating, roasting, toasting, simmering, searing, melting, and occasionally burning things."
 	icon = 'icons/obj/hydroponics/equipment.dmi'
 	icon_state = "bonfire"
-	density = FALSE
-	anchored = TRUE
 	buckle_lying = FALSE
 
 /obj/structure/lightable/bonfire/dense
@@ -287,5 +282,14 @@
 	new /obj/item/stack/sheet/wood (get_turf(src), 5)
 	qdel(src)
 	..()
+
+/obj/structure/lightable/torch/lava_bridge
+
+/obj/structure/lightable/torch/lava_bridge/Initialize(mapload)
+	. = ..()
+	StartBurning()
+
+/obj/structure/lightable/torch/lava_bridge/CheckOxygen()
+	return TRUE // these load before SSair sets up atmos on Lavaland
 
 #undef MIN_OXY_IGNITE

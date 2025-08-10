@@ -27,6 +27,9 @@
 	e_cost = 83
 	select_name = "kill"
 
+/obj/item/ammo_casing/energy/lasergun/lever_action
+	fire_sound = 'sound/weapons/laser4.ogg'
+
 /obj/item/ammo_casing/energy/laser/hos
 	e_cost = 120
 
@@ -40,6 +43,15 @@
 	pellets = 5
 	variance = 25
 	select_name = "scatter"
+
+/obj/item/ammo_casing/energy/laser/eshotgun
+	projectile_type = /obj/item/projectile/beam/scatter/eshotgun
+	pellets = 6
+	variance = 25
+	delay = 1 SECONDS
+
+/obj/item/ammo_casing/energy/laser/eshotgun/cyborg
+	e_cost = 500
 
 /obj/item/ammo_casing/energy/laser/heavy
 	projectile_type = /obj/item/projectile/beam/laser/heavylaser
@@ -78,7 +90,6 @@
 /obj/item/ammo_casing/energy/xray
 	projectile_type = /obj/item/projectile/beam/xray
 	muzzle_flash_color = LIGHT_COLOR_GREEN
-	e_cost = 100
 	fire_sound = 'sound/weapons/laser3.ogg'
 
 /obj/item/ammo_casing/energy/immolator
@@ -88,7 +99,6 @@
 
 /obj/item/ammo_casing/energy/immolator/strong
 	projectile_type = /obj/item/projectile/beam/immolator/strong
-	e_cost = 125
 	select_name = "precise"
 
 /obj/item/ammo_casing/energy/immolator/strong/cyborg
@@ -97,7 +107,6 @@
 
 /obj/item/ammo_casing/energy/immolator/scatter
 	projectile_type = /obj/item/projectile/beam/immolator/weak
-	e_cost = 125
 	pellets = 6
 	variance = 25
 	select_name = "scatter"
@@ -185,6 +194,17 @@
 	randomspread = 1
 	delay = 0
 
+/obj/item/ammo_casing/energy/disabler/fake
+	projectile_type = /obj/item/projectile/beam/disabler/fake
+	e_cost = 100
+
+/obj/item/ammo_casing/energy/disabler/eshotgun
+	projectile_type = /obj/item/projectile/beam/disabler/pellet
+	e_cost = 75
+	delay = 1 SECONDS
+	pellets = 6
+	variance = 25
+
 /// seperate balancing for cyborg, again
 /obj/item/ammo_casing/energy/disabler/cyborg
 	e_cost = 250
@@ -209,7 +229,6 @@
 	projectile_type = /obj/item/projectile/beam/wormhole
 	muzzle_flash_color = "#33CCFF"
 	delay = 10
-	e_cost = 100
 	fire_sound = 'sound/weapons/pulse3.ogg'
 	var/obj/item/gun/energy/wormhole_projector/gun = null
 	select_name = "blue"
@@ -299,7 +318,6 @@
 	projectile_type = /obj/item/projectile/beam/emitter
 	muzzle_flash_color = LIGHT_COLOR_GREEN
 	fire_sound = 'sound/weapons/emitter.ogg'
-	e_cost = 100
 	delay = 2 SECONDS // Lasers fire twice every second for 40 dps, this fires every 2 seconds for 15 dps. Seems fair, since every cyborg will have this with more shots?
 	select_name = "emitter"
 

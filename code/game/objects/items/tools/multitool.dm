@@ -13,18 +13,14 @@
 	icon_state = "multitool"
 	belt_icon = "multitool"
 	flags = CONDUCT
-	force = 0
-	w_class = WEIGHT_CLASS_NORMAL
-	throwforce = 0
-	throw_range = 7
 	throw_speed = 3
 	drop_sound = 'sound/items/handling/multitool_drop.ogg'
 	pickup_sound =  'sound/items/handling/multitool_pickup.ogg'
 	materials = list(MAT_METAL = 300, MAT_GLASS = 140)
 	origin_tech = "magnets=1;engineering=2"
-	toolspeed = 1
 	tool_behaviour = TOOL_MULTITOOL
 	hitsound = 'sound/weapons/tap.ogg'
+	new_attack_chain = TRUE
 	/// Reference to whatever machine is held in the buffer
 	var/obj/machinery/buffer // TODO - Make this a soft ref to tie into whats below
 	/// Soft-ref for linked stuff. This should be used over the above var.
@@ -47,7 +43,8 @@
 	buffer = null
 	return ..()
 
-/obj/item/multitool/attack_self__legacy__attackchain(mob/user)
+/obj/item/multitool/activate_self(mob/user)
+	. = ..()
 	if(!COOLDOWN_FINISHED(src, cd_apc_scan))
 		return
 	COOLDOWN_START(src, cd_apc_scan, 1.5 SECONDS)
@@ -60,6 +57,15 @@
 		to_chat(user, "<span class='notice'>APC detected 0 meters [dir2text(apc.dir)].</span>")
 		return
 	to_chat(user, "<span class='notice'>APC detected [get_dist(src, apc)] meter\s [dir2text(get_dir(src, apc))].</span>")
+
+/obj/item/multitool/ranged_interact_with_atom(atom/target, mob/living/user, list/modifiers)
+	. = ..()
+	if(!(istype(target, /obj/machinery/atmospherics/unary) || istype(target, /obj/machinery/atmospherics/air_sensor)))
+		return
+	if(!(target in view(5, user)))
+		to_chat(user,"<span class='warning'>[target] out of multitool range. Please get within 5 meters and try again.<span>")
+		return
+	return target.multitool_act(user, src)
 
 // Syndicate device disguised as a multitool; it will turn red when an AI camera is nearby.
 /obj/item/multitool/ai_detect
@@ -159,7 +165,6 @@
 	return OBLITERATION
 
 /obj/item/multitool/cyborg
-	name = "multitool"
 	desc = "An integrated multitool used for electrical maintenance, typically found in construction and engineering robots."
 	toolspeed = 0.5
 

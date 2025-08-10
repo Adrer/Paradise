@@ -70,7 +70,8 @@ GLOBAL_LIST_INIT(special_role_times, list(
 	var/glowlevel = GLOW_MED
 	var/UI_style_color = "#ffffff"
 	var/UI_style_alpha = 255
-	var/clientfps = 63
+	/// This value will be converted by BYOND, don't set already converted values there, otherwise it will set client's fps 1 step higher than it should've
+	var/clientfps = 100
 	var/atklog = ATKLOG_ALL
 	/// Forum userid
 	var/fuid
@@ -182,11 +183,6 @@ GLOBAL_LIST_INIT(special_role_times, list(
 	switch(current_tab)
 		if(TAB_CHAR) // Character Settings
 			var/datum/species/S = GLOB.all_species[active_character.species]
-			var/datum/species/subtype = GLOB.all_species[active_character.species_subtype]
-			if(istype(S) && istype(subtype))
-				subtype = new subtype.type()
-				S = new S.type()
-				S.bodyflags |= subtype.bodyflags
 			if(!istype(S)) //The species was invalid. Set the species to the default, fetch the datum for that species and generate a random character.
 				active_character.species = initial(active_character.species)
 				S = GLOB.all_species[active_character.species]
@@ -212,8 +208,6 @@ GLOBAL_LIST_INIT(special_role_times, list(
 			dat += "<b>Age:</b> <a href='byond://?_src_=prefs;preference=age;task=input'>[active_character.age]</a><br>"
 			dat += "<b>Body:</b> <a href='byond://?_src_=prefs;preference=all;task=random'>(Randomize)</a><br>"
 			dat += "<b>Species:</b> <a href='byond://?_src_=prefs;preference=species;task=input'>[active_character.species]</a><br>"
-			if(S.bodyflags & HAS_SPECIES_SUBTYPE)
-				dat += "<b>Species Sub-Type:</b> <a href='byond://?_src_=prefs;preference=species_subtype;task=input'>[active_character.species_subtype]</a><br>"
 			dat += "<b>Gender:</b> <a href='byond://?_src_=prefs;preference=gender'>[active_character.gender == MALE ? "Male" : (active_character.gender == FEMALE ? "Female" : "Genderless")]</a><br>"
 			dat += "<b>Body Type:</b> <a href='byond://?_src_=prefs;preference=body_type'>[active_character.body_type == MALE ? "Masculine" : "Feminine"]</a>"
 			dat += "<br>"
@@ -427,7 +421,7 @@ GLOBAL_LIST_INIT(special_role_times, list(
 			dat += "<b>Colourblind Mode:</b> <a href='byond://?_src_=prefs;preference=cbmode'>[colourblind_mode]</a><br>"
 			if(user.client.donator_level > 0)
 				dat += "<b>Donator Publicity:</b> <a href='byond://?_src_=prefs;preference=donor_public'><b>[(toggles & PREFTOGGLE_DONATOR_PUBLIC) ? "Public" : "Hidden"]</b></a><br>"
-			dat += "<b>FPS:</b>	 <a href='byond://?_src_=prefs;preference=clientfps;task=input'>[clientfps]</a><br>"
+			dat += "<b>FPS:</b>	 <a href='byond://?_src_=prefs;preference=clientfps;task=input'>[user.client.fps]</a><br>"
 			dat += "<b>Ghost Ears:</b> <a href='byond://?_src_=prefs;preference=ghost_ears'><b>[(toggles & PREFTOGGLE_CHAT_GHOSTEARS) ? "All Speech" : "Nearest Creatures"]</b></a><br>"
 			dat += "<b>Ghost Radio:</b> <a href='byond://?_src_=prefs;preference=ghost_radio'><b>[(toggles & PREFTOGGLE_CHAT_GHOSTRADIO) ? "All Chatter" : "Nearest Speakers"]</b></a><br>"
 			dat += "<b>Ghost Sight:</b> <a href='byond://?_src_=prefs;preference=ghost_sight'><b>[(toggles & PREFTOGGLE_CHAT_GHOSTSIGHT) ? "All Emotes" : "Nearest Creatures"]</b></a><br>"

@@ -12,6 +12,16 @@
 	build_path = /obj/item/circuitboard/thermomachine
 	category = list ("Engineering Machinery")
 
+/datum/design/space_heater
+	name = "Machine Board (Space Heater)"
+	desc = "The circuit board for a space heater"
+	id = "space_heater"
+	req_tech = list("programming" = 3, "plasmatech" = 3)
+	build_type = IMPRINTER
+	materials = list(MAT_GLASS = 1000)
+	build_path = /obj/item/circuitboard/space_heater
+	category = list ("Engineering Machinery")
+
 /datum/design/recharger
 	name = "Machine Board (Weapon Recharger)"
 	desc = "The circuit board for a weapon recharger."
@@ -97,7 +107,6 @@
 	desc = "The circuit board for an Industrial Suit Storage Unit."
 	id = "issu"
 	req_tech = list("engineering" = 5, "materials" = 4)
-	build_type = IMPRINTER
 	materials = list(MAT_GLASS = 1000)
 	build_path = /obj/item/circuitboard/suit_storage_unit/industrial
 	category = list("Engineering Machinery")
@@ -572,6 +581,16 @@
 	build_path = /obj/item/circuitboard/kinetic_assembler
 	category = list ("Misc. Machinery")
 
+/datum/design/scientific_assembler
+	name = "Machine Design (Scientific Assembler)"
+	desc = "The circuit board for a Scientific Assembler."
+	id = "scientific_assembler"
+	req_tech = list("programming" = 2, "engineering" = 4, "plasmatech" = 3)
+	build_type = IMPRINTER
+	materials = list(MAT_GLASS = 1000)
+	build_path = /obj/item/circuitboard/scientific_assembler
+	category = list ("Misc. Machinery")
+
 /datum/design/mining_equipment_vendor
 	name = "Machine Design (Mining Rewards Vendor Board)"
 	desc = "The circuit board for a Mining Rewards Vendor."
@@ -662,6 +681,35 @@
 	build_path = /obj/item/circuitboard/merch
 	category = list("Misc. Machinery")
 
+/datum/design/processing_node
+	name =  "Machine Design (Processing Node)"
+	desc = "The circuit board for a processing node."
+	id = "processing_node"
+	req_tech = list("programming" = 5)
+	build_type = IMPRINTER
+	materials = list(MAT_GLASS = 1000, MAT_GOLD = 250)
+	build_path = /obj/item/circuitboard/processing_node
+	category = list("Misc. Machinery")
+
+/datum/design/network_node
+	name =  "Machine Design (Network Node)"
+	desc = "The circuit board for a network node."
+	id = "network_node"
+	req_tech = list("programming" = 5)
+	build_type = IMPRINTER
+	materials = list(MAT_GLASS = 1000, MAT_GOLD = 250)
+	build_path = /obj/item/circuitboard/network_node
+	category = list("Misc. Machinery")
+
+/datum/design/ai_resource_console
+	name =  "Computer Design (AI Resource Console)"
+	desc = "The circuit board for an AI Resource Console."
+	id = "ai_resource_console"
+	req_tech = list("programming" = 5)
+	build_type = IMPRINTER
+	materials = list(MAT_GLASS = 1000)
+	build_path = /obj/item/circuitboard/ai_resource_console
+
 /datum/design/autochef
 	name = "Machine Design (Autochef)"
 	desc = "The circuit board for an autochef."
@@ -671,3 +719,13 @@
 	materials = list(MAT_GLASS = 1000)
 	build_path = /obj/item/circuitboard/autochef
 	category = list("Misc. Machinery")
+
+/datum/design/organ_analyzer
+	name = "Machine Design (Organ Analyzer)"
+	desc = "The circuit board for an organ analyzer."
+	id = "organ_analyzer"
+	req_tech = list("programming" = 3, "bluespace" = 3, "materials" = 3)
+	build_type = IMPRINTER
+	materials = list(MAT_GLASS = 1000)
+	build_path = /obj/item/circuitboard/organ_analyzer
+	category = list("Research Machinery")

@@ -7,9 +7,6 @@
 	desc = "An electric stovetop with four burners."
 	icon_state = "stove"
 	density = FALSE
-	anchored = TRUE
-	layer = BELOW_OBJ_LAYER
-	cooking = FALSE
 	pass_flags = PASSTABLE
 	allowed_containers = list(
 		/obj/item/reagent_containers/cooking/pot,
@@ -126,8 +123,19 @@
 	board_name = "Stovetop"
 	build_path = /obj/machinery/cooking/stovetop
 	board_type = "machine"
-	origin_tech = list(TECH_BIO = 1)
+	icon_state = "service"
+	origin_tech = "biotech=1"
 	req_components = list(
 		/obj/item/stock_parts/micro_laser = 2,
 		/obj/item/stock_parts/capacitor = 1,
 	)
+
+/obj/machinery/cooking/stovetop/loaded/Initialize(mapload)
+	. = ..()
+	for(var/i in 1 to length(surfaces))
+		var/datum/cooking_surface/surface = surfaces[i]
+		if(i % 2 == 0)
+			surface.container = new /obj/item/reagent_containers/cooking/pot(src)
+		else
+			surface.container = new /obj/item/reagent_containers/cooking/pan(src)
+	update_appearance()

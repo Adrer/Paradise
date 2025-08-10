@@ -14,10 +14,9 @@
 	flags = CONDUCT
 	force = 10.0
 	throwforce = 10.0
-	throw_speed = 2
 	throw_range = 5
-	toolspeed = 1
 	usesound = 'sound/weapons/flash.ogg'
+	origin_tech = "bluespace=3"
 	/// Power cell (10000W)
 	var/obj/item/stock_parts/cell/high/rcell = null
 	/// Selected telepad
@@ -58,7 +57,7 @@
 
 	var/list/L = list() // List of avaliable telepads
 	var/list/areaindex = list() // Telepad area location
-	for(var/obj/machinery/telepad_cargo/R in GLOB.machines)
+	for(var/obj/machinery/telepad_cargo/R in SSmachines.get_by_type(/obj/machinery/telepad_cargo))
 		if(R.stage)
 			continue
 		var/turf/T = get_turf(R)

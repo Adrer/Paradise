@@ -2,7 +2,7 @@
 
 /datum/action/chameleon_outfit
 	name = "Select Chameleon Outfit"
-	button_overlay_icon_state = "chameleon_outfit"
+	button_icon_state = "chameleon_outfit"
 	var/list/outfit_options //By default, this list is shared between all instances. It is not static because if it were, subtypes would not be able to have their own. If you ever want to edit it, copy it first.
 	var/mob/living/carbon/human/owner = null
 
@@ -93,7 +93,7 @@
 			qdel(O)
 	..()
 
-/datum/action/item_action/chameleon_change/UpdateButton(atom/movable/screen/movable/action_button/button, status_only, force)
+/datum/action/item_action/chameleon_change/update_button_name(atom/movable/screen/movable/action_button/button, force)
 	. = ..()
 	if(.)
 		button.name = "Change [chameleon_name] Appearance"
@@ -194,7 +194,7 @@
 
 
 /datum/action/item_action/chameleon_change/proc/initialize_disguises()
-	UpdateButtons()
+	build_all_button_icons()
 	chameleon_blacklist |= typecacheof(target.type)
 	if(!isnull(chameleon_list[chameleon_name]))
 		return
@@ -235,7 +235,7 @@
 		var/obj/item/thing = target
 		thing.update_slot_icon()
 		SStgui.update_uis(src)
-	UpdateButtons()
+	build_all_button_icons()
 
 /datum/action/item_action/chameleon_change/proc/update_item(obj/item/picked_item)
 	target.name = initial(picked_item.name)
@@ -255,6 +255,8 @@
 			var/obj/item/P = new picked_item(null)
 			I.sprite_sheets = P.sprite_sheets
 			qdel(P)
+		else
+			I.sprite_sheets = null
 
 		if(isclothing(I) && isclothing(picked_item))
 			var/obj/item/clothing/CL = I
@@ -291,7 +293,6 @@
 	item_state = "bl_suit"
 	item_color = "black"
 	desc = "It's a plain jumpsuit. It has a small dial on the wrist."
-	sensor_mode = SENSOR_OFF //Hey who's this guy on the Syndicate Shuttle??
 	random_sensor = FALSE
 	resistance_flags = NONE
 	armor = list(MELEE = 5, BULLET = 5, LASER = 5, ENERGY = 0, BOMB = 0, RAD = 0, FIRE = 50, ACID = 50)
@@ -384,7 +385,6 @@
 	desc = "Used by engineering and mining staff to see basic structural and terrain layouts through walls, regardless of lighting condition."
 	icon_state = "meson"
 	item_state = "meson"
-	resistance_flags = NONE
 	prescription_upgradable = TRUE
 	armor = list(MELEE = 5, BULLET = 5, LASER = 5, ENERGY = 0, BOMB = 0, RAD = 0, FIRE = 50, ACID = 50)
 
@@ -421,12 +421,10 @@
 	vision_flags = SEE_MOBS
 	lighting_alpha = LIGHTING_PLANE_ALPHA_MOSTLY_VISIBLE
 	flash_protect = FLASH_PROTECTION_SENSITIVE
-	prescription_upgradable = TRUE
 
 /obj/item/clothing/glasses/chameleon/night
 	origin_tech = "magnets=3;syndicate=1"
 	see_in_dark = 8
-	prescription_upgradable = TRUE
 	lighting_alpha = LIGHTING_PLANE_ALPHA_MOSTLY_INVISIBLE
 
 /obj/item/clothing/glasses/hud/security/chameleon
@@ -516,7 +514,6 @@
 	icon_override = 'icons/mob/clothing/head/softcap.dmi'
 	icon_state = "greysoft"
 	item_color = "grey"
-	dyeable = FALSE
 
 	resistance_flags = NONE
 	armor = list(MELEE = 5, BULLET = 5, LASER = 5, ENERGY = 0, BOMB = 0, RAD = 0, FIRE = 50, ACID = 50)
@@ -559,7 +556,6 @@
 	gas_transfer_coefficient = 0.01
 	permeability_coefficient = 0.01
 	flags_cover = MASKCOVERSEYES | MASKCOVERSMOUTH
-	dyeable = FALSE
 
 	sprite_sheets = list(
 		"Vox" = 'icons/mob/clothing/species/vox/mask.dmi',
@@ -594,8 +590,6 @@
 	chameleon_action.emp_randomise(INFINITY)
 
 /obj/item/clothing/mask/chameleon/voice_change
-	name = "gas mask"
-	desc = "A face-covering mask that can be connected to an air supply. While good for concealing your identity, it isn't good for blocking gas flow."
 	icon_state = "swat"
 	item_state = "swat"
 
@@ -639,10 +633,6 @@
 	chameleon_action.emp_randomise()
 
 /obj/item/clothing/shoes/chameleon/noslip
-	name = "black shoes"
-	icon_state = "black"
-	item_color = "black"
-	desc = "A pair of black shoes."
 	no_slip = TRUE
 
 /obj/item/clothing/shoes/chameleon/noslip/broken/Initialize(mapload)
@@ -650,7 +640,6 @@
 	chameleon_action.emp_randomise(INFINITY)
 
 /obj/item/storage/backpack/chameleon
-	name = "backpack"
 
 	sprite_sheets = list(
 		"Vox" = 'icons/mob/clothing/species/vox/back.dmi'
@@ -703,7 +692,6 @@
 	chameleon_action.emp_randomise(INFINITY)
 
 /obj/item/radio/headset/chameleon
-	name = "radio headset"
 	var/datum/action/item_action/chameleon_change/chameleon_action
 
 /obj/item/radio/headset/chameleon/Initialize(mapload)
@@ -771,7 +759,6 @@
 /obj/item/clothing/neck/chameleon
 	name = "black tie"
 	desc = "A neosilk clip-on tie."
-	icon = 'icons/obj/clothing/neck.dmi'
 	icon_state = "blacktie"
 	resistance_flags = NONE
 

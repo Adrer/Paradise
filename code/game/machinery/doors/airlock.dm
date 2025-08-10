@@ -51,7 +51,6 @@ GLOBAL_LIST_EMPTY(airlock_emissive_underlays)
 	desc = "An airlock door keeping you safe from the vacuum of space. Only works if closed."
 	icon = 'icons/obj/doors/airlocks/station/public.dmi'
 	icon_state = "closed"
-	anchored = TRUE
 	max_integrity = 300
 	integrity_failure = 70
 	damage_deflection = AIRLOCK_DAMAGE_DEFLECTION_N
@@ -86,6 +85,10 @@ GLOBAL_LIST_EMPTY(airlock_emissive_underlays)
 	var/airlock_material //material of inner filling; if its an airlock with glass, this should be set to "glass"
 	var/overlays_file = 'icons/obj/doors/airlocks/station/overlays.dmi'
 	var/note_overlay_file = 'icons/obj/doors/airlocks/station/overlays.dmi' //Used for papers and photos pinned to the airlock
+	var/closed_icon_state = "closed"
+	var/open_icon_state = "open"
+	var/opening_icon_state = "opening"
+	var/closing_icon_state = "closing"
 	var/normal_integrity = AIRLOCK_INTEGRITY_N
 	var/prying_so_hard = FALSE
 	var/paintable = TRUE // If the airlock type can be painted with an airlock painter
@@ -385,7 +388,7 @@ GLOBAL_LIST_EMPTY(airlock_emissive_underlays)
 	if(operating && !override)
 		return
 
-	icon_state = density ? "closed" : "open"
+	icon_state = density ? closed_icon_state : open_icon_state
 	switch(state)
 		if(0)
 			if(density)
@@ -419,7 +422,7 @@ GLOBAL_LIST_EMPTY(airlock_emissive_underlays)
 	var/mutable_appearance/sparks_underlay
 	switch(state)
 		if(AIRLOCK_CLOSED)
-			frame_overlay = get_airlock_overlay("closed", icon)
+			frame_overlay = get_airlock_overlay(closed_icon_state, icon)
 			buttons_underlay = get_airlock_emissive_underlay("closed_lightmask", overlays_file)
 			if(airlock_material)
 				filling_overlay = get_airlock_overlay("[airlock_material]_closed", overlays_file)
@@ -453,7 +456,7 @@ GLOBAL_LIST_EMPTY(airlock_emissive_underlays)
 		if(AIRLOCK_DENY)
 			if(!arePowerSystemsOn())
 				return
-			frame_overlay = get_airlock_overlay("closed", icon)
+			frame_overlay = get_airlock_overlay(closed_icon_state, icon)
 			if(airlock_material)
 				filling_overlay = get_airlock_overlay("[airlock_material]_closed", overlays_file)
 			else
@@ -478,7 +481,7 @@ GLOBAL_LIST_EMPTY(airlock_emissive_underlays)
 				note_overlay = get_airlock_overlay(notetype, note_overlay_file)
 
 		if(AIRLOCK_EMAG)
-			frame_overlay = get_airlock_overlay("closed", icon)
+			frame_overlay = get_airlock_overlay(closed_icon_state, icon)
 			buttons_underlay = get_airlock_emissive_underlay("closed_lightmask", overlays_file)
 			sparks_overlay = get_airlock_overlay("sparks", overlays_file)
 			sparks_underlay = get_airlock_emissive_underlay("sparks_lightmask", overlays_file)
@@ -504,7 +507,7 @@ GLOBAL_LIST_EMPTY(airlock_emissive_underlays)
 				note_overlay = get_airlock_overlay(notetype, note_overlay_file)
 
 		if(AIRLOCK_CLOSING)
-			frame_overlay = get_airlock_overlay("closing", icon)
+			frame_overlay = get_airlock_overlay(closing_icon_state, icon)
 			buttons_underlay = get_airlock_emissive_underlay("closing_lightmask", overlays_file)
 			if(airlock_material)
 				filling_overlay = get_airlock_overlay("[airlock_material]_closing", overlays_file)
@@ -523,7 +526,7 @@ GLOBAL_LIST_EMPTY(airlock_emissive_underlays)
 				note_overlay = get_airlock_overlay("[notetype]_closing", note_overlay_file)
 
 		if(AIRLOCK_OPEN)
-			frame_overlay = get_airlock_overlay("open", icon)
+			frame_overlay = get_airlock_overlay(open_icon_state, icon)
 			if(airlock_material)
 				filling_overlay = get_airlock_overlay("[airlock_material]_open", overlays_file)
 			else
@@ -540,7 +543,7 @@ GLOBAL_LIST_EMPTY(airlock_emissive_underlays)
 				note_overlay = get_airlock_overlay("[notetype]_open", note_overlay_file)
 
 		if(AIRLOCK_OPENING)
-			frame_overlay = get_airlock_overlay("opening", icon)
+			frame_overlay = get_airlock_overlay(opening_icon_state, icon)
 			buttons_underlay = get_airlock_emissive_underlay("opening_lightmask", overlays_file)
 			if(airlock_material)
 				filling_overlay = get_airlock_overlay("[airlock_material]_opening", overlays_file)
@@ -1326,7 +1329,7 @@ GLOBAL_LIST_EMPTY(airlock_emissive_underlays)
 	operating = NONE
 	recalculate_atmos_connectivity()
 	if(safe)
-		CheckForMobs()
+		check_for_mobs()
 	return TRUE
 
 /obj/machinery/door/airlock/lock(forced=0)
@@ -1503,9 +1506,9 @@ GLOBAL_LIST_EMPTY(airlock_emissive_underlays)
 	if(!(flags & NODECONSTRUCT))
 		var/obj/structure/door_assembly/DA
 		if(assemblytype)
-			DA = new assemblytype(loc)
+			DA = new assemblytype(loc, dir)
 		else
-			DA = new /obj/structure/door_assembly(loc)
+			DA = new /obj/structure/door_assembly(loc, dir)
 			//If you come across a null assemblytype, it will produce the default assembly instead of disintegrating.
 		DA.reinforced_glass = src.reinforced_glass //tracks whether there's rglass in
 		DA.anchored = TRUE

@@ -85,8 +85,6 @@ GLOBAL_LIST_INIT(pipe_path2type, list(
 	icon = 'icons/obj/pipe-item.dmi'
 	icon_state = "simple"
 	item_state = "buildpipe"
-	w_class = WEIGHT_CLASS_NORMAL
-	level = 2
 	/// Will the constructed pipe be flipped
 	var/flipped = FALSE
 	/// The label that will be put on the constructed pipe when this is wrenched down
@@ -106,7 +104,15 @@ GLOBAL_LIST_INIT(pipe_path2type, list(
 		if(make_from.initialize_directions in list(NORTH|WEST, NORTH|EAST, SOUTH|WEST, SOUTH|EAST))
 			is_bent = TRUE
 
-		pipe_type = GLOB.pipe_path2type[makes_type] + is_bent
+		// If our path is in the list use the list
+		if(makes_type in GLOB.pipe_path2type)
+			pipe_type = GLOB.pipe_path2type[makes_type] + is_bent
+		// If our path isn't exactly in the list (e.g /obj/machinery/atmospherics/binary/pump/on) try and find an ancestor there
+		else
+			for(var/type_path in GLOB.pipe_path2type)
+				if(ispath(makes_type, type_path))
+					pipe_type = GLOB.pipe_path2type[type_path] + is_bent
+					break
 
 		switch(pipe_type)
 			if(PIPE_SUPPLY_STRAIGHT, PIPE_SUPPLY_BENT, PIPE_SUPPLY_MANIFOLD, PIPE_SUPPLY_MANIFOLD4W, PIPE_SUPPLY_CAP)
