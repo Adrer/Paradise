@@ -57,9 +57,11 @@
 	icon_state = "magic_key"
 	origin_tech = "magnets=2"
 
+/obj/item/card/emag/magic_key/pre_attack(atom/target, mob/living/user, params)
+	if(..() || !isairlock(target))
+		return FINISH_ATTACK
+
 /obj/item/card/emag/magic_key/interact_with_atom(atom/target, mob/living/user, list/modifiers)
-	if(!isairlock(target))
-		return ITEM_INTERACT_COMPLETE
 	var/obj/machinery/door/D = target
 	D.locked = FALSE
 	D.update_icon()
