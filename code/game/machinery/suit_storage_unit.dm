@@ -47,7 +47,7 @@
 	var/state_open = FALSE
 	/// If set, turned into typecache in Initialize, other wise, defaults to mob/living typecache
 	var/opening = FALSE
-	var/opening_time = 
+	var/opening_time = 0.8 SECONDS
 	var/list/occupant_typecache
 	var/atom/movable/occupant = null
 	var/board_type = /obj/item/circuitboard/suit_storage_unit
