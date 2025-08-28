@@ -46,6 +46,8 @@
 	//abstract these onto machinery eventually
 	var/state_open = FALSE
 	/// If set, turned into typecache in Initialize, other wise, defaults to mob/living typecache
+	var/opening = FALSE
+	var/opening_time = 
 	var/list/occupant_typecache
 	var/atom/movable/occupant = null
 	var/board_type = /obj/item/circuitboard/suit_storage_unit
@@ -713,13 +715,22 @@
 		storage = null
 
 /obj/machinery/suit_storage_unit/proc/toggle_open(mob/user as mob)
-	if(locked || uv)
+	if(locked || uv || opening)
 		to_chat(user, "<span class='danger'>Unable to open unit.</span>")
 		return
 	if(occupant)
 		eject_occupant(user)
 		return
+	opening = TRUE
 	state_open = !state_open
+	SStgui.update_uis(src)
+	if(state_open && opening)
+		flick_overlay_view(image(icon, src, "[base_icon_state]_opening"), src, opening_time+0.1)
+		flick_overlay_view(image(icon, src, "[base_icon_state]_lights_opening"), src, opening_time+0.1)
+	else if(!state_open && opening)
+		flick_overlay_view(image(icon, src, "[base_icon_state]_closing"), src, opening_time+0.1)
+		flick_overlay_view(image(icon, src, "[base_icon_state]_lights_closing"), src, opening_time+0.1)
+	addtimer(CALLBACK(src, PROC_REF(handle_opening)), opening_time)
 
 /obj/machinery/suit_storage_unit/proc/toggle_lock(mob/user as mob)
 	if(occupant && safeties)
