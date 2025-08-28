@@ -308,8 +308,7 @@
 		. += "[base_icon_state]_lights_red"
 		return
 
-	if(state_open)
-		. += "[base_icon_state]_open"
+	if(state_open || opening)
 		. += "[base_icon_state]_lights_open"
 		if(suit)
 			. += "[base_icon_state]_suit"
@@ -318,6 +317,7 @@
 		if(storage)
 			. += "[base_icon_state]_storage"
 	else
+		. += "[base_icon_state]_closed"
 		. += "[base_icon_state]_lights_closed"
 
 	. += "[base_icon_state]_[occupant ? "body" : "ready"]"
@@ -722,19 +722,20 @@
 		eject_occupant(user)
 		return
 	opening = TRUE
-	state_open = !state_open
 	SStgui.update_uis(src)
-	if(state_open && opening)
+	if(!state_open && opening)
 		flick_overlay_view(image(icon, src, "[base_icon_state]_opening"), src, opening_time+0.1)
 		flick_overlay_view(image(icon, src, "[base_icon_state]_lights_opening"), src, opening_time+0.1)
-	else if(!state_open && opening)
+	else if(state_open && opening)
 		flick_overlay_view(image(icon, src, "[base_icon_state]_closing"), src, opening_time+0.1)
 		flick_overlay_view(image(icon, src, "[base_icon_state]_lights_closing"), src, opening_time+0.1)
 	addtimer(CALLBACK(src, PROC_REF(handle_opening)), opening_time)
 
 /obj/machinery/suit_storage_unit/proc/handle_opening()
 	opening = FALSE
+	state_open = !state_open
 	update_icon(UPDATE_OVERLAYS)
+	SStgui.update_uis(src)
 
 /obj/machinery/suit_storage_unit/proc/toggle_lock(mob/user as mob)
 	if(occupant && safeties)
