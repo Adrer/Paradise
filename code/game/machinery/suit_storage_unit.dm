@@ -732,6 +732,10 @@
 		flick_overlay_view(image(icon, src, "[base_icon_state]_lights_closing"), src, opening_time+0.1)
 	addtimer(CALLBACK(src, PROC_REF(handle_opening)), opening_time)
 
+/obj/machinery/suit_storage_unit/proc/handle_opening()
+	opening = FALSE
+	update_icon(UPDATE_OVERLAYS)
+
 /obj/machinery/suit_storage_unit/proc/toggle_lock(mob/user as mob)
 	if(occupant && safeties)
 		to_chat(user, "<span class='warning'>The unit's safety protocols disallow locking when a biological form is detected inside its compartments.</span>")
