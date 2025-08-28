@@ -122,9 +122,6 @@
 
 /obj/machinery/computer/mech_bay_power_console
 	name = "mech bay power control console"
-	density = TRUE
-	anchored = TRUE
-	icon = 'icons/obj/computer.dmi'
 	icon_keyboard = "tech_key"
 	icon_screen = "recharge_comp"
 	light_color = LIGHT_COLOR_FADEDPURPLE
@@ -209,7 +206,7 @@
 				)
 	return data
 
-/obj/machinery/computer/mech_bay_power_console/Initialize()
+/obj/machinery/computer/mech_bay_power_console/Initialize(mapload)
 	reconnect()
 	update_icon()
 	return ..()

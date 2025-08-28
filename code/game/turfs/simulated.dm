@@ -30,6 +30,14 @@
 	/// If a fire is ongoing, how much fuel did we burn last tick?
 	/// Value is not updated while below PLASMA_MINIMUM_BURN_TEMPERATURE.
 	var/fuel_burnt = 0
+	/// When do we last remember having wind?
+	var/wind_tick = null
+	/// Wind's X component
+	var/wind_x = null
+	/// Wind's Y component
+	var/wind_y = null
+	/// Wind effect
+	var/obj/effect/wind/wind_effect = null
 
 /turf/simulated/proc/break_tile()
 	return
@@ -67,15 +75,16 @@
 	if(!found)
 		return
 
-	var/datum/milla_safe/turf_cool/milla = new()
+	var/datum/milla_safe/quench/milla = new()
 	milla.invoke_async(src, delta, divisor)
 
-/datum/milla_safe/turf_cool
+/datum/milla_safe/quench
 
-/datum/milla_safe/turf_cool/on_run(turf/T, delta, divisor)
+/datum/milla_safe/quench/on_run(turf/T, delta, divisor)
 	var/datum/gas_mixture/air = get_turf_air(T)
 	air.set_temperature(max(min(air.temperature()-delta * divisor,air.temperature() / divisor), TCMB))
 	air.react()
+	extinguish_hotspot(T)
 
 /*
  * Makes a turf slippery using the given parameters
@@ -102,6 +111,7 @@
 			else
 				wet_overlay = image('icons/effects/water.dmi', src, "wet_static")
 		wet_overlay.plane = FLOOR_OVERLAY_PLANE
+		wet_overlay.appearance_flags = RESET_TRANSFORM
 		overlays += wet_overlay
 	if(time == INFINITY)
 		return
@@ -130,7 +140,6 @@
 			switch(src.wet)
 				if(TURF_WET_WATER)
 					if(!(M.slip("the wet floor", WATER_WEAKEN_TIME, tilesSlipped = 0, walkSafely = 1)))
-						M.inertia_dir = 0
 						return
 
 				if(TURF_WET_LUBE) //lube
@@ -139,7 +148,6 @@
 
 				if(TURF_WET_ICE) // Ice
 					if(M.slip("the icy floor", 8 SECONDS, tilesSlipped = 0, walkSafely = 0))
-						M.inertia_dir = 0
 						if(prob(5))
 							var/obj/item/organ/external/affected = M.get_organ("head")
 							if(affected)
@@ -149,6 +157,10 @@
 
 				if(TURF_WET_PERMAFROST) // Permafrost
 					M.slip("the frosted floor", 10 SECONDS, tilesSlipped = 1, walkSafely = 0, slipAny = 1)
+
+/turf/simulated/BeforeChange()
+	QDEL_NULL(wind_effect)
+	return ..()
 
 /turf/simulated/ChangeTurf(path, defer_change = FALSE, keep_icon = TRUE, ignore_air = FALSE, copy_existing_baseturf = TRUE)
 	. = ..()

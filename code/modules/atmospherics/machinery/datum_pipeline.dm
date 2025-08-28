@@ -7,6 +7,8 @@
 
 	var/update = TRUE
 
+	var/list/crawlers = list()
+
 /datum/pipeline/New()
 	SSair.pipenets += src
 
@@ -23,6 +25,10 @@
 		P.parent = null
 	for(var/obj/machinery/atmospherics/A in other_atmosmch)
 		A.nullifyPipenet(src)
+
+	other_airs.Cut()
+	members.Cut()
+	other_atmosmch.Cut()
 	return ..()
 
 /datum/pipeline/process()//This use to be called called from the pipe networks
@@ -198,15 +204,20 @@
 
 	for(var/i=1;i<=length(PL);i++)
 		var/datum/pipeline/P = PL[i]
-		if(!P)
-			return
+		if(!istype(P) || QDELETED(P) || isnull(P.air))
+			continue
 		GL += P.air
 		GL += P.other_airs
+
 		for(var/obj/machinery/atmospherics/binary/valve/V in P.other_atmosmch)
+			if(QDELETED(V))
+				continue
 			if(V.open)
 				PL |= V.parent1
 				PL |= V.parent2
 		for(var/obj/machinery/atmospherics/trinary/tvalve/T in P.other_atmosmch)
+			if(QDELETED(T))
+				continue
 			if(!T.state)
 				if(src != T.parent2) // otherwise dc'd side connects to both other sides!
 					PL |= T.parent1
@@ -216,7 +227,45 @@
 					PL |= T.parent1
 					PL |= T.parent2
 		for(var/obj/machinery/atmospherics/unary/portables_connector/C in P.other_atmosmch)
+			if(QDELETED(C))
+				continue
 			if(C.connected_device)
 				GL += C.portableConnectorReturnAir()
 
 	share_many_airs(GL)
+
+/datum/pipeline/proc/add_ventcrawler(mob/living/crawler)
+	if(!(crawler in crawlers))
+		RegisterSignal(crawler, COMSIG_LIVING_EXIT_VENTCRAWL, PROC_REF(remove_ventcrawler), crawler)
+		crawlers += crawler
+
+/datum/pipeline/proc/remove_ventcrawler(mob/living/crawler)
+	UnregisterSignal(crawler, COMSIG_LIVING_EXIT_VENTCRAWL)
+	crawlers -= crawler
+
+/**
+ * Gets all pipelines connected to this with valves, including src.
+ */
+/datum/pipeline/proc/get_connected_pipelines()
+	. = list()
+	var/list/possible_expansions = list(src)
+	while(length(possible_expansions))
+		var/datum/pipeline/P = popleft(possible_expansions)
+		if(!P)
+			break
+		. |= P
+		for(var/obj/machinery/atmospherics/V in P.other_atmosmch)
+			for(var/datum/pipeline/possible in V.get_machinery_pipelines())
+				if(possible in .)
+					continue
+				possible_expansions |= possible
+
+/datum/pipeline/proc/get_ventcrawls(check_welded = TRUE)
+	. = list()
+	for(var/datum/pipeline/P in get_connected_pipelines())
+		for(var/obj/machinery/atmospherics/V in P.other_atmosmch)
+			if(!is_type_in_list(V, GLOB.ventcrawl_machinery))
+				continue
+			if(check_welded && !V.can_crawl_through())
+				continue
+			. |= V

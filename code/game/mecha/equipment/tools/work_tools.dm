@@ -131,13 +131,12 @@
 	desc = "Equipment for engineering exosuits. A rapid-firing high capacity fire extinguisher."
 	icon_state = "mecha_exting"
 	equip_cooldown = 5
-	energy_drain = 0
 	range = MECHA_MELEE | MECHA_RANGED
 
-/obj/item/mecha_parts/mecha_equipment/extinguisher/New()
+/obj/item/mecha_parts/mecha_equipment/extinguisher/Initialize(mapload)
+	. = ..()
 	create_reagents(1000)
 	reagents.add_reagent("water", 1000)
-	..()
 
 /obj/item/mecha_parts/mecha_equipment/extinguisher/action(atom/target) //copypasted from extinguisher. TODO: Rewrite from scratch.
 	if(!action_checks(target) || get_dist(chassis, target)>3)
@@ -205,13 +204,12 @@
 	range = MECHA_MELEE | MECHA_RANGED
 	flags_2 = NO_MAT_REDEMPTION_2
 	var/mode = MECH_RCD_MODE_DECONSTRUCT
-	var/canRwall = 0
-	toolspeed = 1
+	var/can_rwall = 0
 	usesound = 'sound/items/deconstruct.ogg'
 
-/obj/item/mecha_parts/mecha_equipment/rcd/New()
+/obj/item/mecha_parts/mecha_equipment/rcd/Initialize(mapload)
+	. = ..()
 	GLOB.rcd_list += src
-	..()
 
 /obj/item/mecha_parts/mecha_equipment/rcd/Destroy()
 	GLOB.rcd_list -= src
@@ -231,7 +229,7 @@
 	switch(mode)
 		if(MECH_RCD_MODE_DECONSTRUCT)
 			if(iswallturf(target))
-				if((isreinforcedwallturf(target) && !canRwall) || istype(target, /turf/simulated/wall/indestructible))
+				if((isreinforcedwallturf(target) && !can_rwall) || istype(target, /turf/simulated/wall/indestructible))
 					return 0
 				var/turf/simulated/wall/W = target
 				occupant_message("Deconstructing [target]...")
@@ -280,7 +278,8 @@
 
 
 /obj/item/mecha_parts/mecha_equipment/rcd/Topic(href,href_list)
-	..()
+	if(..())
+		return
 	if(href_list["mode"])
 		mode = text2num(href_list["mode"])
 		switch(mode)
@@ -334,10 +333,10 @@
 	var/obj/item/stack/cable_coil/cable
 	var/max_cable = 1000
 
-/obj/item/mecha_parts/mecha_equipment/cable_layer/New()
+/obj/item/mecha_parts/mecha_equipment/cable_layer/Initialize(mapload)
+	. = ..()
 	cable = new(src)
 	cable.amount = 0
-	..()
 
 /obj/item/mecha_parts/mecha_equipment/cable_layer/can_attach(obj/mecha/working/M)
 	if(..())
@@ -375,7 +374,8 @@
 
 
 /obj/item/mecha_parts/mecha_equipment/cable_layer/Topic(href,href_list)
-	..()
+	if(..())
+		return
 	if(href_list["toggle"])
 		set_ready_state(!equip_ready)
 		occupant_message("[src] [equip_ready?"dea":"a"]ctivated.")
@@ -501,8 +501,8 @@
 	chassis.occupant.changeNext_click(equip_cooldown)
 	var/proximate = chassis.Adjacent(target)
 	if(proximate)
-		target.attackby(internal_crusher, chassis.occupant)
-	internal_crusher.afterattack(target, chassis.occupant, proximate, null)
+		target.attackby__legacy__attackchain(internal_crusher, chassis.occupant)
+	internal_crusher.afterattack__legacy__attackchain(target, chassis.occupant, proximate, null)
 
 #undef MECH_RCD_MODE_DECONSTRUCT
 #undef MECH_RCD_MODE_WALL_OR_FLOOR

@@ -13,6 +13,8 @@
 	var/opened_door_sprite
 	/// Overwrites icon_state for the closed door sprite. Only necessary if the closed door sprite has a different name than the icon_state.
 	var/closed_door_sprite
+	/// Added to initial(icon_state) if not null. Used for IC customization, e.g. when painting cardboard boxes.
+	var/custom_skin
 	var/opened = FALSE
 	var/welded = FALSE
 	var/locked = FALSE
@@ -42,7 +44,7 @@
 	var/door_hinge_x = -6.5
 	/// Amount of time it takes for the door animation to play
 	var/door_anim_time = 2.0 // set to 0 to make the door not animate at all
-	/// Whether this closet uses a door overlay at all. If FALSE, it'll switch to a system where the entire icon_state is replaced with [icon_state]_open instead.
+	/// Whether this closet uses a door overlay at all. If `FALSE`, it'll switch to a system where the entire icon_state is replaced with `[icon_state]_open` instead.
 	var/enable_door_overlay = TRUE
 	/// Whether this closet uses a door overlay for when it is opened
 	var/has_opened_overlay = TRUE
@@ -66,9 +68,9 @@
 	. = ..()
 	if(!enable_door_overlay)
 		if(opened)
-			icon_state = "[initial(icon_state)]_open"
+			icon_state = "[initial(icon_state)][custom_skin]_open"
 		else
-			icon_state = initial(icon_state)
+			icon_state = "[initial(icon_state)][custom_skin]"
 
 /obj/structure/closet/proc/closet_update_overlays(list/new_overlays)
 	. = new_overlays
@@ -79,7 +81,7 @@
 			door_overlay.overlays += emissive_blocker(door_overlay.icon, door_overlay.icon_state, alpha = door_overlay.alpha) // If we don't do this the door doesn't block emissives and it looks weird.
 		else if(!opened && has_closed_overlay)
 			. += "[closed_door_sprite || icon_state]_closed"
-	
+
 	if(opened)
 		return
 
@@ -165,7 +167,7 @@
 	QDEL_NULL(door_obj)
 	return ..()
 
-/obj/structure/closet/CanPass(atom/movable/mover, turf/target)
+/obj/structure/closet/CanPass(atom/movable/mover, border_dir)
 	if(wall_mounted)
 		return TRUE
 	return (!density)
@@ -179,6 +181,8 @@
 	for(var/obj/structure/closet/closet in get_turf(src))
 		if(closet != src && closet.anchored != 1)
 			return FALSE
+	for(var/mob/living/simple_animal/hostile/megafauna/M in get_turf(src))
+		return FALSE
 	return TRUE
 
 /obj/structure/closet/proc/dump_contents()
@@ -214,30 +218,32 @@
 	update_appearance()
 	return TRUE
 
-/obj/structure/closet/proc/close()
+/obj/structure/closet/proc/close(mob/user)
 	if(!opened)
 		return FALSE
 	if(!can_close())
 		return FALSE
 
 	var/itemcount = 0
-
+	var/temp_capacity = storage_capacity
+	if(user && user.mind && HAS_TRAIT(user.mind, TRAIT_PACK_RAT))
+		temp_capacity *= 1.5
 	//Cham Projector Exception
 	for(var/obj/effect/dummy/chameleon/AD in loc)
-		if(itemcount >= storage_capacity)
+		if(itemcount >= temp_capacity)
 			break
 		AD.forceMove(src)
 		itemcount++
 
 	for(var/obj/item/I in loc)
-		if(itemcount >= storage_capacity)
+		if(itemcount >= temp_capacity)
 			break
 		if(!I.anchored)
 			I.forceMove(src)
 			itemcount++
 
 	for(var/mob/M in loc)
-		if(itemcount >= storage_capacity)
+		if(itemcount >= temp_capacity)
 			break
 		if(isobserver(M))
 			continue
@@ -245,7 +251,7 @@
 			continue
 		if(M.buckled || M.anchored || M.has_buckled_mobs())
 			continue
-		if(isAI(M))
+		if(is_ai(M))
 			continue
 
 		M.forceMove(src)
@@ -255,13 +261,12 @@
 	if(enable_door_overlay)
 		animate_door(TRUE)
 	update_appearance()
-	playsound(loc, close_sound, close_sound_volume, TRUE, -3)
 	density = TRUE
 
 	return TRUE
 
 /obj/structure/closet/proc/toggle(mob/user)
-	if(!(opened ? close() : open()))
+	if(!(opened ? close(user) : open()))
 		to_chat(user, "<span class='notice'>It won't budge!</span>")
 
 /obj/structure/closet/proc/bust_open()
@@ -279,7 +284,7 @@
 	if(!broken && !(flags & NODECONSTRUCT))
 		bust_open()
 
-/obj/structure/closet/attackby(obj/item/W, mob/user, params)
+/obj/structure/closet/attackby__legacy__attackchain(obj/item/W, mob/user, params)
 	if(istype(W, /obj/item/rcs) && !opened)
 		var/obj/item/rcs/E = W
 		E.try_send_container(user, src)
@@ -296,7 +301,7 @@
 			return FALSE
 		if(user.a_intent != INTENT_HELP) // Stops you from putting your baton in the closet on accident
 			return
-		if(isrobot(user))
+		if(isrobot(user) && !istype(W.loc, /obj/item/gripper))
 			return
 		if(!user.drop_item()) //couldn't drop the item
 			to_chat(user, "<span class='notice'>\The [W] is stuck to your hand, you cannot put it in \the [src]!</span>")
@@ -309,7 +314,7 @@
 			return TRUE // It's resolved. No afterattack needed. Stops you from emagging lockers when putting in an emag
 	else if(can_be_emaged && (istype(W, /obj/item/card/emag) || istype(W, /obj/item/melee/energy/blade) && !broken))
 		emag_act(user)
-	else if(istype(W, /obj/item/stack/packageWrap))
+	else if(istype(W, /obj/item/stack/package_wrap))
 		return
 	else if(user.a_intent != INTENT_HARM)
 		closed_item_click(user)
@@ -445,7 +450,7 @@
 	//		breakout_time++ //Harder to get out of welded lockers than locked lockers
 
 	//okay, so the closet is either welded or locked... resist!!!
-	to_chat(L, "<span class='warning'>You lean on the back of \the [src] and start pushing the door open. (this will take about [breakout_time] minutes)</span>")
+	to_chat(L, "<span class='warning'>You lean on the back of \the [src] and start pushing the door open. (this will take about [breakout_time / 600] minutes)</span>")
 	for(var/mob/O in viewers(usr.loc))
 		O.show_message("<span class='danger'>[src] begins to shake violently!</span>", 1)
 
@@ -465,8 +470,8 @@
 			to_chat(usr, "<span class='warning'>You successfully break out!</span>")
 			for(var/mob/O in viewers(L.loc))
 				O.show_message("<span class='danger'>\the [usr] successfully broke out of \the [src]!</span>", 1)
-			if(istype(loc, /obj/structure/bigDelivery)) //nullspace ect.. read the comment above
-				var/obj/structure/bigDelivery/BD = loc
+			if(istype(loc, /obj/structure/big_delivery)) //nullspace ect.. read the comment above
+				var/obj/structure/big_delivery/BD = loc
 				BD.attack_hand(usr)
 			open()
 
@@ -495,7 +500,7 @@
 	if(opened && can_close())
 		target.forceMove(src)
 		visible_message("<span class='danger'>[attacker] shoves [target] inside [src]!</span>", "<span class='warning'>You hear a thud, and something clangs shut.</span>")
-		close()
+		close(attacker)
 		add_attack_logs(attacker, target, "shoved into [src]")
 		return TRUE
 
@@ -509,30 +514,35 @@
 
 /obj/structure/closet/bluespace
 	name = "bluespace closet"
-	desc = "A storage unit that moves and stores through the fourth dimension."
+	desc = "An experimental storage unit which defies several conventional laws of physics. It appears to only tenuously exist on this plane of reality, allowing it to phase through anything less solid than a wall."
 	density = FALSE
 	icon_state = "bluespace"
 	storage_capacity = 60
 	var/materials = list(MAT_METAL = 5000, MAT_PLASMA = 2500, MAT_TITANIUM = 500, MAT_BLUESPACE = 500)
 
-/obj/structure/closet/bluespace/CheckExit(atom/movable/AM)
-	UpdateTransparency(AM, loc)
-	return TRUE
+/obj/structure/closet/bluespace/Initialize(mapload)
+	. = ..()
+	var/static/list/loc_connections = list(
+		COMSIG_ATOM_ENTERED = PROC_REF(UpdateTransparency),
+		COMSIG_ATOM_EXITED = PROC_REF(UpdateTransparency),
+	)
 
-/obj/structure/closet/bluespace/proc/UpdateTransparency(atom/movable/AM, atom/location)
+	AddElement(/datum/element/connect_loc, loc_connections)
+
+/obj/structure/closet/bluespace/proc/UpdateTransparency()
+	SIGNAL_HANDLER  // COMSIG_ATOM_ENTERED + COMSIG_ATOM_EXITED
 	transparent = FALSE
-	for(var/atom/A in location)
-		if(A.density && A != src && A != AM)
+	if(!get_turf(loc))
+		return
+
+	for(var/atom/A in loc)
+		if(A.density && A != src)
 			transparent = TRUE
 			alpha = 180
 			update_icon()
 			return
 	alpha = 255
 	update_icon()
-
-/obj/structure/closet/bluespace/Crossed(atom/movable/AM, oldloc)
-	if(AM.density)
-		UpdateTransparency(location = loc)
 
 /obj/structure/closet/bluespace/Move(NewLoc, direct) // Allows for "phasing" throug objects but doesn't allow you to stuff your EOC homebois in one of these and push them through walls.
 	var/turf/T = get_turf(NewLoc)
@@ -541,8 +551,10 @@
 	for(var/atom/A in T.contents)
 		if(A.density && isairlock(A))
 			return
-	UpdateTransparency(src, NewLoc)
-	forceMove(NewLoc)
+
+	. = ..()
+
+	UpdateTransparency()
 
 /obj/structure/closet/bluespace/close()
 	. = ..()

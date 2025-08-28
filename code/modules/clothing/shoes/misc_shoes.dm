@@ -2,7 +2,6 @@
 	name = "mime shoes"
 	icon_state = "mime"
 	item_color = "mime"
-	dyeable = TRUE
 
 /// basic syndicate combat boots for nuke ops and mob corpses
 /obj/item/clothing/shoes/combat
@@ -40,13 +39,11 @@
 	desc = "A pair of magic, black shoes."
 	icon_state = "black"
 	resistance_flags = FIRE_PROOF |  ACID_PROOF
-	dyeable = FALSE
 
 /obj/item/clothing/shoes/sandal/magic
 	name = "magical sandals"
 	desc = "A pair of sandals imbued with magic."
 	resistance_flags = FIRE_PROOF |  ACID_PROOF
-	dyeable = FALSE
 
 /obj/item/clothing/shoes/galoshes
 	name = "galoshes"
@@ -93,7 +90,6 @@
 	// "Dyeable" in this case is a bit of an understatement, washing these
 	// with a crayon will give them the appearance and name of normal
 	// shoes, but the functionality of clown shoes.
-	dyeable = TRUE
 
 	var/enabled_waddle = TRUE
 
@@ -103,7 +99,7 @@
 
 /obj/item/clothing/shoes/clown_shoes/equipped(mob/user, slot)
 	. = ..()
-	if(slot == SLOT_HUD_SHOES && enabled_waddle)
+	if(slot == ITEM_SLOT_SHOES && enabled_waddle)
 		user.AddElement(/datum/element/waddling)
 
 /obj/item/clothing/shoes/clown_shoes/dropped(mob/user)
@@ -154,7 +150,7 @@
 	var/recharging_time = 0
 
 /obj/item/clothing/shoes/clown_shoes/slippers/item_action_slot_check(slot, mob/user)
-	if(slot == SLOT_HUD_SHOES)
+	if(slot == ITEM_SLOT_SHOES)
 		return TRUE
 
 /obj/item/clothing/shoes/clown_shoes/slippers/proc/slide_one(mob/living/user, progress, prev_dir , prev_flags)
@@ -208,12 +204,10 @@
 	can_cut_open = 0
 	icon_state = "jacksandal"
 	item_color = "jacksandal"
-	dyeable = FALSE
 
 /obj/item/clothing/shoes/jackboots/noisy
 	name = "heavy jackboots"
 	desc = "Outdated heavier versions of the standard Nanotrasen-issue Security combat boots. Pick up that can."
-	dyeable = FALSE
 
 /obj/item/clothing/shoes/jackboots/noisy/Initialize(mapload)
 	. = ..()
@@ -236,7 +230,16 @@
 	heat_protection = FEET|LEGS
 	max_heat_protection_temperature = SHOES_MAX_TEMP_PROTECT
 	knife_slot = TRUE
-	dyeable = FALSE
+
+/obj/item/clothing/shoes/workboots/smithing
+	name = "smithing boots"
+	desc = "Steel-toed smithing boots to designed to protect the feet against both heavy objects and hot metal."
+	icon_state = "smith"
+	resistance_flags = FIRE_PROOF
+	cold_protection = FEET|LEGS
+	min_cold_protection_temperature = SHOES_MIN_TEMP_PROTECT
+	heat_protection = FEET|LEGS
+	max_heat_protection_temperature = SHOES_MAX_TEMP_PROTECT
 
 /obj/item/clothing/shoes/winterboots
 	name = "winter boots"
@@ -265,7 +268,7 @@
 
 /obj/item/clothing/shoes/cyborg
 	name = "cyborg boots"
-	desc = "Shoes for a cyborg costume"
+	desc = "Shoes for a cyborg costume."
 	icon_state = "boots"
 	dyeable = FALSE
 
@@ -390,7 +393,7 @@
 
 /obj/item/clothing/shoes/cowboy/black
 	name = "black cowboy boots"
-	desc = "A pair a' black rustlers' boots"
+	desc = "A pair a' black rustlers' boots."
 	icon_state = "cowboy_black"
 	item_color = "cowboy_black"
 
@@ -423,9 +426,9 @@
 	desc = "A pair of masterfully crafted lizard skin boots. Finally a good application for the station's most bothersome inhabitants."
 	icon_state = "lizardboots_blue"
 
-/obj/effect/spawner/lootdrop/lizardboots
+/obj/effect/spawner/random/lizardboots
 	name = "random lizard boot quality"
-	desc = "Which ever gets picked, the lizard race loses"
+	desc = "Which ever gets picked, the lizard race loses."
 	icon = 'icons/obj/clothing/shoes.dmi'
 	icon_state = "lizardboots_green"
 	loot = list(
@@ -437,8 +440,6 @@
 	desc = "A roll of treated canvas used for wrapping claws or paws."
 	icon_state = "clothwrap"
 	item_state = "clothwrap"
-	force = 0
-	w_class = WEIGHT_CLASS_SMALL
 	dyeable = FALSE
 
 /obj/item/clothing/shoes/bhop
@@ -450,7 +451,6 @@
 	resistance_flags = FIRE_PROOF
 	actions_types = list(/datum/action/item_action/bhop)
 	permeability_coefficient = 0.05
-	can_cut_open = FALSE
 	knife_slot = TRUE
 	dyeable = FALSE
 
@@ -460,7 +460,7 @@
 	var/recharging_time = 0 //time until next dash
 
 /obj/item/clothing/shoes/bhop/item_action_slot_check(slot)
-	if(slot == SLOT_HUD_SHOES)
+	if(slot == ITEM_SLOT_SHOES)
 		return TRUE
 
 /obj/item/clothing/shoes/bhop/ui_action_click(mob/user, action)
@@ -478,6 +478,7 @@
 		user.visible_message("<span class='warning'>[usr] dashes forward into the air!</span>")
 		recharging_time = world.time + recharging_rate
 	else
+		REMOVE_TRAIT(user, TRAIT_FLYING, "bhop_shoes")
 		to_chat(user, "<span class='warning'>Something prevents you from dashing forward!</span>")
 
 /obj/item/clothing/shoes/ducky

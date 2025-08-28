@@ -97,7 +97,6 @@
 /datum/sprite_accessory/head_accessory/none
 	name = "None"
 	species_allowed = list("Human", "Unathi", "Diona", "Grey", "Kidan", "Machine", "Tajaran", "Vulpkanin", "Skrell", "Slime People", "Skeleton", "Vox")
-	icon_state = "accessory_none"
 
 /* BODY MARKINGS */
 
@@ -114,7 +113,6 @@
 
 /datum/sprite_accessory/body_markings/tail
 	species_allowed = list()
-	icon_state = "accessory_none"
 	marking_location = "tail"
 	tails_allowed = null
 
@@ -462,6 +460,10 @@
 	name = "Rainbow Shirt"
 	icon_state = "shirt_rainbow"
 
+/datum/sprite_accessory/undershirt/shirt_wave
+	name = "Great Wave Shirt"
+	icon_state = "shirt_wave"
+
 //end graphic shirts
 
 //short sleeved
@@ -566,6 +568,15 @@
 	name = "Striped Tank-Top"
 	icon_state = "tank_stripes"
 //end tanktops
+
+//paratoberfest/contributor reward items
+/datum/sprite_accessory/undershirt/reward
+	fluff = TRUE
+
+/datum/sprite_accessory/undershirt/reward/ptbf24
+	name = "Great Synthwave Shirt"
+	icon_state = "shirt_ptbf24"
+//end rewards
 
 ///////////////////////
 // Socks Definitions //

@@ -84,6 +84,8 @@
 		/obj/item/book/manual/nuclear,
 		/obj/item/book/manual/wiki,
 		/obj/item/book/manual/hydroponics_pod_people,
+		/obj/item/book/manual/wiki/security_space_law/imaginary,
+		/obj/item/book/manual/wiki/sop_legal/imaginary
 	)
 
 	var/newid = 1
@@ -452,7 +454,8 @@
 	var/list/flag_json = list()
 	//Flagged book json is stored as such: "[[reporter_ckey1, report_id1],[reporter_ckey2, report_id2]]""
 	for(var/datum/flagged_book/book in reportedbook.reports)
-		flag_json += list(list( //yes this is intentional
+		//yes this is intentional
+		flag_json += list(list(
 			book.reporter,
 			book.category_id,
 		))

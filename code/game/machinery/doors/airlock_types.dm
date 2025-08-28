@@ -160,16 +160,14 @@
 	paintable = FALSE
 	var/last_event = 0
 
-/obj/machinery/door/airlock/uranium/process()
-	if(world.time > last_event + 20)
-		if(prob(50))
-			radiate()
-		last_event = world.time
-	..()
+/obj/machinery/door/airlock/uranium/Initialize(mapload)
+	. = ..()
+	var/datum/component/inherent_radioactivity/radioactivity = AddComponent(/datum/component/inherent_radioactivity, 150, 0, 0, 1.5)
+	START_PROCESSING(SSradiation, radioactivity)
 
-/obj/machinery/door/airlock/uranium/proc/radiate()
-	radiation_pulse(get_turf(src), 150)
 
+/obj/machinery/door/airlock/uranium/attack_hand(mob/user)
+	. = ..()
 
 /obj/machinery/door/airlock/uranium/glass
 	opacity = FALSE
@@ -182,7 +180,7 @@
 	assemblytype = /obj/structure/door_assembly/door_assembly_plasma
 	paintable = FALSE
 
-/obj/machinery/door/airlock/plasma/temperature_expose(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/obj/machinery/door/airlock/plasma/temperature_expose(exposed_temperature, exposed_volume)
 	..()
 	if(exposed_temperature > 300)
 		PlasmaBurn(exposed_temperature)
@@ -197,18 +195,18 @@
 	DA = new /obj/structure/door_assembly(loc)
 	if(glass)
 		DA.glass = TRUE
-	DA.update_icon()
-	DA.update_name()
+	DA.update_appearance(UPDATE_NAME|UPDATE_ICON)
 	qdel(src)
 
-/obj/machinery/door/airlock/plasma/attackby(obj/item/C, mob/user, params)
-	if(C.get_heat() > 300)
+/obj/machinery/door/airlock/plasma/item_interaction(mob/living/user, obj/item/used, list/modifiers)
+	if(used.get_heat() > 300)
 		message_admins("Plasma airlock ignited by [key_name_admin(user)] in ([x],[y],[z] - <a href='byond://?_src_=holder;adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
 		log_game("Plasma airlock ignited by [key_name(user)] in ([x],[y],[z])")
-		investigate_log("was <font color='red'><b>ignited</b></font> by [key_name(user)]","atmos")
-		ignite(C.get_heat())
-	else
-		return ..()
+		investigate_log("was <font color='red'><b>ignited</b></font> by [key_name(user)]",INVESTIGATE_ATMOS)
+		ignite(used.get_heat())
+		return ITEM_INTERACT_COMPLETE
+
+	return ..()
 
 /obj/machinery/door/airlock/plasma/glass
 	opacity = FALSE
@@ -216,7 +214,7 @@
 
 /obj/machinery/door/airlock/bananium
 	name = "bananium airlock"
-	desc = "Honkhonkhonk"
+	desc = "Honkhonkhonk!"
 	icon = 'icons/obj/doors/airlocks/station/bananium.dmi'
 	assemblytype = /obj/structure/door_assembly/door_assembly_bananium
 	doorOpen = 'sound/items/bikehorn.ogg'
@@ -323,7 +321,6 @@
 /obj/machinery/door/airlock/centcom
 	icon = 'icons/obj/doors/airlocks/centcom/centcom.dmi'
 	overlays_file = 'icons/obj/doors/airlocks/centcom/overlays.dmi'
-	opacity = TRUE
 	explosion_block = 2
 	assemblytype = /obj/structure/door_assembly/door_assembly_centcom
 	normal_integrity = 1000
@@ -333,7 +330,7 @@
 	glass = TRUE
 	opacity = FALSE
 
-/obj/machinery/door/airlock/centcom/glass/Initialize()
+/obj/machinery/door/airlock/centcom/glass/Initialize(mapload)
 	. = ..()
 	update_icon()
 
@@ -367,11 +364,11 @@
 
 /obj/machinery/door/airlock/hatch/syndicate
 	name = "syndicate hatch"
-	req_access_txt = "150"
+	req_access = list(ACCESS_SYNDICATE)
 
 /obj/machinery/door/airlock/hatch/syndicate/command
 	name = "Command Center"
-	req_access_txt = "153"
+	req_access = list(ACCESS_SYNDICATE_COMMAND)
 	explosion_block = 2
 	normal_integrity = 1000
 	security_level = 6
@@ -398,7 +395,7 @@
 
 /obj/machinery/door/airlock/hatch/syndicate/vault
 	name = "syndicate vault hatch"
-	req_access_txt = "151"
+	req_access = list(ACCESS_SYNDICATE)
 	icon = 'icons/obj/doors/airlocks/vault/vault.dmi'
 	overlays_file = 'icons/obj/doors/airlocks/vault/overlays.dmi'
 	assemblytype = /obj/structure/door_assembly/door_assembly_vault
@@ -448,16 +445,17 @@
 	else
 		lock(TRUE)
 
-/obj/machinery/door/airlock/highsecurity/red/attackby(obj/C, mob/user, params)
+/obj/machinery/door/airlock/highsecurity/red/item_interaction(mob/living/user, obj/item/used, list/modifiers)
 	if(!issilicon(user))
 		if(isElectrified())
 			if(shock(user, 75))
-				return
-	if(istype(C, /obj/item/detective_scanner))
-		return
+				return ITEM_INTERACT_COMPLETE
+	if(istype(used, /obj/item/detective_scanner))
+		return ITEM_INTERACT_COMPLETE
 
 	add_fingerprint(user)
 
+	return ..()
 
 /obj/machinery/door/airlock/highsecurity/red/welder_act(mob/user, obj/item/I)
 	if(shock_user(user, 75))
@@ -487,6 +485,29 @@
 	normal_integrity = 700
 	security_level = 1
 	paintable = FALSE
+
+// MARK: Clockwork Airlocks
+
+/obj/machinery/door/airlock/clockwork
+	name = "pinion airlock"
+	desc = "A massive cogwheel set into two heavy slabs of brass."
+	icon = 'icons/obj/doors/airlocks/clockwork/clockwork.dmi'
+	overlays_file = 'icons/obj/doors/airlocks/clockwork/clockwork-overlays.dmi'
+	assemblytype = /obj/structure/door_assembly/door_assembly_clockwork
+	paintable = FALSE
+
+/obj/machinery/door/airlock/clockwork/Initialize(mapload)
+	. = ..()
+	new /obj/effect/temp_visual/ratvar/door(loc)
+
+/obj/machinery/door/airlock/clockwork/allowed(mob/living/L)
+	if(..())
+		new /obj/effect/temp_visual/ratvar/door(loc)
+		return TRUE
+
+/obj/machinery/door/airlock/clockwork/glass
+	glass = TRUE
+	opacity = FALSE
 
 //////////////////////////////////
 /*
@@ -519,7 +540,7 @@
 	/// Inner airlock material (Glass, plasteel)
 	var/stealth_airlock_material = null
 
-/obj/machinery/door/airlock/cult/Initialize()
+/obj/machinery/door/airlock/cult/Initialize(mapload)
 	. = ..()
 	icon = GET_CULT_DATA(airlock_runed_icon_file, initial(icon))
 	overlays_file = GET_CULT_DATA(airlock_runed_overlays_file, initial(overlays_file))
@@ -584,7 +605,7 @@
 	glass = TRUE
 	opacity = FALSE
 
-/obj/machinery/door/airlock/cult/glass/Initialize()
+/obj/machinery/door/airlock/cult/glass/Initialize(mapload)
 	. = ..()
 	update_icon()
 
@@ -597,7 +618,7 @@
 	assemblytype = /obj/structure/door_assembly/door_assembly_cult/unruned
 	openingoverlaytype = /obj/effect/temp_visual/cult/door/unruned
 
-/obj/machinery/door/airlock/cult/unruned/Initialize()
+/obj/machinery/door/airlock/cult/unruned/Initialize(mapload)
 	. = ..()
 	icon = GET_CULT_DATA(airlock_unruned_icon_file, initial(icon))
 	overlays_file = GET_CULT_DATA(airlock_unruned_overlays_file, initial(overlays_file))
@@ -610,7 +631,7 @@
 	glass = TRUE
 	opacity = FALSE
 
-/obj/machinery/door/airlock/cult/unruned/glass/Initialize()
+/obj/machinery/door/airlock/cult/unruned/glass/Initialize(mapload)
 	. = ..()
 	update_icon()
 
@@ -622,7 +643,7 @@
 	desc = "An airlock hastily corrupted by blood magic, it is unusually brittle in this state."
 	normal_integrity = 150
 	damage_deflection = 5
-	armor = list(MELEE = 0, BULLET = 0, LASER = 0, ENERGY = 0, BOMB = 0, RAD = 0, FIRE = 0, ACID = 0)
+	armor = null
 
 //////////////////////////////////
 /*
@@ -632,13 +653,16 @@
 //Terribly sorry for the code doubling, but things go derpy otherwise.
 /obj/machinery/door/airlock/multi_tile
 	name = "large airlock"
-	dir = EAST
 	width = 2
 	icon = 'icons/obj/doors/airlocks/glass_large/glass_large.dmi'
 	overlays_file = 'icons/obj/doors/airlocks/glass_large/overlays.dmi'
 	note_overlay_file = 'icons/obj/doors/airlocks/glass_large/overlays.dmi'
 	assemblytype = /obj/structure/door_assembly/multi_tile
 	paintable = FALSE
+
+/obj/machinery/door/airlock/multi_tile/Moved(atom/old_loc, movement_dir, forced, list/old_locs, momentum_change)
+	. = ..()
+	update_bounds()
 
 /obj/machinery/door/airlock/multi_tile/narsie_act()
 	return
@@ -647,23 +671,17 @@
 	opacity = FALSE
 	glass = TRUE
 
+/// Player view blocking fillers for multi-tile doors
 /obj/airlock_filler_object
 	name = "airlock fluff"
 	desc = "You shouldn't be able to see this fluff!"
-	icon = null
-	icon_state = null
 	density = TRUE
 	opacity = TRUE
 	anchored = TRUE
 	invisibility = INVISIBILITY_MAXIMUM
-	//atmos_canpass = CANPASS_DENSITY
+	resistance_flags = INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | UNACIDABLE | ACID_PROOF
 	/// The door/airlock this fluff panel is attached to
 	var/obj/machinery/door/filled_airlock
-
-/obj/airlock_filler_object/Bumped(atom/A)
-	if(isnull(filled_airlock))
-		stack_trace("Someone bumped into an airlock filler with no parent airlock specified!")
-	return filled_airlock.Bumped(A)
 
 /obj/airlock_filler_object/Destroy()
 	filled_airlock = null
@@ -681,14 +699,9 @@
 	UnregisterSignal(filled_airlock)
 	qdel(src)
 
-/// Multi-tile airlocks (using a filler panel) have special handling for movables with PASS_FLAG_GLASS
-/obj/airlock_filler_object/CanPass(atom/movable/mover, turf/target)
-	. = ..()
-	if(.)
-		return
-
-	if(istype(mover))
-		return !opacity
+/// They only block our visuals, not movement
+/obj/airlock_filler_object/CanPass(atom/movable/mover, border_dir)
+	return TRUE
 
 /obj/airlock_filler_object/singularity_act()
 	return

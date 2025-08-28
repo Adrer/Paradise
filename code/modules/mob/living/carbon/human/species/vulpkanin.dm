@@ -38,14 +38,16 @@
 															unless they choose otherwise by selecting the colourblind disability in character creation (darksight = 8 but colourblind).*/
 		)
 
-	allowed_consumed_mobs = list(/mob/living/simple_animal/mouse, /mob/living/simple_animal/lizard, /mob/living/simple_animal/chick, /mob/living/simple_animal/chicken,
-								/mob/living/simple_animal/crab, /mob/living/simple_animal/butterfly, /mob/living/simple_animal/parrot, /mob/living/simple_animal/hostile/poison/bees)
+	allowed_consumed_mobs = list(/mob/living/simple_animal/mouse, /mob/living/basic/lizard, /mob/living/simple_animal/chick, /mob/living/simple_animal/chicken,
+								/mob/living/simple_animal/crab, /mob/living/basic/butterfly, /mob/living/simple_animal/parrot, /mob/living/simple_animal/hostile/poison/bees)
 
 	suicide_messages = list(
 		"is attempting to bite their tongue off!",
 		"is jamming their claws into their eye sockets!",
 		"is twisting their own neck!",
 		"is holding their breath!")
+
+	plushie_type = /obj/item/toy/plushie/red_fox
 
 /datum/species/vulpkanin/handle_death(gibbed, mob/living/carbon/human/H)
 	H.stop_tail_wagging()

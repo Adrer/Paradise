@@ -17,7 +17,7 @@
 		"Vox" = 'icons/mob/clothing/species/vox/head.dmi'
 	)
 
-/obj/item/clothing/head/hardhat/attack_self(mob/living/user)
+/obj/item/clothing/head/hardhat/attack_self__legacy__attackchain(mob/living/user)
 	toggle_helmet_light(user)
 
 /obj/item/clothing/head/hardhat/proc/toggle_helmet_light(mob/living/user)
@@ -34,9 +34,7 @@
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
 		H.update_inv_head()
-	for(var/X in actions)
-		var/datum/action/A = X
-		A.UpdateButtons()
+	update_action_buttons()
 
 /obj/item/clothing/head/hardhat/proc/turn_on(mob/user)
 	set_light(brightness_on)
@@ -110,4 +108,18 @@
 		"Grey" = 'icons/mob/clothing/species/grey/head/utility.dmi',
 		"Drask" = 'icons/mob/clothing/species/drask/head/utility.dmi',
 		"Kidan" = 'icons/mob/clothing/species/kidan/head/utility.dmi'
+	)
+
+/obj/item/clothing/head/hardhat/durathread
+	name = "durathread hard hat"
+	icon_state = "hardhat0_durathread"
+	item_state = "hardhat0_durathread"
+	item_color = "durathread"
+	desc = "A hard hat made from durathread, leather, and light fixture components."
+	armor = list(MELEE = 10, BULLET = 5, LASER = 20, ENERGY = 5, BOMB = 10, RAD = 0, FIRE = 35, ACID = 50)
+	sprite_sheets = list(
+		"Drask" = 'icons/mob/clothing/species/drask/head.dmi',
+		"Grey" = 'icons/mob/clothing/species/grey/head.dmi',
+		"Kidan" = 'icons/mob/clothing/species/kidan/head.dmi',
+		"Vox" = 'icons/mob/clothing/species/vox/head.dmi'
 	)

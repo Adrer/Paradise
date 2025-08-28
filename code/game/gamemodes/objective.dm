@@ -4,7 +4,7 @@ GLOBAL_LIST_EMPTY(all_objectives)
 /// Stores objective [names][/datum/objective/var/name] as list keys, and their corresponding typepaths as list values.
 GLOBAL_LIST_EMPTY(admin_objective_list)
 
-GLOBAL_LIST_INIT(potential_theft_objectives, (subtypesof(/datum/theft_objective) - /datum/theft_objective/steal - /datum/theft_objective/number - /datum/theft_objective/unique))
+GLOBAL_LIST_INIT(potential_theft_objectives, (subtypesof(/datum/theft_objective) - /datum/theft_objective/number - /datum/theft_objective/unique))
 
 /datum/objective
 	/**
@@ -46,8 +46,8 @@ GLOBAL_LIST_INIT(potential_theft_objectives, (subtypesof(/datum/theft_objective)
 	var/delayed_objective_text = "This is a bug! Report it on the github and ask an admin what type of objective"
 
 /datum/objective/New(text, datum/team/team_to_join, datum/mind/_owner)
-	. = ..()
 	SHOULD_CALL_PARENT(TRUE)
+	. = ..()
 	GLOB.all_objectives += src
 	if(text)
 		explanation_text = text
@@ -109,6 +109,8 @@ GLOBAL_LIST_INIT(potential_theft_objectives, (subtypesof(/datum/theft_objective)
 		return TARGET_INVALID_GOLEM
 	if(possible_target.offstation_role)
 		return TARGET_INVALID_EVENT
+	if(HAS_TRAIT(possible_target.current, TRAIT_CRYO_DESPAWNING))
+		return TARGET_CRYOING
 
 /datum/objective/is_invalid_target(datum/mind/possible_target)
 	. = ..()
@@ -117,7 +119,7 @@ GLOBAL_LIST_INIT(potential_theft_objectives, (subtypesof(/datum/theft_objective)
 	for(var/datum/mind/M in get_owners())
 		if(possible_target == M)
 			return TARGET_INVALID_IS_OWNER
-		if(possible_target in M.targets)
+		if(possible_target in holder.get_targets())
 			return TARGET_INVALID_IS_TARGET
 	if(SEND_SIGNAL(src, COMSIG_OBJECTIVE_CHECK_VALID_TARGET, possible_target) & OBJECTIVE_INVALID_TARGET)
 		return TARGET_INVALID_BLACKLISTED
@@ -165,9 +167,6 @@ GLOBAL_LIST_INIT(potential_theft_objectives, (subtypesof(/datum/theft_objective)
 	target = null
 	INVOKE_ASYNC(src, PROC_REF(post_target_cryo), owners)
 
-/**
-  * Called a tick after when the objective's target goes to cryo.
-  */
 /datum/objective/proc/post_target_cryo(list/owners)
 	find_target()
 	if(!target)
@@ -291,7 +290,6 @@ GLOBAL_LIST_INIT(potential_theft_objectives, (subtypesof(/datum/theft_objective)
 
 /datum/objective/maroon
 	name = "Maroon"
-	martyr_compatible = FALSE
 	delayed_objective_text = "Your objective is to make sure another crewmember doesn't leave on the Escape Shuttle. You will receive further information in a few minutes."
 
 /datum/objective/maroon/update_explanation_text()
@@ -317,7 +315,6 @@ GLOBAL_LIST_INIT(potential_theft_objectives, (subtypesof(/datum/theft_objective)
 /// I want braaaainssss
 /datum/objective/debrain
 	name = "Debrain"
-	martyr_compatible = FALSE
 	delayed_objective_text = "Your objective is to steal another crewmember's brain. You will receive further information in a few minutes."
 
 /datum/objective/debrain/is_invalid_target(datum/mind/possible_target)
@@ -385,7 +382,6 @@ GLOBAL_LIST_INIT(potential_theft_objectives, (subtypesof(/datum/theft_objective)
 
 /datum/objective/hijack
 	name = "Hijack"
-	martyr_compatible = FALSE //Technically you won't get both anyway.
 	explanation_text = "Hijack the shuttle by escaping on it with no loyalist Nanotrasen crew on board and free. \
 	Syndicate agents, other enemies of Nanotrasen, cyborgs, pets, and cuffed/restrained hostages may be allowed on the shuttle alive. \
 	Alternatively, hack the shuttle console multiple times (by alt clicking on it) until the shuttle directions are corrupted."
@@ -402,7 +398,6 @@ GLOBAL_LIST_INIT(potential_theft_objectives, (subtypesof(/datum/theft_objective)
 /datum/objective/hijackclone
 	name = "Hijack (with clones)"
 	explanation_text = "Hijack the shuttle by ensuring only you (or your copies) escape."
-	martyr_compatible = FALSE
 	needs_target = FALSE
 
 // This objective should only be given to a single owner, because the "copies" can only copy one person.
@@ -437,7 +432,6 @@ GLOBAL_LIST_INIT(potential_theft_objectives, (subtypesof(/datum/theft_objective)
 	explanation_text = "Hijack the shuttle by alt-clicking on the shuttle console. Do not let the crew wipe you off of it! \
 	Crew and agents can be on the shuttle when you do this, and may try to wipe you! \
 	Using the doomsday device successfully is also an option."
-	martyr_compatible = FALSE
 	needs_target = FALSE
 
 /datum/objective/block/check_completion()
@@ -483,7 +477,7 @@ GLOBAL_LIST_INIT(potential_theft_objectives, (subtypesof(/datum/theft_objective)
 	return TRUE
 
 /datum/objective/escape/escape_with_identity
-	name = null
+	name = "Escape With Identity"
 	/// Stored because the target's `[mob/var/real_name]` can change over the course of the round.
 	var/target_real_name
 	/// If the objective has an assassinate objective tied to it.
@@ -575,7 +569,6 @@ GLOBAL_LIST_INIT(potential_theft_objectives, (subtypesof(/datum/theft_objective)
 
 /datum/objective/steal
 	name = "Steal Item"
-	martyr_compatible = FALSE
 	delayed_objective_text = "Your objective is to steal a high-value item. You will receive further information in a few minutes."
 	var/theft_area
 	var/datum/theft_objective/steal_target
@@ -617,7 +610,7 @@ GLOBAL_LIST_INIT(potential_theft_objectives, (subtypesof(/datum/theft_objective)
 	explanation_text = "Free Objective."
 
 /datum/objective/steal/proc/select_target()
-	var/list/possible_items_all = GLOB.potential_theft_objectives + "custom"
+	var/list/possible_items_all = GLOB.potential_theft_objectives + "custom" + "random"
 	var/new_target = input("Select target:", "Objective target", null) as null|anything in possible_items_all
 	if(!new_target)
 		return
@@ -636,12 +629,18 @@ GLOBAL_LIST_INIT(potential_theft_objectives, (subtypesof(/datum/theft_objective)
 		target_theft_objective.name = theft_objective_name
 		steal_target = target_theft_objective
 		explanation_text = "Steal [theft_objective_name]."
-	else
-		steal_target = new new_target
-		update_explanation_text()
-		if(steal_target.special_equipment)
-			give_kit(steal_target.special_equipment)
+		return steal_target
+	else if(new_target == "random")
+		return TRUE
+
+	steal_target = new new_target
+	update_explanation_text()
+	if(steal_target.special_equipment) // We have to do it with a callback because mind/Topic creates the objective without an owner
+		addtimer(CALLBACK(src, PROC_REF(hand_out_equipment)), 5 SECONDS, TIMER_DELETE_ME)
 	return steal_target
+
+/datum/objective/steal/proc/hand_out_equipment()
+	give_kit(steal_target?.special_equipment)
 
 /datum/objective/steal/update_explanation_text()
 	explanation_text = "Steal [steal_target.name]. One was last seen in [get_location()]. "
@@ -668,18 +667,17 @@ GLOBAL_LIST_INIT(potential_theft_objectives, (subtypesof(/datum/theft_objective)
 
 	var/obj/item/item_to_give = new item_path
 	var/static/list/slots = list(
-		"backpack" = SLOT_HUD_IN_BACKPACK,
-		"left pocket" = SLOT_HUD_LEFT_STORE,
-		"right pocket" = SLOT_HUD_RIGHT_STORE,
-		"left hand" = SLOT_HUD_LEFT_HAND,
-		"right hand" = SLOT_HUD_RIGHT_HAND,
+		"backpack" = ITEM_SLOT_IN_BACKPACK,
+		"left pocket" = ITEM_SLOT_LEFT_POCKET,
+		"right pocket" = ITEM_SLOT_RIGHT_POCKET,
+		"left hand" = ITEM_SLOT_LEFT_HAND,
+		"right hand" = ITEM_SLOT_RIGHT_HAND,
 	)
 
 	for(var/datum/mind/kit_receiver_mind as anything in shuffle(objective_owners))
 		var/mob/living/carbon/human/kit_receiver = kit_receiver_mind.current
 		if(!kit_receiver)
 			continue
-
 		var/where = kit_receiver.equip_in_one_of_slots(item_to_give, slots)
 		if(!where)
 			continue
@@ -767,7 +765,7 @@ GLOBAL_LIST_INIT(potential_theft_objectives, (subtypesof(/datum/theft_objective)
 	return TRUE
 
 /datum/objective/destroy/post_target_cryo(list/owners)
-	holder.replace_objective(src, /datum/objective/assassinate)
+	holder.replace_objective(src, new /datum/objective/assassinate(null, team, owner))
 
 /datum/objective/steal_five_of_type
 	name = "Steal Five Items"
@@ -828,7 +826,7 @@ GLOBAL_LIST_INIT(potential_theft_objectives, (subtypesof(/datum/theft_objective)
 	return stolen_count >= 5
 
 /datum/objective/blood
-	name = "Spread blood"
+	name = "Drink blood"
 	needs_target = FALSE
 
 /datum/objective/blood/New()
@@ -852,6 +850,32 @@ GLOBAL_LIST_INIT(potential_theft_objectives, (subtypesof(/datum/theft_objective)
 		else
 			return FALSE
 
+#define SWARM_GOAL_LOWER_BOUND	130
+#define SWARM_GOAL_UPPER_BOUND	400
+
+/datum/objective/swarms
+	name = "Gain swarms"
+	needs_target = FALSE
+
+/datum/objective/swarms/New()
+	gen_amount_goal()
+	return ..()
+
+/datum/objective/swarms/proc/gen_amount_goal(low = SWARM_GOAL_LOWER_BOUND, high = SWARM_GOAL_UPPER_BOUND)
+	target_amount = round(rand(low, high), 5)
+	update_explanation_text()
+	return target_amount
+
+/datum/objective/swarms/update_explanation_text()
+	explanation_text = "Accumulate at least [target_amount] worth of swarms."
+
+/datum/objective/swarms/check_completion()
+	for(var/datum/mind/M in get_owners())
+		var/datum/antagonist/mindflayer/flayer = M.has_antag_datum(/datum/antagonist/mindflayer)
+		return flayer?.total_swarms_gathered >= target_amount
+
+#undef SWARM_GOAL_LOWER_BOUND
+#undef SWARM_GOAL_UPPER_BOUND
 
 // Traders
 // These objectives have no check_completion, they exist only to tell Sol Traders what to aim for.
@@ -897,3 +921,20 @@ GLOBAL_LIST_INIT(potential_theft_objectives, (subtypesof(/datum/theft_objective)
 
 /datum/objective/delayed/proc/reveal_objective()
 	return holder.replace_objective(src, new objective_to_replace_with(null, team, owner), target_department, steal_list)
+
+// A warning objective for that an agent is after you and knows you are an agent (or that you are paranoid)
+/datum/objective/potentially_backstabbed
+	name = "Potentially Backstabbed"
+	explanation_text = "Our intelligence suggests that you are likely to be the target of a rival member of the Syndicate. \
+		Remain vigilant, they know who you are and what you can do."
+	needs_target = FALSE
+
+/datum/objective/potentially_backstabbed/check_completion()
+	for(var/datum/mind/M in get_owners())
+		var/datum/antagonist/traitor/T = M.has_antag_datum(/datum/antagonist/traitor)
+		for(var/datum/objective/our_objective in T.get_antag_objectives(FALSE))
+			if(istype(our_objective, /datum/objective/potentially_backstabbed))
+				continue
+			if(!our_objective.check_completion())
+				return FALSE
+	return TRUE

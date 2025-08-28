@@ -98,7 +98,6 @@
 	strip_delay = 70
 	put_on_delay = 70
 	resistance_flags = NONE
-	dyeable = FALSE
 
 	sprite_sheets = list(
 		"Vox" = 'icons/mob/clothing/species/vox/suit.dmi'
@@ -140,6 +139,9 @@
 		"Drask" = 'icons/mob/clothing/species/drask/head/utility.dmi',
 		"Kidan" = 'icons/mob/clothing/species/kidan/head/utility.dmi'
 	)
+	rad_insulation_alpha = RAD_FULL_INSULATION
+	rad_insulation_beta = RAD_FULL_INSULATION
+	rad_insulation_gamma = RAD_FULL_INSULATION
 
 /obj/item/clothing/suit/radiation
 	name = "radiation suit"
@@ -154,7 +156,7 @@
 	flags = THICKMATERIAL
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|FEET|ARMS|HANDS
 	allowed = list(/obj/item/flashlight,/obj/item/tank/internals/emergency_oxygen, /obj/item/geiger_counter)
-	slowdown = 1.5
+	slowdown = 0.75
 	armor = list(MELEE = 0, BULLET = 0, LASER = 0, ENERGY = 0, BOMB = 0, RAD = INFINITY, FIRE = 20, ACID = 20)
 	flags_inv = HIDEJUMPSUIT|HIDETAIL
 	strip_delay = 60
@@ -170,3 +172,6 @@
 		"Drask" = 'icons/mob/clothing/species/drask/suits/utility.dmi',
 		"Kidan" = 'icons/mob/clothing/species/kidan/suits/utility.dmi'
 	)
+	rad_insulation_alpha = RAD_FULL_INSULATION
+	rad_insulation_beta = RAD_FULL_INSULATION
+	rad_insulation_gamma = RAD_FULL_INSULATION

@@ -34,10 +34,11 @@
 	var/emagged = FALSE
 
 	// Access-related fields
+
+	/// A list of accesses as defined by `code/__DEFINES/access_defines.dm`. All accesses are required when checking.
 	var/list/req_access = null
-	var/req_access_txt = "0"
+	/// A list of accesses as defined by `code/__DEFINES/access_defines.dm`. At least one access is required when checking.
 	var/list/req_one_access = null
-	var/req_one_access_txt = "0"
 
 /obj/Initialize(mapload)
 	. = ..()
@@ -112,7 +113,7 @@
 			if(M.client && M.machine == src)
 				is_in_use = TRUE
 				src.attack_hand(M)
-		if(isAI(usr) || isrobot(usr))
+		if(is_ai(usr) || isrobot(usr))
 			if(!(usr in nearby))
 				if(usr.client && usr.machine==src) // && M.machine == src is omitted because if we triggered this by using the dialog, it doesn't matter if our machine changed in between triggering it and this - the dialog is probably still supposed to refresh.
 					is_in_use = TRUE
@@ -162,7 +163,7 @@
 /obj/item/proc/updateSelfDialog()
 	var/mob/M = src.loc
 	if(istype(M) && M.client && M.machine == src)
-		src.attack_self(M)
+		src.attack_self__legacy__attackchain(M)
 
 /obj/proc/hide(h)
 	return
@@ -209,6 +210,8 @@
 	. = ..()
 	extinguish()
 	acid_level = 0
+	if(temperature > VIRUS_DISINFECTION_TEMP)
+		SEND_SIGNAL(src, COMSIG_ATOM_DISINFECTED)
 
 /obj/singularity_pull(S, current_size)
 	..()
@@ -234,15 +237,6 @@
 	speed_process = FALSE
 	START_PROCESSING(SSobj, src)
 	STOP_PROCESSING(SSfastprocess, src)
-
-/obj/vv_get_dropdown()
-	. = ..()
-	.["Delete all of type"] = "?_src_=vars;delall=[UID()]"
-	if(!speed_process)
-		.["Make speed process"] = "?_src_=vars;makespeedy=[UID()]"
-	else
-		.["Make normal process"] = "?_src_=vars;makenormalspeed=[UID()]"
-	.["Modify armor values"] = "?_src_=vars;modifyarmor=[UID()]"
 
 /obj/proc/check_uplink_validity()
 	return TRUE
@@ -274,12 +268,19 @@
 	if(mob_hurt) //Density check probably not needed, one should only bump into something if it is dense, and blob tiles are not dense, because of course they are not.
 		return
 	C.visible_message("<span class='danger'>[C] slams into [src]!</span>", "<span class='userdanger'>You slam into [src]!</span>")
-	C.take_organ_damage(damage)
 	if(!self_hurt)
 		take_damage(damage, BRUTE)
+
 	if(issilicon(C))
 		C.Weaken(3 SECONDS)
+		C.adjustBruteLoss(damage)
 	else
+		var/obj/item/organ/external/affecting = C.get_organ(ran_zone(throwingdatum.target_zone))
+		if(affecting)
+			var/armor_block = C.run_armor_check(affecting, MELEE)
+			C.apply_damage(damage, BRUTE, affecting, armor_block)
+		else
+			C.take_organ_damage(damage)
 		C.KnockDown(3 SECONDS)
 
 /obj/handle_ricochet(obj/item/projectile/P)

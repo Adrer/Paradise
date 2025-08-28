@@ -7,8 +7,6 @@
 	attack_verb = list("whacked", "fisted", "power-punched")
 	force = 12
 	throwforce = 10
-	throw_range = 7
-	w_class = WEIGHT_CLASS_NORMAL
 	armor = list(MELEE = 0, BULLET = 0, LASER = 0, ENERGY = 0, BOMB = 0, RAD = 0, FIRE = 100, ACID = 40)
 	resistance_flags = FIRE_PROOF
 	origin_tech = "combat=5;powerstorage=3;syndicate=3"
@@ -30,7 +28,7 @@
 	else if(tank)
 		. += "<span class='notice'>[bicon(tank)] It has [tank] mounted onto it.</span>"
 
-/obj/item/melee/powerfist/attackby(obj/item/W, mob/user, params)
+/obj/item/melee/powerfist/attackby__legacy__attackchain(obj/item/W, mob/user, params)
 	if(istype(W, /obj/item/tank/internals))
 		if(!user.is_holding(src))
 			to_chat(user, "<span class='warning'>You have to hold [src] in your hand!</span>")
@@ -71,7 +69,7 @@
 			to_chat(user, "<span class='notice'>[src] currently has no tank attached to it.</span>")
 			return
 		to_chat(user, "<span class='notice'>As you detach [thetank] from [src], the fist unlocks.</span>")
-		flags &= ~NODROP
+		set_nodrop(FALSE, user)
 		tank.forceMove(get_turf(user))
 		user.put_in_hands(tank)
 		tank = null
@@ -79,15 +77,14 @@
 		if(tank)
 			to_chat(user, "<span class='warning'>[src] already has a tank.</span>")
 			return
-		if(!user.unEquip(thetank))
+		if(!user.unequip(thetank))
 			return
 		to_chat(user, "<span class='notice'>As you hook [thetank] up to [src], the fist locks into place around your arm.</span>")
 		tank = thetank
 		thetank.forceMove(src)
-		flags |= NODROP
+		set_nodrop(TRUE, user)
 
-
-/obj/item/melee/powerfist/attack(mob/living/target, mob/living/user)
+/obj/item/melee/powerfist/attack__legacy__attackchain(mob/living/target, mob/living/user)
 	if(HAS_TRAIT(user, TRAIT_PACIFISM))
 		to_chat(user, "<span class='warning'>You don't want to harm other living beings!</span>")
 		return
@@ -101,7 +98,13 @@
 
 	user.do_attack_animation(target)
 
-	target.apply_damage(force * fisto_setting, BRUTE)
+	var/obj/item/organ/external/affecting = target.get_organ(ran_zone(user.zone_selected))
+	if(!affecting)
+		affecting = target.get_organ("chest")
+
+	var/armor_block = target.run_armor_check(affecting, MELEE)
+	target.apply_damage(force * fisto_setting, BRUTE, affecting, armor_block)
+
 	target.visible_message("<span class='danger'>[user]'s powerfist lets out a loud hiss as [user.p_they()] punch[user.p_es()] [target.name]!</span>", \
 		"<span class='userdanger'>You cry out in pain as [user]'s punch flings you backwards!</span>")
 	new /obj/effect/temp_visual/kinetic_blast(target.loc)

@@ -24,12 +24,11 @@
 	icon_state = "deathsquad"
 	item_state = "deathsquad"
 	item_color = "deathsquad"
-	sensor_mode = SENSOR_OFF // You think the Deathsquad wants to be seen?
 	random_sensor = FALSE
 
 /obj/item/clothing/under/rank/centcom/ert/chaplain
-	name = "response team inquisitor uniform"
-	desc = "An armoured uniform designed for emergency response teams. This one belongs to an inquisitor."
+	name = "response team chaplain uniform"
+	desc = "An armoured uniform designed for emergency response teams. This one belongs to a chaplain."
 	icon_state = "ert_chaplain"
 	item_state = "ert_chaplain"
 	item_color = "ert_chaplain"
@@ -108,6 +107,5 @@
 	name = "\improper Nanotrasen diplomatic uniform"
 	desc = "A very gaudy and official looking uniform of the Nanotrasen Diplomatic Corps."
 	icon_state = "presidente"
-	item_state = "g_suit"
 	item_color = "presidente"
 	displays_id = FALSE

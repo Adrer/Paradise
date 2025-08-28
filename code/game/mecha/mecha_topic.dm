@@ -256,8 +256,11 @@
 	if(href_list["select_equip"])
 		if(usr != occupant)	return
 		var/obj/item/mecha_parts/mecha_equipment/equip = afilter.getObj("select_equip")
-		if(equip)
+		if(equip && (equip in equipment))
+			if(selected)
+				selected.on_unequip()
 			selected = equip
+			selected.on_equip()
 			occupant_message("You switch to [equip]")
 			visible_message("[src] raises [equip]")
 			send_byjax(occupant, "exosuit.browser", "eq_list", get_equipment_list())

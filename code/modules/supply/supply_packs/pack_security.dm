@@ -93,20 +93,15 @@
 	containername = "disabler crate"
 
 /datum/supply_packs/security/forensics
-	name = "Forensics Crate"
-	contains = list(/obj/item/detective_scanner,
-					/obj/item/storage/box/evidence,
-					/obj/item/camera,
-					/obj/item/taperecorder,
-					/obj/item/toy/crayon/white,
-					/obj/item/clothing/head/det_hat)
-	cost = 100
-	containername = "forensics crate"
+	name = "Forensics Resupply Crate"
+	contains = list(/obj/item/storage/briefcase/crimekit,
+					/obj/item/storage/briefcase/crimekit)
+	cost = 250
+	containername = "forensics resupply crate"
 
 ///// Armory stuff
 
 /datum/supply_packs/security/armory
-	name = "HEADER"
 	containertype = /obj/structure/closet/crate/secure/weapon
 	access = ACCESS_ARMORY
 	announce_beacons = list("Security" = list("Warden", "Head of Security's Desk"))
@@ -218,6 +213,21 @@
 	containertype = /obj/structure/closet/crate/secure/plasma
 	containername = "energy gun crate"
 
+/datum/supply_packs/security/armory/eshotguns
+	name = "Energy Shotguns Crate"
+	contains = list(/obj/item/gun/energy/gun/shotgun,
+					/obj/item/gun/energy/gun/shotgun)
+	cost = 500
+	containertype = /obj/structure/closet/crate/secure/plasma
+	containername = "energy shotgun crate"
+
+/datum/supply_packs/security/armory/stingers
+	name = "Stinger Grenade Crate"
+	contains = list(/obj/item/storage/box/stingers,
+					/obj/item/storage/box/stingers)
+	cost = 300
+	containername = "stingball grenade crate"
+
 /// costs 3/5ths of the normal e-guns for 3/4ths the total ammo, making it cheaper to arm more people, but less convient for any one person
 /datum/supply_packs/security/armory/epistol
 	name = "Energy Pistol Crate"
@@ -276,17 +286,25 @@
 	cost = 300
 	containername = "laser rifle ammo crate"
 
+/datum/supply_packs/security/armory/lever_action
+	name = "Model 2495 Laser Rifle Crate"
+	contains = list(/obj/item/gun/energy/laser/lever_action,
+					/obj/item/gun/energy/laser/lever_action)
+	cost = 250
+	containertype = /obj/structure/closet/crate/secure/plasma
+	containername = "lever action rifle crate"
+
 /datum/supply_packs/security/armory/tranqammo
 	name = "Tranquilizer Shell Crate"
-	contains = list(/obj/item/storage/box/tranquilizer,
-					/obj/item/storage/box/tranquilizer)
+	contains = list(/obj/item/storage/fancy/shell/tranquilizer,
+					/obj/item/storage/fancy/shell/tranquilizer)
 	cost = 400
 	containername = "tranquilizer shell crate"
 
 /datum/supply_packs/security/armory/holyammo
 	name = "Holy Water Shell Crate"
-	contains = list(/obj/item/storage/box/holy,
-					/obj/item/storage/box/holy)
+	contains = list(/obj/item/storage/fancy/shell/holy,
+					/obj/item/storage/fancy/shell/holy)
 	cost = 400
 	containername = "holy water shell crate"
 
@@ -317,6 +335,20 @@
 	contains = list (/obj/item/storage/box/chemimp)
 	cost = 500
 	containername = "chemical bio-chip crate"
+
+/datum/supply_packs/security/armory/flayer_nullifer
+	name = "Mindflayer Containment Kit"
+	contains = list(/obj/item/organ/internal/cyberimp/chest/ipc_joints/flayer_pacification,
+					/obj/item/storage/box/handcuffs,
+					/obj/item/toy/plushie/ipcplushie) // For practicing takedowns
+	cost = 250
+	containername = "mindflayer containment kit"
+
+/datum/supply_packs/security/armory/bluespace_anchor
+	name = "Bluespace Anchor Crate"
+	contains = list(/obj/item/organ/internal/cyberimp/chest/bluespace_anchor)
+	cost = 250
+	containername = "bluespace anchor crate"
 
 /datum/supply_packs/security/securitybarriers
 	name = "Security Barriers Crate"
@@ -368,3 +400,16 @@
 	containertype = /obj/structure/largecrate/secway
 	containername = "secway crate"
 	access = ACCESS_HEADS
+
+/datum/supply_packs/security/party_ammo
+	name = "Party Ammunition Crate"
+	contains = list(
+		/obj/item/grenade/confetti,
+		/obj/item/grenade/confetti,
+		/obj/item/grenade/confetti,
+		/obj/item/storage/fancy/shell/confetti,
+		/obj/item/storage/fancy/shell/confetti,
+		/obj/item/storage/fancy/shell/confetti
+	)
+	cost = 300
+	containername = "party ammunition crate"

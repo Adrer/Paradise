@@ -84,6 +84,7 @@
 
 
 /datum/click_intercept/give/InterceptClickOn(mob/user, params, atom/object)
+	. = TRUE
 	if(user == object || !ishuman(object))
 		return
 	var/mob/living/carbon/human/receiver = object
@@ -170,7 +171,7 @@
 		to_chat(receiver, "<span class='warning'>[I] stays stuck to [giver]'s hand when you try to take it!</span>")
 		return
 	UnregisterSignal(I, list(COMSIG_ITEM_EQUIPPED, COMSIG_ITEM_DROPPED)) // We don't want these triggering `cancel_give` at this point, since the give is successful.
-	giver.unEquip(I)
+	giver.drop_item_to_ground(I)
 	receiver.put_in_hands(I)
 	I.add_fingerprint(receiver)
 	I.on_give(giver, receiver)

@@ -32,13 +32,13 @@
 	if(chassis)
 		chassis.occupant_message("<span class='danger'>[src] is destroyed!</span>")
 		chassis.log_append_to_last("[src] is destroyed.",1)
-		if(istype(src, /obj/item/mecha_parts/mecha_equipment/weapon))
-			SEND_SOUND(chassis.occupant, sound(chassis.weapdestrsound, volume = 50))
-		else
-			SEND_SOUND(chassis.occupant, sound(chassis.critdestrsound, volume = 50))
+		SEND_SOUND(chassis.occupant, sound(get_destroy_sound(), volume = 50))
 		detach(chassis)
 	return ..()
 
+
+/obj/item/mecha_parts/mecha_equipment/proc/get_destroy_sound()
+	return chassis.critdestrsound
 
 /obj/item/mecha_parts/mecha_equipment/proc/get_equip_info()
 	if(!chassis)
@@ -71,6 +71,13 @@
 	return TRUE
 
 /obj/item/mecha_parts/mecha_equipment/proc/action(atom/target)
+	return
+
+/obj/item/mecha_parts/mecha_equipment/proc/on_unequip()
+	chassis.selected = null
+	return
+
+/obj/item/mecha_parts/mecha_equipment/proc/on_equip(atom/target)
 	return
 
 /obj/item/mecha_parts/mecha_equipment/proc/start_cooldown()
@@ -141,6 +148,10 @@
 		select_action.Remove(chassis.occupant)
 
 /obj/item/mecha_parts/mecha_equipment/Topic(href,href_list)
+	if(!chassis)
+		return TRUE
+	if(usr != chassis.occupant)
+		return TRUE
 	if(href_list["detach"])
 		detach()
 
