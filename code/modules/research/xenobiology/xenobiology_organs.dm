@@ -1422,7 +1422,6 @@
 	owner.physiology.armor = owner.physiology.armor.attachArmor(organ_resistance_boost)
 
 /obj/item/organ/internal/kidneys/xenobiology/lethargic/remove(mob/living/carbon/M, special)
-	. = ..()
 	REMOVE_TRAIT(M, TRAIT_GOTTAGOSLOW, ORGAN_TRAIT)
 	if(organ_quality == ORGAN_DAMAGED)
 		owner.physiology.stamina_mod /= 0.9
@@ -1432,6 +1431,7 @@
 		owner.physiology.stamina_mod /= 0.5
 	owner.physiology.armor = owner.physiology.armor.detachArmor(organ_resistance_boost)
 	QDEL_NULL(organ_resistance_boost)
+	. = ..()
 
 /obj/item/organ/internal/ears/xenobiology/colorful
 	name = "colorful organ"
