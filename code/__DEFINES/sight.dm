@@ -15,6 +15,9 @@
 #define INVISIBILITY_HIDDEN_RUNES 30
 #define SEE_INVISIBLE_HIDDEN_RUNES 30
 
+#define INVISIBILITY_FLOCK 30
+#define SEE_INVISIBLE_FLOCK 30
+
 #define SEE_INVISIBLE_LEVEL_ONE 35	//Used by some stuff in code. It's really poorly organized.
 
 #define SEE_INVISIBLE_LEVEL_TWO 45	//Used by some other stuff in code. It's really poorly organized.
@@ -23,11 +26,14 @@
 #define INVISIBILITY_SPIRIT 50
 #define SEE_SPIRITS 50
 
-#define SEE_INVISIBLE_OBSERVER_NOOBSERVERS 59
+/// Only observers can see this
+#define INVISIBILITY_HIGH INVISIBILITY_OBSERVER - 1
+/// Observer's vision without ghost vision
+#define SEE_INVISIBLE_OBSERVER_NO_OBSERVERS SEE_INVISIBLE_OBSERVER - 1
+/// Observer's invisibility
 #define INVISIBILITY_OBSERVER 60
+/// Observer's vision with ghost vision
 #define SEE_INVISIBLE_OBSERVER 60
-#define INVISIBILITY_AI_EYE 61
-#define SEE_INVISIBLE_OBSERVER_AI_EYE 61
 
 #define INVISIBILITY_MAXIMUM 100
 

@@ -6,7 +6,6 @@
 	lefthand_file = 'icons/mob/inhands/lighter_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/lighter_righthand.dmi'
 	icon_state = "lighter-g"
-	item_state = "lighter-g"
 	w_class = WEIGHT_CLASS_TINY
 	flags = CONDUCT
 	slot_flags = ITEM_SLOT_BELT
@@ -20,6 +19,7 @@
 	/// Our lighter color suffix. => `[base_icon_state]-[lightercolor]` => `lighter-r`
 	var/lighter_color
 	var/is_a_zippo = FALSE
+	new_attack_chain = TRUE
 
 /obj/item/lighter/random
 	base_icon_state = "lighter"
@@ -29,16 +29,19 @@
 	lighter_color = pick("r","c","y","g")
 	update_icon()
 
-/obj/item/lighter/attack_self__legacy__attackchain(mob/living/user)
-	. = ..()
+/obj/item/lighter/activate_self(mob/living/user)
+	if(..())
+		return ITEM_INTERACT_COMPLETE
 	if(!lit)
 		turn_on_lighter(user)
 	else
 		turn_off_lighter(user)
+	add_fingerprint(user)
+	return ITEM_INTERACT_COMPLETE
 
 /obj/item/lighter/can_enter_storage(obj/item/storage/S, mob/user)
 	if(lit)
-		to_chat(user, "<span class='warning'>[S] can't hold [src] while it's lit!</span>")
+		to_chat(user, SPAN_WARNING("[S] can't hold [src] while it's lit!"))
 		return FALSE
 	else
 		return TRUE
@@ -58,15 +61,23 @@
 
 /obj/item/lighter/proc/attempt_light(mob/living/user)
 	if(prob(75) || issilicon(user)) // Robots can never burn themselves trying to light it.
-		to_chat(user, "<span class='notice'>You light [src].</span>")
-	else if(HAS_TRAIT(user, TRAIT_BADASS))
-		to_chat(user, "<span class='notice'>[src]'s flames lick your hand as you light it, but you don't flinch.</span>")
+		to_chat(user, SPAN_NOTICE("You light [src]."))
+	else if(HAS_TRAIT(user, TRAIT_BADASS) || HAS_TRAIT(user, TRAIT_COOL))
+		user.visible_message(
+			SPAN_NOTICE("[src]'s flames lick [user]'s hand as [user.p_they()] light it, but [user.p_they()] don't flinch."),
+			SPAN_NOTICE("[src]'s flames lick your hand as you light it, but you don't flinch."),
+			SPAN_HEAR("You hear the click of a lighter.")
+		)
 	else
 		var/mob/living/carbon/human/H = user
 		var/obj/item/organ/external/affecting = H.get_organ("[user.hand ? "l" : "r" ]_hand")
 		if(affecting.receive_damage(0, 5))		//INFERNO
 			H.UpdateDamageIcon()
-		to_chat(user,"<span class='notice'>You light [src], but you burn your hand in the process.</span>")
+		user.visible_message(
+			SPAN_WARNING("[user] burns [user.p_their()] hand with [src] while lighting it!"),
+			SPAN_WARNING("You light [src], but you burn your hand in the process!"),
+			SPAN_HEAR("You hear the click of a lighter and a small hiss of pain.")
+		)
 	if(world.time > next_on_message)
 		playsound(src, 'sound/items/lighter/plastic_strike.ogg', 25, TRUE)
 		next_on_message = world.time + 5 SECONDS
@@ -76,7 +87,7 @@
 	w_class = WEIGHT_CLASS_TINY
 	hitsound = "swing_hit"
 	force = 0
-	attack_verb = null //human_defense.dm takes care of it
+	attack_verb = null // human_defense.dm takes care of it.
 	damtype = initial(damtype)
 	update_icon()
 	if(user)
@@ -90,18 +101,21 @@
 	turn_off_lighter()
 
 /obj/item/lighter/proc/show_off_message(mob/living/user)
-	to_chat(user, "<span class='notice'>You shut off [src].")
+	to_chat(user, SPAN_NOTICE("You shut off [src]."))
 	if(world.time > next_off_message)
 		playsound(src, 'sound/items/lighter/plastic_close.ogg', 25, TRUE)
 		next_off_message = world.time + 5 SECONDS
 
-/obj/item/lighter/attack__legacy__attackchain(mob/living/target, mob/living/user)
+/obj/item/lighter/interact_with_atom(atom/target, mob/living/user, list/modifiers)
 	if(cigarette_lighter_act(user, target))
-		return
+		add_fingerprint(user)
+		return ITEM_INTERACT_COMPLETE
 
+/obj/item/lighter/attack(mob/living/target, mob/living/carbon/human/user)
 	if(lit && target.IgniteMob())
 		message_admins("[key_name_admin(user)] set [key_name_admin(target)] on fire")
 		log_game("[key_name(user)] set [key_name(target)] on fire")
+		add_fingerprint(user)
 
 	return ..()
 
@@ -115,20 +129,21 @@
 		return !isnull(cig)
 
 	if(!lit)
-		to_chat(user, "<span class='warning'>You need to light [src] before it can be used to light anything!</span>")
+		to_chat(user, SPAN_WARNING("You need to light [src] before it can be used to light anything!"))
 		return TRUE
 
 	if(target == user)
 		user.visible_message(
-			"<span class='notice'>After some fiddling, [user] manages to light [user.p_their()] [cig] with [src].</span>",
-			"<span class='notice'>After some fiddling, you manage to light [cig] with [src].</span>,"
+			SPAN_NOTICE("After some fiddling, [user] manages to light [user.p_their()] [cig] with [src]."),
+			SPAN_NOTICE("After some fiddling, you manage to light [cig] with [src].")
 		)
 	else
 		user.visible_message(
-			"<span class='notice'>After some fiddling, [user] manages to light [cig] for [target] with [src].</span>",
-			"<span class='notice'>After some fiddling, you manage to light [cig] for [target] with [src].</span>"
+			SPAN_NOTICE("After some fiddling, [user] manages to light [cig] for [target] with [src]."),
+			SPAN_NOTICE("After some fiddling, you manage to light [cig] for [target] with [src].")
 		)
 	cig.light(user, target)
+	add_fingerprint(user)
 	return TRUE
 
 /obj/item/lighter/process()
@@ -141,7 +156,7 @@
 	icon_state = "[base_icon_state ? "[base_icon_state]" : initial(icon_state)][lighter_color ? "-[lighter_color]" : ""][lit ? "-on" : ""]"
 
 /obj/item/lighter/update_overlays()
-	item_state = "[base_icon_state ? "[base_icon_state]" : initial(item_state)][lighter_color ? "-[lighter_color]" : ""][lit ? "-on" : ""]"
+	inhand_icon_state = "[base_icon_state ? "[base_icon_state]" : initial(inhand_icon_state)][lighter_color ? "-[lighter_color]" : ""][lit ? "-on" : ""]"
 
 /obj/item/lighter/get_heat()
 	return lit * 1500
@@ -152,7 +167,7 @@
 	name = "zippo lighter"
 	desc = "A premium cigarette lighter, for cool and distinguished individuals."
 	icon_state = "zippo"
-	item_state = "zippo"
+	inhand_icon_state = "zippo"
 	is_a_zippo = TRUE
 	throwforce = 4
 
@@ -160,14 +175,14 @@
 	. = ..()
 	if(world.time > next_on_message)
 		user.visible_message(
-			"<span class='rose'>Without even breaking stride, [user] flips open and lights [src] in one smooth movement.</span>",
-			"<span class='rose'>Without breaking your stride, you flip open and light [src] in one smooth movement.</span>",
-			"<span class='rose'>You hear a zippo being lit.</span>"
+			SPAN_ROSE("Without even breaking stride, [user] flips open and lights [src] in one smooth movement."),
+			SPAN_ROSE("Without breaking your stride, you flip open and light [src] in one smooth movement."),
+			SPAN_ROSE("You hear a zippo being lit.")
 		)
 		playsound(src.loc, 'sound/items/zippolight.ogg', 25, TRUE)
 		next_on_message = world.time + 5 SECONDS
 	else
-		to_chat(user, "<span class='notice'>You light [src].</span>")
+		to_chat(user, SPAN_NOTICE("You light [src]."))
 
 /obj/item/lighter/zippo/turn_off_lighter(mob/living/user)
 	. = ..()
@@ -176,14 +191,14 @@
 
 	if(world.time > next_off_message)
 		user.visible_message(
-			"<span class='rose'>You hear a quiet click as [user] shuts off [src] without even looking at what [user.p_theyre()] doing. Wow.</span>",
-			"<span class='rose'>You shut off [src] without even looking at what you're doing.</span>",
-			"<span class='rose'>You hear a quiet click as a zippo lighter is shut off. Wow.</span>"
+			SPAN_ROSE("You hear a quiet click as [user] shuts off [src] without even looking at what [user.p_theyre()] doing. Wow."),
+			SPAN_ROSE("You shut off [src] without even looking at what you're doing."),
+			SPAN_ROSE("You hear a quiet click as a zippo lighter is shut off. Wow.")
 		)
 		playsound(loc, 'sound/items/zippoclose.ogg', 25, TRUE)
 		next_off_message = world.time + 5 SECONDS
 	else
-		to_chat(user, "<span class='notice'>You shut off [src].</span>")
+		to_chat(user, SPAN_NOTICE("You shut off [src]."))
 
 /obj/item/lighter/zippo/cigarette_lighter_act(mob/living/user, mob/living/target, obj/item/direct_attackby_item)
 	var/obj/item/clothing/mask/cigarette/cig = ..()
@@ -191,20 +206,21 @@
 		return !isnull(cig)
 
 	if(!lit)
-		to_chat(user, "<span class='warning'>You need to light [src] before it can be used to light anything!</span>")
+		to_chat(user, SPAN_WARNING("You need to light [src] before it can be used to light anything!"))
 		return TRUE
 
 	if(target == user)
 		user.visible_message(
-			"<span class='rose'>With a single flick of [user.p_their()] wrist, [user] smoothly lights [user.p_their()] [cig.name] with [src]. Damn [user.p_theyre()] cool.</span>",
-			"<span class='rose'>With a single flick of your wrist, you smoothly light [cig] with [src].</span>"
+			SPAN_ROSE("With a single flick of [user.p_their()] wrist, [user] smoothly lights [user.p_their()] [cig.name] with [src]. Damn [user.p_theyre()] cool."),
+			SPAN_ROSE("With a single flick of your wrist, you smoothly light [cig] with [src].")
 		)
 	else
 		user.visible_message(
-			"<span class='rose'>[user] whips [src] out and holds it for [target]. [user.p_their(TRUE)] arm is as steady as the unflickering flame [user.p_they()] light [cig] with. Damn [user.p_theyre()] cool.</span>",
-			"<span class='rose'>You whip [src] out and hold it for [target]. Your arm is as steady as the unflickering flame you light [cig] with.</span>"
+			SPAN_ROSE("[user] whips [src] out and holds it for [target]. [user.p_their(TRUE)] arm is as steady as the unflickering flame [user.p_they()] light [cig] with. Damn [user.p_theyre()] cool."),
+			SPAN_ROSE("You whip [src] out and hold it for [target]. Your arm is as steady as the unflickering flame you light [cig] with.")
 		)
 	cig.light(user, target)
+	add_fingerprint(user)
 	return TRUE
 
 /obj/item/lighter/zippo/show_off_message(mob/living/user)
@@ -215,21 +231,21 @@
 
 /obj/item/lighter/zippo/nt_rep
 	name = "gold engraved zippo"
-	desc = "An engraved golden Zippo lighter with the letters \"NT\" engraved on the sides."
+	desc = "A golden Zippo lighter with the letter \"N\" engraved on the front."
 	icon_state = "zippo-nt"
-	item_state = "zippo-gold"
+	inhand_icon_state = "zippo-gold"
 
 /obj/item/lighter/zippo/blue
 	name = "blue zippo lighter"
 	desc = "A zippo lighter made of some blue metal."
 	icon_state = "zippo-blue"
-	item_state = "zippo-blue"
+	inhand_icon_state = "zippo-blue"
 
 /obj/item/lighter/zippo/black
 	name = "black zippo lighter"
 	desc = "A black zippo lighter."
 	icon_state = "zippo-black"
-	item_state = "zippo-black"
+	inhand_icon_state = "zippo-black"
 
 /obj/item/lighter/zippo/engraved
 	name = "engraved zippo lighter"
@@ -240,7 +256,7 @@
 	name = "Gonzo Fist zippo"
 	desc = "A Zippo lighter with the iconic Gonzo Fist on a matte black finish."
 	icon_state = "zippo-gonzo"
-	item_state = "zippo-red"
+	inhand_icon_state = "zippo-red"
 
 // MARK: MATCHES
 
@@ -256,6 +272,8 @@
 	origin_tech = "materials=1"
 	attack_verb = null
 	var/is_unathi_fire = FALSE
+	scatter_distance = 10
+	new_attack_chain = TRUE
 
 /obj/item/match/process()
 	var/turf/location = get_turf(src)
@@ -282,7 +300,7 @@
 		damtype = "fire"
 		force = 3
 		hitsound = 'sound/items/welder.ogg'
-		item_state = "cig_on"
+		inhand_icon_state = "cig_on"
 		name = "lit match"
 		desc = "A match. This one is lit."
 		attack_verb = list("burnt","singed")
@@ -297,11 +315,13 @@
 		damtype = "brute"
 		force = initial(force)
 		icon_state = "match_burnt"
-		item_state = "cig_off"
+		inhand_icon_state = "cig_off"
 		name = "burnt match"
 		desc = "A match. This one has seen better days."
 		attack_verb = list("flicked")
 		STOP_PROCESSING(SSobj, src)
+		scatter_atom()
+		transform = turn(transform, rand(0, 360))
 		return TRUE
 
 /obj/item/match/dropped(mob/user)
@@ -309,16 +329,18 @@
 	. = ..()
 
 /obj/item/match/can_enter_storage(obj/item/storage/S, mob/user)
-	if(lit)
-		to_chat(user, "<span class='warning'>[S] can't hold [initial(name)] while it's lit!</span>") // initial(name) so it doesn't say "lit" twice in a row
-		return FALSE
-	else
+	if(!lit)
 		return TRUE
+	// Uses initial(name) so it doesn't say "lit" twice in a row.
+	to_chat(user, SPAN_WARNING("[S] can't hold [initial(name)] while it's lit!"))
+	return FALSE
 
-/obj/item/match/attack__legacy__attackchain(mob/living/target, mob/living/user)
+/obj/item/match/interact_with_atom(atom/target, mob/living/user, list/modifiers)
 	if(cigarette_lighter_act(user, target))
-		return
+		return ITEM_INTERACT_COMPLETE
+	return NONE
 
+/obj/item/match/attack(mob/living/target, mob/living/carbon/human/user)
 	if(lit && target.IgniteMob())
 		message_admins("[key_name_admin(user)] set [key_name_admin(target)] on fire")
 		log_game("[key_name(user)] set [key_name(target)] on fire")
@@ -336,18 +358,18 @@
 		return !isnull(cig)
 
 	if(!lit)
-		to_chat(user, "<span class='warning'>You need to light [src] before it can be used to light anything!</span>")
+		to_chat(user, SPAN_WARNING("You need to light [src] before it can be used to light anything!"))
 		return TRUE
 
 	if(target == user)
 		user.visible_message(
-			"<span class='notice'>[user] lights [user.p_their()] [cig] with [src].</span>",
-			"<span class='notice'>You light [cig] with [src].</span>"
+			SPAN_NOTICE("[user] lights [user.p_their()] [cig] with [src]."),
+			SPAN_NOTICE("You light [cig] with [src].")
 		)
 	else
 		user.visible_message(
-			"<span class='notice'>[user] holds [src] out for [target], and lights [cig].</span>",
-			"<span class='notice'>You hold [src] out for [target], and light [user.p_their()] [cig].</span>"
+			SPAN_NOTICE("[user] holds [src] out for [target], and lights [cig]."),
+			SPAN_NOTICE("You hold [src] out for [target], and light [user.p_their()] [cig].")
 		)
 	cig.light(user, target)
 	matchburnout()
@@ -368,8 +390,8 @@
 	desc = "An unlit firebrand. It makes you wonder why it's not just called a stick."
 	smoketime = 20 //40 seconds
 
-/obj/item/match/firebrand/New()
-	..()
+/obj/item/match/firebrand/Initialize(mapload)
+	. = ..()
 	matchignite()
 
 /obj/item/match/unathi
@@ -389,27 +411,27 @@
 		return !isnull(cig)
 
 	if(!lit)
-		to_chat(user, "<span class='userdanger'>If you can see this message, please make an issue report to GitHub, something bad has happened.</span>")
+		to_chat(user, SPAN_USERDANGER("If you can see this message, please make an issue report to GitHub, something bad has happened."))
 		return TRUE
 
 	if(target == user)
 		user.visible_message(
-			"<span class='rose'>[user] spits fire at [user.p_their()] [cig.name], igniting it.</span>",
-			"<span class='rose'>You spit fire at [cig], igniting it.</span>",
-			"<span class='warning'>You hear a brief burst of flame!</span>"
+			SPAN_ROSE("[user] spits fire at [user.p_their()] [cig.name], igniting it."),
+			SPAN_ROSE("You spit fire at [cig], igniting it."),
+			SPAN_WARNING("You hear a brief burst of flame!")
 		)
 	else
 		if(prob(50))
 			user.visible_message(
-				"<span class='rose'>[user] spits fire at [target], lighting [cig] in [target.p_their()] mouth and nearly burning [target.p_their()] face!</span>",
-				"<span class='rose'>You spit fire at [target], lighting [cig] in [target.p_their()] mouth and nearly burning [target.p_their()] face!</span>",
-				"<span class='warning'>You hear a brief burst of flame!</span>"
+				SPAN_ROSE("[user] spits fire at [target], lighting [cig] in [target.p_their()] mouth and nearly burning [target.p_their()] face!"),
+				SPAN_ROSE("You spit fire at [target], lighting [cig] in [target.p_their()] mouth and nearly burning [target.p_their()] face!"),
+				SPAN_WARNING("You hear a brief burst of flame!")
 			)
 		else
 			user.visible_message(
-				"<span class='rose'>[user] spits fire at [target], burning [target.p_their()] face and lighting [cig] in the process!</span>",
-				"<span class='rose'>You spit fire at [target], burning [target.p_their()] face and lighting [cig] in the process!</span>",
-				"<span class='warning'>You hear a brief burst of flame!</span>"
+				SPAN_ROSE("[user] spits fire at [target], burning [target.p_their()] face and lighting [cig] in the process!"),
+				SPAN_ROSE("You spit fire at [target], burning [target.p_their()] face and lighting [cig] in the process!"),
+				SPAN_WARNING("You hear a brief burst of flame!")
 			)
 			var/obj/item/organ/external/head/affecting = target.get_organ("head")
 			affecting.receive_damage(0, 5)

@@ -7,6 +7,9 @@
 	w_class = WEIGHT_CLASS_TINY
 	desc = "This is rubbish."
 	resistance_flags = FLAMMABLE
+	// Recycle your litter, kids!
+	materials = list(MAT_PLASTIC = 100)
+	new_attack_chain = TRUE
 
 /obj/item/trash/decompile_act(obj/item/matter_decompiler/C, mob/user)
 	if(isdrone(user))
@@ -16,9 +19,6 @@
 		qdel(src)
 		return TRUE
 	return ..()
-
-/obj/item/trash/attack__legacy__attackchain(mob/M as mob, mob/living/user as mob)
-	return
 
 /obj/item/trash/raisins
 	name = "4no raisins"
@@ -73,9 +73,19 @@
 /obj/item/trash/fried_vox
 	name = "Kentucky Fried Vox"
 	icon_state = "fried_vox_empty"
-	item_state = "fried_vox_empty"
 	slot_flags = ITEM_SLOT_HEAD
 	dog_fashion = /datum/dog_fashion/head/fried_vox_empty
+	sprite_sheets = list(
+	"Skrell" = 'icons/mob/clothing/species/skrell/head.dmi',
+	"Drask" = 'icons/mob/clothing/species/drask/head.dmi',
+	"Kidan" = 'icons/mob/clothing/species/kidan/head.dmi'
+	)
+
+/obj/item/trash/fried_nian
+	name = "Moffolo Wild Wings"
+	icon_state = "fried_nian_empty"
+	slot_flags = ITEM_SLOT_HEAD
+	dog_fashion = /datum/dog_fashion/head/fried_nian_empty
 	sprite_sheets = list(
 	"Skrell" = 'icons/mob/clothing/species/skrell/head.dmi',
 	"Drask" = 'icons/mob/clothing/species/drask/head.dmi',
@@ -94,6 +104,7 @@
 	name = "Tray"
 	icon_state = "tray"
 	resistance_flags = NONE
+	materials = list(MAT_METAL = 100)
 
 /obj/item/trash/candle
 	name = "candle"
@@ -110,6 +121,7 @@
 	var/is_glass = 0
 	var/is_plastic = 0
 	resistance_flags = NONE
+	materials = list(MAT_METAL = 200)
 
 /obj/item/trash/gum
 	name = "chewed gum"
@@ -135,14 +147,16 @@
 	name = "caviar can"
 	icon_state = "caviar-empty"
 	desc = "There's none left."
+	materials = list(MAT_METAL = 100)
 
 // Ammo casings
 /obj/item/trash/spentcasing
 	icon = 'icons/obj/bullet.dmi'
 	name = "arbitrary spent casing item"
-	desc = "If you can see this and didn't spawn it, make an issue report on GitHub."
+	desc = ABSTRACT_TYPE_DESC
 	icon_state = "pistol_brass"
 	scatter_distance = 10
+	materials = list(MAT_METAL = 100)
 
 /obj/item/trash/spentcasing/Initialize(mapload)
 	. = ..()
@@ -194,3 +208,18 @@
 /obj/item/trash/spentcasing/bullet/lasershot
 	desc = "A spent IK-series single-use lasershot cell. It smells of burnt plastic with a metallic-chemical undertone."
 	icon_state = "lasercasing"
+
+// Trash from Hispania!
+
+/obj/item/trash/empty_jar
+	name = "Empty Jar"
+	icon_state = "jar"
+
+/obj/item/trash/empty_plasticcup
+	name = "Empty Plastic Cup"
+	icon_state = "cup"
+
+/obj/item/trash/barcardine
+	name = "barcardine bar wrapper"
+	desc = "An empty wrapper from a barcardine bar. You notice the inside has several medical labels. You're not sure if you care or not about that."
+	icon_state = "barcardine_trash"

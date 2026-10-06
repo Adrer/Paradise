@@ -22,7 +22,7 @@
 	response_harm   = "kicks"
 	gold_core_spawnable = FRIENDLY_SPAWN
 	var/turns_since_scan = 0
-	var/mob/living/simple_animal/mouse/movement_target
+	var/mob/living/basic/mouse/movement_target
 	var/eats_mice = 1
 	var/collar_icon_state = "cat"
 	footstep_type = FOOTSTEP_MOB_CLAW
@@ -41,13 +41,13 @@
 	icon_resting = "cat_rest"
 	gender = FEMALE
 	gold_core_spawnable = NO_SPAWN
-	unique_pet = TRUE
 	var/list/family = list()
 	var/list/children = list() //Actual mob instances of children
 
 /mob/living/simple_animal/pet/cat/runtime/Initialize(mapload)
 	. = ..()
 	SSpersistent_data.register(src)
+	GLOB.station_pets += src
 
 /mob/living/simple_animal/pet/cat/runtime/Destroy()
 	SSpersistent_data.registered_atoms -= src
@@ -138,15 +138,24 @@
 
 	//MICE!
 	if(eats_mice && isturf(loc) && !incapacitated())
-		for(var/mob/living/simple_animal/mouse/M in view(1, src))
-			if(!M.stat && Adjacent(M))
-				custom_emote(EMOTE_VISIBLE, "splats \the [M]!")
-				M.death()
-				M.splat()
-				movement_target = null
-				walk(src, 0)
-				stop_automated_movement = FALSE
-				break
+		for(var/mob/living/basic/mouse/M in view(1, src))
+			if(M.stat == DEAD || !Adjacent(M))
+				continue
+
+			if(istype(M, /mob/living/basic/mouse/irradiated_mouse))
+				if(prob(50))
+					death()
+					return
+				else
+					name = "Schrödinger's [name]"
+
+			custom_emote(EMOTE_VISIBLE, "splats \the [M]!")
+			M.death()
+			M.splat()
+			movement_target = null
+			walk(src, 0)
+			stop_automated_movement = FALSE
+			break
 		for(var/obj/item/toy/cattoy/T in view(1, src))
 			if(T.cooldown < (world.time - 400))
 				custom_emote(EMOTE_VISIBLE, "bats \the [T] around with its paw!")
@@ -168,7 +177,7 @@
 		movement_target = null
 		stop_automated_movement = FALSE
 		walk(src, 0)
-		for(var/mob/living/simple_animal/mouse/snack in oview(src,3))
+		for(var/mob/living/basic/mouse/snack in oview(src,3))
 			if(isturf(snack.loc) && !snack.stat)
 				movement_target = snack
 				break
@@ -179,7 +188,6 @@
 /mob/living/simple_animal/pet/cat/proc_cat
 	name = "Proc"
 	gold_core_spawnable = NO_SPAWN
-	unique_pet = TRUE
 
 /mob/living/simple_animal/pet/cat/var_cat
 	name = "Var"
@@ -273,13 +281,20 @@
 
 	if(stat == DEAD)
 		if(++final_bites >= total_final_bites)
-			visible_message("<span class='danger'>[L] finished eating [src], there's nothing left!</span>")
-			to_chat(L, "<span class='notice'>Whoa, that last bite tasted weird.</span>")
+			visible_message(SPAN_DANGER("[L] finished eating [src], there's nothing left!"))
+			to_chat(L, SPAN_NOTICE("Whoa, that last bite tasted weird."))
 			L.reagents.add_reagent("teslium", 5)
 			qdel(src)
 
 	L.reagents.add_reagent("nutriment", 0.4)
 	L.reagents.add_reagent("vitamin", 0.4)
+
+	if(HAS_TRAIT(L, TRAIT_GLUTTONOUS_GLORY))
+		to_chat(L, SPAN_BLOB("Delicious. The sin makes it that much more enjoyable."))
+		adjustFireLoss(-1)
+		adjustBruteLoss(-1)
+		reagents.check_and_add("kelotane", 20, 1)
+		reagents.check_and_add("bicaridine", 20, 1)
 
 /mob/living/simple_animal/pet/cat/cak/CheckParts(list/parts)
 	..()
@@ -293,5 +308,5 @@
 	var/new_name = tgui_input_text(src, "Enter your name, or press \"Cancel\" to stick with Keeki.", "Name Change", name)
 	if(!new_name)
 		return
-	to_chat(src, "<span class='notice'>Your name is now <b>\"[new_name]\"</b>!</span>")
+	to_chat(src, SPAN_NOTICE("Your name is now <b>\"[new_name]\"</b>!"))
 	name = new_name

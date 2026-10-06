@@ -22,6 +22,7 @@ GLOBAL_LIST_INIT(pipe_path2type, list(
 		/obj/machinery/atmospherics/trinary/mixer = PIPE_GAS_MIXER,
 		/obj/machinery/atmospherics/unary/vent_scrubber = PIPE_SCRUBBER,
 		/obj/machinery/atmospherics/binary/passive_gate = PIPE_PASSIVE_GATE,
+		/obj/machinery/atmospherics/binary/temperature_gate = PIPE_TEMPERATURE_GATE,
 		/obj/machinery/atmospherics/binary/volume_pump = PIPE_VOLUME_PUMP,
 		/obj/machinery/atmospherics/unary/heat_exchanger = PIPE_HEAT_EXCHANGE,
 		/obj/machinery/atmospherics/trinary/tvalve/digital = PIPE_DTVALVE,
@@ -39,6 +40,7 @@ GLOBAL_LIST_INIT(pipe_path2type, list(
 		/obj/machinery/atmospherics/unary/outlet_injector = PIPE_INJECTOR,
 		/obj/machinery/atmospherics/unary/passive_vent = PIPE_PASV_VENT,
 		/obj/machinery/atmospherics/binary/circulator = PIPE_CIRCULATOR,
+		/obj/machinery/atmospherics/unary/vent_pump/high_volume = PIPE_HIGH_VOLUME_PUMP,
 		"[PIPE_JUNCTION]" = /obj/machinery/atmospherics/pipe/simple/heat_exchanging/junction,
 		"[PIPE_HE_STRAIGHT]" = /obj/machinery/atmospherics/pipe/simple/heat_exchanging,
 		"[PIPE_HE_BENT]" = /obj/machinery/atmospherics/pipe/simple/heat_exchanging,
@@ -61,6 +63,7 @@ GLOBAL_LIST_INIT(pipe_path2type, list(
 		"[PIPE_GAS_MIXER]" = /obj/machinery/atmospherics/trinary/mixer,
 		"[PIPE_SCRUBBER]" = /obj/machinery/atmospherics/unary/vent_scrubber,
 		"[PIPE_PASSIVE_GATE]" = /obj/machinery/atmospherics/binary/passive_gate,
+		"[PIPE_TEMPERATURE_GATE]" = /obj/machinery/atmospherics/binary/temperature_gate,
 		"[PIPE_VOLUME_PUMP]" = /obj/machinery/atmospherics/binary/volume_pump,
 		"[PIPE_HEAT_EXCHANGE]" = /obj/machinery/atmospherics/unary/heat_exchanger,
 		"[PIPE_DTVALVE]" = /obj/machinery/atmospherics/trinary/tvalve/digital,
@@ -74,23 +77,26 @@ GLOBAL_LIST_INIT(pipe_path2type, list(
 		"[PIPE_INJECTOR]" = /obj/machinery/atmospherics/unary/outlet_injector,
 		"[PIPE_PASV_VENT]" = /obj/machinery/atmospherics/unary/passive_vent,
 		"[PIPE_CIRCULATOR]" = /obj/machinery/atmospherics/binary/circulator,
+		"[PIPE_HIGH_VOLUME_PUMP]" = /obj/machinery/atmospherics/unary/vent_pump/high_volume,
 ))
 
 /obj/item/pipe
 	name = "pipe"
-	var/pipe_type = 0
-	var/pipename
-	var/list/connect_types = list(CONNECT_TYPE_NORMAL) //1=regular, 2=supply, 3=scrubber
-	force = 7
 	icon = 'icons/obj/pipe-item.dmi'
 	icon_state = "simple"
-	item_state = "buildpipe"
-	/// Will the constructed pipe be flipped
+	inhand_icon_state = "buildpipe"
+	force = 7
+	new_attack_chain = TRUE
+	/// Will the constructed pipe be flipped?
 	var/flipped = FALSE
-	/// The label that will be put on the constructed pipe when this is wrenched down
+	/// The label that will be put on the constructed pipe when this is wrenched down.
 	var/label = null
-	/// The type of the pipe that will be created when this is wrenched down
+	/// The type of the pipe that will be created when this is wrenched down.
 	var/makes_type = null
+	var/pipe_type = 0
+	var/pipename
+	// 1 = Regular, 2 = Supply, 3 = Scrubber.
+	var/list/connect_types = list(CONNECT_TYPE_NORMAL)
 
 /obj/item/pipe/Initialize(mapload, new_pipe_type, new_dir, obj/machinery/atmospherics/make_from)
 	. = ..()
@@ -104,7 +110,7 @@ GLOBAL_LIST_INIT(pipe_path2type, list(
 		if(make_from.initialize_directions in list(NORTH|WEST, NORTH|EAST, SOUTH|WEST, SOUTH|EAST))
 			is_bent = TRUE
 
-		// If our path is in the list use the list
+		// If our path is in the list use the list.
 		if(makes_type in GLOB.pipe_path2type)
 			pipe_type = GLOB.pipe_path2type[makes_type] + is_bent
 		// If our path isn't exactly in the list (e.g /obj/machinery/atmospherics/binary/pump/on) try and find an ancestor there
@@ -150,8 +156,7 @@ GLOBAL_LIST_INIT(pipe_path2type, list(
 	update(make_from)
 	scatter_atom()
 
-//update the name and icon of the pipe item depending on the type
-
+// Update the name and icon of the pipe item depending on the type.
 /obj/item/pipe/rpd_act(mob/user, obj/item/rpd/our_rpd)
 	. = TRUE
 	if(our_rpd.mode == RPD_ROTATE_MODE)
@@ -161,7 +166,7 @@ GLOBAL_LIST_INIT(pipe_path2type, list(
 		flip()
 
 	else if(our_rpd.mode == RPD_DELETE_MODE)
-		if(pipe_type == PIPE_CIRCULATOR) //Skip TEG heat circulators, they aren't really pipes
+		if(pipe_type == PIPE_CIRCULATOR) // Skip TEG heat circulators, they aren't really pipes.
 			return ..()
 
 		our_rpd.delete_single_pipe(user, src)
@@ -171,7 +176,8 @@ GLOBAL_LIST_INIT(pipe_path2type, list(
 
 /obj/item/pipe/examine(mob/user)
 	. = ..()
-	. += "<span class='notice'>Alt-click it to rotate, Alt-Shift-click it to flip!</span>"
+	. += SPAN_NOTICE("<b>Alt-click</b> to rotate it.")
+	. += SPAN_NOTICE("<b>Alt-Shift-click</b> to flip it.")
 
 /obj/item/pipe/proc/update(obj/machinery/atmospherics/make_from)
 	name = "[get_pipe_name(pipe_type, PIPETYPE_ATMOS)] fitting"
@@ -226,11 +232,11 @@ GLOBAL_LIST_INIT(pipe_path2type, list(
 		dir = dir | turn(dir, 90)
 
 	else if(pipe_type in list (PIPE_SIMPLE_STRAIGHT, PIPE_SUPPLY_STRAIGHT, PIPE_SCRUBBERS_STRAIGHT, PIPE_UNIVERSAL, PIPE_HE_STRAIGHT, PIPE_MVALVE, PIPE_DVALVE))
-		if(dir == 2)
-			dir = 1
+		if(dir == SOUTH)
+			dir = NORTH
 
-		else if(dir == 8)
-			dir = 4
+		else if(dir == WEST)
+			dir = EAST
 
 // returns all pipe's endpoints
 
@@ -253,11 +259,11 @@ GLOBAL_LIST_INIT(pipe_path2type, list(
 			return flip
 
 		if(PIPE_SIMPLE_BENT, PIPE_HE_BENT, PIPE_SUPPLY_BENT, PIPE_SCRUBBERS_BENT,
-			PIPE_UVENT, PIPE_PASV_VENT, PIPE_SCRUBBER, PIPE_INJECTOR)
+			PIPE_UVENT, PIPE_PASV_VENT, PIPE_SCRUBBER, PIPE_INJECTOR, PIPE_HIGH_VOLUME_PUMP)
 			return dir
 
 		if(PIPE_SIMPLE_STRAIGHT, PIPE_HE_STRAIGHT, PIPE_JUNCTION,
-			PIPE_PUMP, PIPE_VOLUME_PUMP, PIPE_PASSIVE_GATE, PIPE_MVALVE, PIPE_DVALVE, PIPE_DP_VENT,
+			PIPE_PUMP, PIPE_VOLUME_PUMP, PIPE_PASSIVE_GATE, PIPE_TEMPERATURE_GATE, PIPE_MVALVE, PIPE_DVALVE, PIPE_DP_VENT,
 			PIPE_SUPPLY_STRAIGHT, PIPE_SCRUBBERS_STRAIGHT, PIPE_UNIVERSAL,
 			PIPE_CONNECTOR, PIPE_HEAT_EXCHANGE)
 			return dir|flip
@@ -286,17 +292,19 @@ GLOBAL_LIST_INIT(pipe_path2type, list(
 //Helper to clean up dir
 /obj/item/pipe/proc/fixdir()
 	if(pipe_type in list (PIPE_SIMPLE_STRAIGHT, PIPE_SUPPLY_STRAIGHT, PIPE_SCRUBBERS_STRAIGHT, PIPE_HE_STRAIGHT, PIPE_MVALVE, PIPE_DVALVE))
-		if(dir == 2)
-			dir = 1
+		if(dir == SOUTH)
+			dir = NORTH
 
-		else if(dir == 8)
-			dir = 4
+		else if(dir == WEST)
+			dir = EAST
 
 	else if(pipe_type in list(PIPE_MANIFOLD4W, PIPE_SUPPLY_MANIFOLD4W, PIPE_SCRUBBERS_MANIFOLD4W))
-		dir = 2
+		dir = SOUTH
 
-/obj/item/pipe/attack_self__legacy__attackchain(mob/user as mob)
-	return rotate()
+/obj/item/pipe/activate_self(mob/user)
+	if(..())
+		return ITEM_INTERACT_COMPLETE
+	rotate()
 
 /obj/item/pipe/wrench_act(mob/user, obj/item/I)
 	. = TRUE
@@ -313,12 +321,12 @@ GLOBAL_LIST_INIT(pipe_path2type, list(
 
 	for(var/obj/machinery/atmospherics/M in loc)
 		if((M.initialize_directions & pipe_dir) && M.check_connect_types_construction(M, src))	// matches at least one direction on either type of pipe
-			to_chat(user, "<span class='warning'>There is already a pipe of the same type at this location.</span>")
+			to_chat(user, SPAN_WARNING("There is already a pipe of the same type at this location."))
 			return
 
-	if(pipe_type in list(PIPE_SUPPLY_STRAIGHT, PIPE_SUPPLY_BENT, PIPE_SCRUBBERS_STRAIGHT, PIPE_SCRUBBERS_BENT, PIPE_HE_STRAIGHT, PIPE_HE_BENT, PIPE_SUPPLY_MANIFOLD, PIPE_SCRUBBERS_MANIFOLD, PIPE_SUPPLY_MANIFOLD4W, PIPE_SCRUBBERS_MANIFOLD4W, PIPE_UVENT, PIPE_SUPPLY_CAP, PIPE_SCRUBBERS_CAP, PIPE_PASV_VENT, PIPE_DP_VENT, PIPE_PASSIVE_GATE))
+	if(pipe_type in list(PIPE_SUPPLY_STRAIGHT, PIPE_SUPPLY_BENT, PIPE_SCRUBBERS_STRAIGHT, PIPE_SCRUBBERS_BENT, PIPE_HE_STRAIGHT, PIPE_HE_BENT, PIPE_SUPPLY_MANIFOLD, PIPE_SCRUBBERS_MANIFOLD, PIPE_SUPPLY_MANIFOLD4W, PIPE_SCRUBBERS_MANIFOLD4W, PIPE_UVENT, PIPE_SUPPLY_CAP, PIPE_SCRUBBERS_CAP, PIPE_PASV_VENT, PIPE_DP_VENT, PIPE_PASSIVE_GATE, PIPE_TEMPERATURE_GATE))
 		if(T.transparent_floor) //stops jank with transparent floors and pipes
-			to_chat(user, "<span class='warning'>You can only fix simple pipes and devices over glass floors!</span>")
+			to_chat(user, SPAN_WARNING("You can only fix simple pipes and devices over glass floors!"))
 			return
 
 	switch(pipe_type) //What kind of heartless person thought of doing this?
@@ -369,9 +377,9 @@ GLOBAL_LIST_INIT(pipe_path2type, list(
 				P.AddComponent(/datum/component/label, label)
 
 	user.visible_message( \
-		"<span class='notice'>[user] fastens [src].</span>",
-		"<span class='notice'>You fasten [src].</span>",
-		"<span class='notice'>You hear a ratchet.</span>")
+		SPAN_NOTICE("[user] fastens [src]."),
+		SPAN_NOTICE("You fasten [src]."),
+		SPAN_NOTICE("You hear a ratchet."))
 	qdel(src)	// remove the pipe item
 	. |= RPD_TOOL_SUCCESS
 
@@ -380,20 +388,20 @@ GLOBAL_LIST_INIT(pipe_path2type, list(
 	desc = "A meter that can be laid on pipes."
 	icon = 'icons/obj/pipe-item.dmi'
 	icon_state = "meter"
-	item_state = "buildpipe"
+	inhand_icon_state = "buildpipe"
 	w_class = WEIGHT_CLASS_BULKY
 	var/label = null
 
 /obj/item/pipe_meter/wrench_act(mob/living/user, obj/item/I)
 	if(!locate(/obj/machinery/atmospherics/pipe, loc))
-		to_chat(user, "<span class='warning'>You need to fasten it to a pipe.</span>")
+		to_chat(user, SPAN_WARNING("You need to fasten it to a pipe."))
 		return TRUE
 
 	var/obj/machinery/atmospherics/meter/P = new(loc)
 	if(label)
 		P.AddComponent(/datum/component/label, label)
 	I.play_tool_sound(src)
-	to_chat(user, "<span class='notice'>You have fastened the meter to the pipe.</span>")
+	to_chat(user, SPAN_NOTICE("You have fastened the meter to the pipe."))
 	qdel(src)
 	return TRUE
 
@@ -409,7 +417,7 @@ GLOBAL_LIST_INIT(pipe_path2type, list(
 	desc = "A sensor that can be hooked to a computer."
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "gsensor0"
-	item_state = "buildpipe"
+	inhand_icon_state = "buildpipe"
 	w_class = WEIGHT_CLASS_BULKY
 	var/label = null
 
@@ -419,7 +427,7 @@ GLOBAL_LIST_INIT(pipe_path2type, list(
 	if(label)
 		AS.AddComponent(/datum/component/label, label)
 	I.play_tool_sound(src, 50)
-	to_chat(user, "<span class='notice'>You have fastened the gas sensor.</span>")
+	to_chat(user, SPAN_NOTICE("You have fastened the gas sensor."))
 	qdel(src)
 	return TRUE
 

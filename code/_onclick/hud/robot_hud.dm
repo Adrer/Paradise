@@ -46,7 +46,7 @@
 /atom/movable/screen/robot/active_module/proc/activate()
 	icon_state = activated_icon_string
 	active = TRUE
-	
+
 /// Updates the background of the module to be inactive
 /atom/movable/screen/robot/active_module/proc/deactivate()
 	icon_state = deactivated_icon_string
@@ -58,6 +58,17 @@
 	if(isrobot(usr))
 		var/mob/living/silicon/robot/R = usr
 		R.toggle_module(module_number)
+
+/atom/movable/screen/robot/language_menu
+	name = "language menu"
+	icon_state = "talk_wheel"
+	screen_loc = UI_BORG_LANUGAGE_MENU
+
+/atom/movable/screen/robot/language_menu/Click()
+	var/mob/M = usr
+	if(!istype(M))
+		return
+	M.check_languages()
 
 /atom/movable/screen/robot/radio
 	name = "radio"
@@ -85,7 +96,7 @@
 /atom/movable/screen/robot/lamp
 	name = "Toggle Headlamp"
 	icon_state = "lamp0"
-	screen_loc = ui_borg_lamp
+	screen_loc = UI_BORG_LAMP
 
 /atom/movable/screen/robot/lamp/Click()
 	if(..())
@@ -103,6 +114,29 @@
 		return
 	var/mob/living/silicon/robot/R = usr
 	R.toggle_ionpulse()
+
+/atom/movable/screen/robot/pda
+	name = "internal PDA"
+	icon_state = "pda"
+	screen_loc = UI_BORG_PDA
+
+/atom/movable/screen/robot/pda/Click()
+	if(..())
+		return
+	var/mob/living/silicon/robot/R = usr
+	R.open_pda()
+
+/atom/movable/screen/robot/sensors
+	name = "Toggle Sensor Augmentation"
+	icon_state = "sensor"
+	screen_loc = UI_BORG_SENSOR
+
+/atom/movable/screen/robot/sensors/Click()
+	if(..())
+		return
+	if(isrobot(usr))
+		var/mob/living/silicon/robot/borg = usr
+		borg.sensor_mode()
 
 /atom/movable/screen/robot/mov_intent
 	name = "fast/slow toggle"
@@ -131,13 +165,13 @@
 	var/mob/living/silicon/robot/mymobR = mymob
 
 //Language menu
-	using = new /atom/movable/screen/language_menu
-	using.screen_loc = ui_borg_lanugage_menu
+	using = new /atom/movable/screen/robot/language_menu
+	using.screen_loc = UI_BORG_LANUGAGE_MENU
 	static_inventory += using
 
 //Radio
 	using = new /atom/movable/screen/robot/radio()
-	using.screen_loc = ui_borg_radio
+	using.screen_loc = UI_BORG_RADIO
 	static_inventory += using
 
 //Module select
@@ -148,8 +182,8 @@
 		mymobR.inventory_screens += using
 
 //Sec/Med HUDs
-	using = new /atom/movable/screen/ai/sensors()
-	using.screen_loc = ui_borg_sensor
+	using = new /atom/movable/screen/robot/sensors()
+	using.screen_loc = UI_BORG_SENSOR
 	static_inventory += using
 
 //Intent
@@ -163,7 +197,7 @@
 	using = new /atom/movable/screen/robot/mov_intent()
 	using.icon_state = (mymob.m_intent == MOVE_INTENT_RUN ? "running" : "walking")
 	static_inventory += using
-	using.screen_loc = ui_movi
+	using.screen_loc = UI_MOVI
 	move_intent = using
 
 //Health
@@ -174,17 +208,17 @@
 
 //Installed Module
 	mymobR.hands = new /atom/movable/screen/robot/module()
-	mymobR.hands.screen_loc = ui_borg_module
+	mymobR.hands.screen_loc = UI_BORG_MODULE
 	static_inventory += mymobR.hands
 
 	module_store_icon = new /atom/movable/screen/robot/store()
-	module_store_icon.screen_loc = ui_borg_store
+	module_store_icon.screen_loc = UI_BORG_STORE
 
 	mymob.pullin = new /atom/movable/screen/pull()
 	mymob.pullin.icon = 'icons/mob/screen_robot.dmi'
 	mymob.pullin.hud = src
 	mymob.pullin.update_icon(UPDATE_ICON_STATE)
-	mymob.pullin.screen_loc = ui_borg_pull
+	mymob.pullin.screen_loc = UI_BORG_PULL
 	hotkeybuttons += mymob.pullin
 
 	zone_select = new /atom/movable/screen/zone_sel/robot()
@@ -194,14 +228,19 @@
 
 //Headlamp
 	mymobR.lamp_button = new /atom/movable/screen/robot/lamp()
-	mymobR.lamp_button.screen_loc = ui_borg_lamp
+	mymobR.lamp_button.screen_loc = UI_BORG_LAMP
 	static_inventory += mymobR.lamp_button
 
 //Thrusters
 	using = new /atom/movable/screen/robot/thrusters()
-	using.screen_loc = ui_borg_thrusters
+	using.screen_loc = UI_BORG_THRUSTERS
 	static_inventory += using
 	mymobR.thruster_button = using
+
+// PDA
+	using = new /atom/movable/screen/robot/pda()
+	static_inventory += using
+	mymobR.pda_button = using
 
 /datum/hud/robot/Destroy()
 	var/mob/living/silicon/robot/myrob = mymob
@@ -248,7 +287,7 @@
 		screenmob.client.screen += module_store_icon	//"store" icon
 
 		if(!R.module.modules)
-			to_chat(usr, "<span class='danger'>Selected module has no modules to select.</span>")
+			to_chat(usr, SPAN_DANGER("Selected module has no modules to select."))
 			return
 
 		if(!robot_modules_background)

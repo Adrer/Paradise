@@ -37,6 +37,12 @@
 		MiddleClickOn(A)
 		return
 	if(modifiers["shift"])
+		if(isturf(A))
+			var/turf/clicked_turf = A
+			var/obj/machinery/door/AL = locate() in clicked_turf.contents
+			if(AL)
+				AL.try_to_activate_door(src)
+				return
 		ShiftClickOn(A)
 		return
 	if(modifiers["alt"]) // alt and alt-gr (rightalt)
@@ -63,7 +69,7 @@
 			if(is_component_functioning("camera"))
 				aiCamera.captureimage(A, usr)
 			else
-				to_chat(src, "<span class='userdanger'>Your camera isn't functional.</span>")
+				to_chat(src, SPAN_USERDANGER("Your camera isn't functional."))
 			return
 
 	/*

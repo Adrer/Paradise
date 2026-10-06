@@ -1,5 +1,5 @@
 /datum/outfit/admin/debug
-	name = "Debug outfit"
+	name = "Debug Outfit"
 
 	uniform = /obj/item/clothing/under/costume/patriotsuit
 	back = /obj/item/mod/control/pre_equipped/debug
@@ -37,7 +37,7 @@
 		return
 	var/obj/item/card/id/I = H.wear_id
 	if(istype(I))
-		apply_to_card(I, H, get_all_accesses(), "Debugger", "admin")
+		apply_to_card(I, H, get_absolutely_all_accesses(), "Debugger", "admin")
 
 	H.dna.SetSEState(GLOB.breathlessblock, 1)
 	singlemutcheck(H, GLOB.breathlessblock, MUTCHK_FORCED)
@@ -61,9 +61,12 @@
 	for(var/channel in SSradio.radiochannels)
 		channels[channel] = 1 // yeah, all channels, sure, probably fine
 
-/obj/item/encryptionkey/syndicate/all_channels/attack_self__legacy__attackchain(mob/user, pickupfireoverride)
+/obj/item/encryptionkey/syndicate/all_channels/activate_self(mob/user)
+	if(..())
+		return ITEM_INTERACT_COMPLETE
 	change_voice = !change_voice
-	to_chat(user, "You switch [src] to [change_voice ? "" : "not "]change your voice on syndicate communications.")
+	to_chat(user, SPAN_NOTICE("You switch [src] to [change_voice ? "" : "not "]change your voice on syndicate communications."))
+	return ITEM_INTERACT_COMPLETE
 
 /obj/item/encryptionkey/syndicate/all_channels/AltClick(mob/user)
 	var/new_name = tgui_input_text(user, "Enter new fake agent name...", "New name", max_length = MAX_NAME_LEN)
@@ -93,51 +96,56 @@
 
 /obj/item/clothing/glasses/hud/debug
 	name = "AVD-CNED glasses"
-	desc = "Diagnostic, Hydroponic, Medical, Security, and Skills HUD. Built-in advanced reagent scanner. Alt-click to toggle X-ray vision."
+	desc = "Diagnostic, Hydroponic, Medical, and Security HUD. Built-in advanced reagent scanner. Protects the wearer from supermatter hallucinations and welding flashes."
 	icon_state = "nvgmeson"
 	hud_debug = TRUE
 	flash_protect = FLASH_PROTECTION_WELDER
 	scan_reagents_advanced = TRUE
-
 	prescription_upgradable = FALSE
-
 	hud_types = list(DATA_HUD_MEDICAL_ADVANCED, DATA_HUD_DIAGNOSTIC_ADVANCED, DATA_HUD_SECURITY_ADVANCED, DATA_HUD_HYDROPONIC)
-
 	var/xray = FALSE
 
-/obj/item/clothing/glasses/hud/debug/equipped(mob/living/carbon/human/user, slot)
-	..()
-	if(xray)
-		add_xray(user)
+/obj/item/clothing/glasses/hud/debug/examine(mob/user)
+	. = ..()
+	. += "<span class = 'notice'><b>Alt-Click</b> to toggle X-ray vision.</span>"
 
-/obj/item/clothing/glasses/hud/debug/dropped(mob/living/carbon/human/user)
+/obj/item/clothing/glasses/hud/debug/equipped(mob/user, slot)
 	..()
-	if(xray)
-		remove_xray(user)
+	if(slot == ITEM_SLOT_EYES)
+		handle_traits(user, TRUE)
+	else
+		handle_traits(user)
 
-/obj/item/clothing/glasses/hud/debug/AltClick(mob/user)
+/obj/item/clothing/glasses/hud/debug/dropped(mob/user)
+	..()
+	handle_traits(user)
+
+/obj/item/clothing/glasses/hud/debug/AltClick(mob/living/carbon/human/user)
+	to_chat(user, SPAN_NOTICE("You [xray ? "de" : ""]activate the x-ray setting on [src]."))
+	xray = !xray
+	if(istype(user) && user.glasses == src)
+		handle_traits(user, TRUE)
+
+/obj/item/clothing/glasses/hud/debug/proc/handle_traits(mob/user, worn = FALSE)
 	if(!ishuman(user))
 		return
-	var/mob/living/carbon/human/human_user = user
-	if(human_user.glasses != src)
-		return
-	if(xray)
-		remove_xray(human_user)
+
+	if(worn)
+		if(!HAS_TRAIT_FROM(user, SM_HALLUCINATION_IMMUNE, "debug_glasses[UID()]"))
+			ADD_TRAIT(user, SM_HALLUCINATION_IMMUNE, "debug_glasses[UID()]")
 	else
-		add_xray(human_user)
-	xray = !xray
-	to_chat(user, "<span class='notice'>You [!xray ? "de" : ""]activate the x-ray setting on [src]</span>")
-	human_user.update_sight()
+		REMOVE_TRAIT(user, SM_HALLUCINATION_IMMUNE, "debug_glasses[UID()]")
 
-/obj/item/clothing/glasses/hud/debug/proc/remove_xray(mob/user)
-	see_in_dark = initial(see_in_dark)
-	lighting_alpha = initial(lighting_alpha)
-	REMOVE_TRAIT(user, TRAIT_XRAY_VISION, "debug_glasses[UID()]")
-
-/obj/item/clothing/glasses/hud/debug/proc/add_xray(mob/user)
-	see_in_dark = 8
-	lighting_alpha = LIGHTING_PLANE_ALPHA_INVISIBLE
-	ADD_TRAIT(user, TRAIT_XRAY_VISION, "debug_glasses[UID()]")
+	if(xray && worn)
+		see_in_dark = 8
+		lighting_alpha = LIGHTING_PLANE_ALPHA_INVISIBLE
+		if(!HAS_TRAIT_FROM(user, TRAIT_XRAY_VISION, "debug_glasses[UID()]"))
+			ADD_TRAIT(user, TRAIT_XRAY_VISION, "debug_glasses[UID()]")
+	else
+		see_in_dark = initial(see_in_dark)
+		lighting_alpha = initial(lighting_alpha)
+		REMOVE_TRAIT(user, TRAIT_XRAY_VISION, "debug_glasses[UID()]")
+	user.update_sight()
 
 /obj/item/debug/human_spawner
 	name = "human spawner"
@@ -150,7 +158,7 @@
 
 /obj/item/debug/human_spawner/examine(mob/user)
 	. = ..()
-	. += "<span class='notice'><b>Alt-Click</b> to toggle mind-activation on spawning.</span>"
+	. += SPAN_NOTICE("<b>Alt-Click</b> to toggle mind-activation on spawning.")
 
 /obj/item/debug/human_spawner/afterattack__legacy__attackchain(atom/target, mob/user, proximity)
 	..()
@@ -171,7 +179,7 @@
 	if(!Adjacent(user))
 		return
 	activate_mind = !activate_mind
-	to_chat(user, "<span class='notice'>Any humans spawned will [activate_mind ? "" : "not "]spawn with an initialized mind.</span>")
+	to_chat(user, SPAN_NOTICE("Any humans spawned will [activate_mind ? "" : "not "]spawn with an initialized mind."))
 
 /obj/item/rcd/combat/admin
 	name = "AVD-CNED RCD"
@@ -194,8 +202,10 @@
 	desc = "A wonder of modern medicine. This tool functions as any other sort of surgery tool, and finishes in only a fraction of the time. Hey, how'd you get your hands on this, anyway?"
 	toolspeed = 0.01
 
-/obj/item/scalpel/laser/manager/debug/attack_self__legacy__attackchain(mob/user)
-	. = ..()
+/obj/item/scalpel/laser/manager/debug/activate_self(mob/user)
+	if(..())
+		return
+
 	toolspeed = toolspeed == 0.5 ? 0.01 : 0.5
 	to_chat(user, "[src] is now set to toolspeed [toolspeed]")
 	playsound(src, 'sound/effects/pop.ogg', 50, 0)		//Change the mode
@@ -302,6 +312,11 @@
 	new /obj/item/stack/sheet/plasmarglass/fifty(src)
 	new /obj/item/stack/sheet/titaniumglass/fifty(src)
 	new /obj/item/stack/sheet/plastitaniumglass/fifty(src)
+	new /obj/item/stack/sheet/wood/fifty(src)
+	new /obj/item/stack/sheet/bamboo/fifty(src)
+	new /obj/item/stack/sheet/cloth/fifty(src)
+	new /obj/item/stack/sheet/durathread/fifty(src)
+	new /obj/item/stack/sheet/cardboard/fifty(src)
 	new /obj/item/stack/sheet/mineral/sandstone/fifty(src)
 	new /obj/item/stack/sheet/mineral/diamond/fifty(src)
 	new /obj/item/stack/sheet/mineral/uranium/fifty(src)

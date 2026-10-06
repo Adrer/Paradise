@@ -67,7 +67,7 @@
 	if(..())
 		return
 	if(is_away_level(z))
-		to_chat(user, "<span class='danger'>Unable to establish a connection</span>: You're too far away from the station!")
+		to_chat(user, "[SPAN_DANGER("Unable to establish a connection")]: You're too far away from the station!")
 		return
 	add_fingerprint(user)
 	ui_interact(user)
@@ -419,7 +419,7 @@
 		<br>\nMajor Crimes: [record_security.fields["ma_crim"]]
 		<br>\nDetails: [record_security.fields["ma_crim_d"]]<br>\n
 		<br>\nImportant Notes:
-		<br>\n\t[record_security.fields["notes"]]<br>\n<br>\n<center><B>Comments/Log</B></center><br>"}
+		<br>\n\t[replacetext(record_security.fields["notes"], "\n", "<BR>")]<br>\n<br>\n<center><B>Comments/Log</B></center><br>"}
 		for(var/c in record_security.fields["comments"])
 			if(islist(c))
 				P.info += "\"[c["text"]]\" Comment [c["header"]]<br>"

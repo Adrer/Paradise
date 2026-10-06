@@ -280,7 +280,7 @@
 	var/select
 	var/list/borgs = list()
 	for(var/mob/living/silicon/robot/A in GLOB.player_list)
-		if(A.stat == DEAD || A.connected_ai || A.scrambledcodes || isdrone(A))
+		if(A.stat == DEAD || A.connected_ai || A.scrambledcodes || isdrone(A) || A.shell)
 			continue
 		var/name = "[A.real_name] ([A.modtype] [A.braintype])"
 		borgs[name] = A
@@ -403,6 +403,8 @@
 	for(var/mob/living/basic/M in sortmob)
 		moblist.Add(M)
 	for(var/mob/camera/blob/M in sortmob)
+		moblist.Add(M)
+	for(var/mob/camera/flock/M in sortmob)
 		moblist.Add(M)
 	return moblist
 
@@ -558,6 +560,35 @@ Returns 1 if the chain up to the area contains the given typepath
 
 	return starting_turf
 
+/// returns a turf at the outer edge of a given radius
+/proc/get_random_perimeter_turf(atom/origin, radius)
+	var/turf/origin_turf = get_turf(origin)
+	if(isnull(origin_turf))
+		return null
+
+	if(radius == 0)
+		return origin_turf
+
+	var/upper_x = clamp(origin_turf.x + radius, 1, world.maxx)
+	var/lower_x = clamp(origin_turf.x - radius, 1, world.maxx)
+
+	var/upper_y = clamp(origin_turf.y + radius, 1, world.maxy)
+	var/lower_y = clamp(origin_turf.y - radius, 1, world.maxy)
+
+
+	var/x
+	var/y
+	var/z = origin_turf.z
+
+	if(prob(50))
+		x = pick(lower_x, upper_x)
+		y = rand(lower_y, upper_y)
+	else
+		x = rand(lower_x, upper_x)
+		y = pick(lower_y, upper_y)
+
+	return locate(x, y ,z)
+
 // returns turf relative to A for a given clockwise angle at set range
 // result is bounded to map size
 /proc/get_angle_target_turf(atom/A, angle, range)
@@ -644,17 +675,13 @@ Returns 1 if the chain up to the area contains the given typepath
 		current = get_step_towards(current, target_turf)
 		while(current != target_turf)
 			if(steps > length)
-				return 0
-			if(current.opacity)
-				return 0
-			for(var/thing in current)
-				var/atom/A = thing
-				if(A.opacity)
-					return 0
+				return FALSE
+			if(IS_OPAQUE_TURF(current))
+				return FALSE
 			current = get_step_towards(current, target_turf)
 			steps++
 
-	return 1
+	return TRUE
 
 //Returns: all the areas in the world
 /proc/return_areas()
@@ -1388,7 +1415,7 @@ GLOBAL_DATUM_INIT(dview_mob, /mob/dview, new)
 	return I
 
 //similar function to RANGE_TURFS(), but will search spiralling outwards from the center (like the above, but only turfs)
-/proc/spiral_range_turfs(dist=0, center=usr, orange=0)
+/proc/spiral_range_turfs(dist = 0, center = usr, orange = 0)
 	if(!dist)
 		if(!orange)
 			return list(center)
@@ -1552,7 +1579,7 @@ GLOBAL_DATUM_INIT(dview_mob, /mob/dview, new)
 			/obj/item/organ/internal = "INT_ORG",
 			/obj/item/organ = "ORGAN",
 			/obj/item/pda = "PDA",
-			/obj/item/projectile = "PROJ",
+			/obj/projectile = "PROJ",
 			/obj/item/radio/headset = "HEADSET",
 			/obj/item/reagent_containers/glass/beaker = "BEAKER",
 			/obj/item/reagent_containers/glass/bottle = "BOTTLE",

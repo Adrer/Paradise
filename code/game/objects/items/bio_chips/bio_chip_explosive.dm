@@ -15,25 +15,25 @@
 	var/delay = 7
 
 /obj/item/bio_chip/explosive/death_trigger(mob/source, gibbed)
-	activate("death")
-
-/obj/item/bio_chip/explosive/activate(cause)
-	if(!cause || !imp_in)
-		return FALSE
-	if(cause == "action_button" && alert(imp_in, "Are you sure you want to activate your microbomb bio-chip? This will cause you to explode!", "Microbomb Bio-chip Confirmation", "Yes", "No") != "Yes")
-		return FALSE
 	if(detonating)
 		return FALSE
 	heavy = round(heavy)
 	medium = round(medium)
 	weak = round(weak)
 	detonating = TRUE
-	to_chat(imp_in, "<span class='danger'>You activate your microbomb bio-chip.</span>")
+	to_chat(imp_in, SPAN_DANGER("You activate your microbomb bio-chip."))
 //If the delay is short, just blow up already jeez
 	if(delay <= 7)
 		self_destruct()
 		return
 	timed_explosion()
+
+/obj/item/bio_chip/explosive/activate(cause)
+	if(!cause || !imp_in)
+		return FALSE
+	if(cause == "action_button" && alert(imp_in, "Are you sure you want to activate your microbomb bio-chip? This will cause you to explode!", "Microbomb Bio-chip Confirmation", "Yes", "No") != "Yes")
+		return FALSE
+	death_trigger(imp_in)
 
 /// Gib the implantee and delete their destructible contents.
 /obj/item/bio_chip/explosive/proc/self_destruct()
@@ -83,17 +83,19 @@
 	imp_in.visible_message("<span class = 'warning'>[imp_in] starts beeping ominously!</span>")
 	playsound(loc, 'sound/items/timer.ogg', 30, 0)
 	var/wait_delay = delay / 4
-	sleep(wait_delay)
-	if(imp_in && imp_in.stat)
-		imp_in.visible_message("<span class = 'warning'>[imp_in] doubles over in pain!</span>")
-		imp_in.Weaken(14 SECONDS)
+	addtimer(CALLBACK(src, PROC_REF(do_booms), wait_delay, 1), wait_delay)
+
+/obj/item/bio_chip/explosive/proc/do_booms(wait_delay, stage)
+	if(stage == 1)
+		if(imp_in && imp_in.stat)
+			imp_in.visible_message(SPAN_WARNING("[imp_in] doubles over in pain!"))
+			imp_in.Weaken(14 SECONDS)
+	else if(stage == 4)
+		self_destruct()
+		return
+
 	playsound(loc, 'sound/items/timer.ogg', 30, 0)
-	sleep(wait_delay)
-	playsound(loc, 'sound/items/timer.ogg', 30, 0)
-	sleep(wait_delay)
-	playsound(loc, 'sound/items/timer.ogg', 30, 0)
-	sleep(wait_delay)
-	self_destruct()
+	addtimer(CALLBACK(src, PROC_REF(do_booms), wait_delay, stage + 1), wait_delay)
 
 /obj/item/bio_chip/explosive/macro
 	name = "macrobomb bio-chip"
@@ -110,7 +112,7 @@
 		return FALSE
 	if(cause == "action_button" && alert(imp_in, "Are you sure you want to activate your macrobomb bio-chip? This will cause you to explode and gib!", "Macrobomb Bio-chip Confirmation", "Yes", "No") != "Yes")
 		return FALSE
-	to_chat(imp_in, "<span class='notice'>You activate your macrobomb bio-chip.</span>")
+	to_chat(imp_in, SPAN_NOTICE("You activate your macrobomb bio-chip."))
 	timed_explosion()
 
 /obj/item/bio_chip/explosive/macro/implant(mob/source)

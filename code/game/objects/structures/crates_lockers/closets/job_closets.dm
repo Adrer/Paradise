@@ -65,7 +65,7 @@
 /obj/structure/closet/jcloset
 	name = "custodial closet"
 	desc = "It's a storage unit for janitorial clothes and gear."
-	closed_door_sprite = "mixed"
+	icon_state = "janitor"
 
 
 /obj/structure/closet/jcloset/populate_contents()
@@ -85,3 +85,8 @@
 	new /obj/item/cartridge/janitor(src)
 	new /obj/item/reagent_containers/glass/bucket(src)
 	new /obj/item/reagent_containers/glass/bucket(src)
+
+/obj/structure/closet/jcloset/empty
+
+/obj/structure/closet/jcloset/empty/populate_contents()
+	return

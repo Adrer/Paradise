@@ -15,6 +15,7 @@
 	VV_DROPDOWN_OPTION(VV_HK_BUILD_MODE, "Toggle Build Mode")
 	VV_DROPDOWN_OPTION(VV_HK_DIRECT_CONTROL, "Assume Direct Control")
 	VV_DROPDOWN_OPTION(VV_HK_OFFER_CONTROL, "Offer Control to Ghosts")
+	VV_DROPDOWN_OPTION(VV_HK_ADD_AI_CONTROLLER, "Add AI Controller")
 	VV_DROPDOWN_OPTION(VV_HK_DROP_EVERYTHING, "Drop Everything")
 	VV_DROPDOWN_OPTION(VV_HK_REGENERATEICONS, "Regenerate Icons")
 	VV_DROPDOWN_OPTION(VV_HK_ADDLANGUAGE, "Add Language")
@@ -42,34 +43,19 @@
 		rename_character(real_name, new_name)
 		href_list["datumrefresh"] = UID()
 	if(href_list[VV_HK_MOB_PLAYER_PANEL])
-		if(!check_rights(R_ADMIN|R_MOD))
-			return
-
-		usr.client.holder.show_player_panel(src)
+		SSuser_verbs.invoke_verb(usr, /datum/user_verb/show_player_panel, src)
 		href_list["datumrefresh"] = UID()
 	if(href_list[VV_HK_GIVE_SPELL])
-		if(!check_rights(R_SERVER|R_EVENT))
-			return
-
-		usr.client.give_spell(src)
+		SSuser_verbs.invoke_verb(usr, /datum/user_verb/give_spell, src)
 		href_list["datumrefresh"] = UID()
 	if(href_list[VV_HK_GIVE_DISEASE])
-		if(!check_rights(R_SERVER|R_EVENT))
-			return
-
-		usr.client.give_disease(src)
+		SSuser_verbs.invoke_verb(usr, /datum/user_verb/give_disease, src)
 		href_list["datumrefresh"] = UID()
 	if(href_list[VV_HK_GODMODE])
-		if(!check_rights(R_EVENT))
-			return
-
-		usr.client.cmd_admin_godmode(src)
+		SSuser_verbs.invoke_verb(usr, /datum/user_verb/godmode, src)
 		href_list["datumrefresh"] = UID()
 	if(href_list[VV_HK_GIB])
-		if(!check_rights(R_ADMIN|R_EVENT))
-			return
-
-		usr.client.cmd_admin_gib(src)
+		SSuser_verbs.invoke_verb(usr, /datum/user_verb/gib_mob, src)
 	if(href_list[VV_HK_BUILD_MODE])
 		if(!check_rights(R_BUILDMODE))
 			return
@@ -83,11 +69,7 @@
 		if(usr.client)
 			usr.client.cmd_admin_drop_everything(src)
 	if(href_list[VV_HK_DIRECT_CONTROL])
-		if(!check_rights(R_DEBUG|R_ADMIN))
-			return
-
-		if(usr.client)
-			usr.client.cmd_assume_direct_control(src)
+		SSuser_verbs.invoke_verb(usr, /datum/user_verb/assume_direct_control, src)
 	if(href_list[VV_HK_OFFER_CONTROL])
 		if(!check_rights(R_ADMIN))
 			return
@@ -108,21 +90,21 @@
 			return
 
 		if(QDELETED(src))
-			to_chat(usr, "<span class='notice'>Mob doesn't exist anymore.</span>")
+			to_chat(usr, SPAN_NOTICE("Mob doesn't exist anymore."))
 			return
 
 		if(add_language(new_language, TRUE))
-			to_chat(usr, "<span class='notice'>Added [new_language] to [src].</span>")
+			to_chat(usr, SPAN_NOTICE("Added [new_language] to [src]."))
 			message_admins("[key_name_admin(usr)] has given [key_name_admin(src)] the language [new_language]")
 			log_admin("[key_name(usr)] has given [key_name(src)] the language [new_language]")
 		else
-			to_chat(usr, "<span class='notice'>Mob already knows that language.</span>")
+			to_chat(usr, SPAN_NOTICE("Mob already knows that language."))
 	if(href_list[VV_HK_REMLANGUAGE])
 		if(!check_rights(R_SPAWN))
 			return
 
 		if(!length(languages))
-			to_chat(usr, "<span class='notice'>This mob knows no languages.</span>")
+			to_chat(usr, SPAN_NOTICE("This mob knows no languages."))
 			return
 
 		var/datum/language/rem_language = tgui_input_list(usr, "Please choose a language to remove.", "Language", src.languages)
@@ -131,15 +113,15 @@
 			return
 
 		if(QDELETED(src))
-			to_chat(usr, "<span class='notice'>Mob doesn't exist anymore.</span>")
+			to_chat(usr, SPAN_NOTICE("Mob doesn't exist anymore."))
 			return
 
 		if(remove_language(rem_language.name, TRUE))
-			to_chat(usr, "<span class='notice'>Removed [rem_language] from [src].</span>")
+			to_chat(usr, SPAN_NOTICE("Removed [rem_language] from [src]."))
 			message_admins("[key_name_admin(usr)] has removed language [rem_language] from [key_name_admin(src)]")
 			log_admin("[key_name(usr)] has removed language [rem_language] from [key_name(src)]")
 		else
-			to_chat(usr, "<span class='notice'>Mob doesn't know that language.</span>")
+			to_chat(usr, SPAN_NOTICE("Mob doesn't know that language."))
 	if(href_list[VV_HK_ADDVERB])
 		if(!check_rights(R_DEBUG))
 			return
@@ -159,7 +141,7 @@
 
 		var/verb = input("Select a verb!", "Verbs",null) as anything in possibleverbs
 		if(QDELETED(src))
-			to_chat(usr, "<span class='notice'>Mob doesn't exist anymore.</span>")
+			to_chat(usr, SPAN_NOTICE("Mob doesn't exist anymore."))
 			return
 		if(!verb || verb == "Cancel")
 			return
@@ -173,7 +155,7 @@
 
 		var/verb = tgui_input_list(usr, "Please choose a verb to remove.", "Verbs", src.verbs)
 		if(QDELETED(src))
-			to_chat(usr, "<span class='notice'>Mob doesn't exist anymore.</span>")
+			to_chat(usr, SPAN_NOTICE("Mob doesn't exist anymore."))
 			return
 		if(!verb)
 			return
@@ -181,3 +163,18 @@
 			remove_verb(src, verb)
 			message_admins("[key_name_admin(usr)] has removed verb [verb] from [key_name_admin(src)]")
 			log_admin("[key_name(usr)] has removed verb [verb] from [key_name(src)]")
+	if(href_list[VV_HK_ADD_AI_CONTROLLER])
+		var/static/list/controllers = subtypesof(/datum/admin_ai_template)
+		var/static/list/controllers_by_name = list()
+		if(!length(controllers_by_name))
+			for(var/datum/admin_ai_template/template as anything in controllers)
+				controllers_by_name["[initial(template.name)]"] = template
+
+		var/chosen = tgui_input_list(usr, "Which template should we apply?", "Select Template", controllers_by_name)
+		if(isnull(chosen))
+			return
+
+		var/chosen_type = controllers_by_name[chosen]
+		var/datum/admin_ai_template/using_template = new chosen_type
+		using_template.apply(src, usr)
+		href_list["datumrefresh"] = UID()

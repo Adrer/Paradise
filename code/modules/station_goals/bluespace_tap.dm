@@ -16,8 +16,8 @@
 	Nanotrasen Science Directorate"}
 
 /datum/station_goal/bluespace_tap/on_report()
-	var/datum/supply_packs/misc/station_goal/bluespace_tap/P = SSeconomy.supply_packs["[/datum/supply_packs/misc/station_goal/bluespace_tap]"]
-	P.special_enabled = TRUE
+	var/datum/supply_packs/engineering/goal/bluespace_tap/P = SSeconomy.supply_packs["[/datum/supply_packs/engineering/goal/bluespace_tap]"]
+	P.cost = 1000
 
 /datum/station_goal/bluespace_tap/check_completion()
 	if(..())
@@ -25,7 +25,7 @@
 	var/highscore = 0
 	for(var/obj/machinery/power/bluespace_tap/T in SSmachines.get_by_type(/obj/machinery/power/bluespace_tap))
 		highscore = max(highscore, T.total_points)
-	to_chat(world, "<b>Bluespace Harvester Highscore</b>: [highscore >= goal ? "<span class='greenannounce'>": "<span class='boldannounceic'>"][highscore]</span>")
+	to_chat(world, "<b>Bluespace Harvester Highscore</b>: [highscore >= goal ? SPAN_GREENANNOUNCE(highscore) : SPAN_BOLDANNOUNCEIC(highscore)]")
 	if(highscore >= goal)
 		return TRUE
 	return FALSE
@@ -584,7 +584,7 @@
 	emagged = TRUE
 	do_sparks(5, FALSE, src)
 	if(user)
-		user.visible_message("<span class='warning'>[user] disables the [src]'s safeties'.</span>", "<span class='warning'>You disable the [src]'s safeties'.</span>")
+		user.visible_message(SPAN_WARNING("[user] disables the [src]'s safeties'."), SPAN_WARNING("You disable the [src]'s safeties'."))
 	return TRUE
 
 /obj/structure/spawner/nether/bluespace_tap

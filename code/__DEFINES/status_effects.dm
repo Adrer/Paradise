@@ -82,6 +82,8 @@
 
 #define STATUS_EFFECT_OVERCLOCK /datum/status_effect/overclock
 
+#define STATUS_EFFECT_DUELING /datum/status_effect/dueling
+
 /////////////
 // DEBUFFS //
 /////////////
@@ -98,6 +100,8 @@
 
 #define STATUS_EFFECT_CULT_STUN /datum/status_effect/cult_stun_mark
 
+#define STATUS_EFFECT_ACOLYTE_STUN /datum/status_effect/cult_stun_mark/acolyte
+
 #define STATUS_EFFECT_HISWRATH /datum/status_effect/his_wrath //His Wrath.
 
 #define STATUS_EFFECT_SUMMONEDGHOST /datum/status_effect/cultghost //is a cult ghost: can see dead people, can't manifest more ghosts
@@ -112,11 +116,15 @@
 
 #define STATUS_EFFECT_GROUNDPOUND /datum/status_effect/stacking/ground_pound //if hit twice, the third attack will fling the target
 
+#define STATUS_EFFECT_BLUESPACE_THREADS /datum/status_effect/stacking/unstable_bluespace_threads // if hit twice, the third attack will cause something random
+
 #define STATUS_EFFECT_TELEPORTSICK /datum/status_effect/teleport_sickness //increasing debuffs as you rapidly teleport.
 
 #define STATUS_EFFECT_PACIFIED /datum/status_effect/pacifism //forces the pacifism trait
 
 #define STATUS_EFFECT_BLUESPACESLOWDOWN /datum/status_effect/bluespace_slowdown //Halfs victims next move modifier
+
+#define STATUS_EFFECT_BLUESPACESLOWDOWN_LONG /datum/status_effect/bluespace_slowdown/long
 
 #define STATUS_EFFECT_SHADOW_BOXING /datum/status_effect/shadow_boxing
 
@@ -185,6 +193,7 @@
 #define STATUS_EFFECT_NO_OXY_HEAL /datum/status_effect/transient/no_oxy_heal
 #define STATUS_EFFECT_JITTER /datum/status_effect/transient/jittery
 #define STATUS_EFFECT_CULT_SLUR /datum/status_effect/transient/cult_slurring
+#define STATUS_EFFECT_HERETIC_SLUR /datum/status_effect/transient/heretic_slurring
 #define STATUS_EFFECT_STAMMER /datum/status_effect/transient/stammering
 #define STATUS_EFFECT_SLURRING /datum/status_effect/transient/slurring
 #define STATUS_EFFECT_LOSE_BREATH /datum/status_effect/transient/lose_breath
@@ -201,8 +210,10 @@
 #define STATUS_EFFECT_HIGHFIVE /datum/status_effect/high_five
 #define STATUS_EFFECT_DAP /datum/status_effect/high_five/dap
 #define STATUS_EFFECT_OFFERING_EFTPOS /datum/status_effect/high_five/offering_eftpos
+#define STATUS_EFFECT_OFFERING_BARCODE_SCANNER /datum/status_effect/high_five/offering_barcode_scanner
 #define STATUS_EFFECT_HANDSHAKE /datum/status_effect/high_five/handshake
 #define STATUS_EFFECT_RPS /datum/status_effect/high_five/rps
+#define STATUS_EFFECT_FISTBUMP /datum/status_effect/high_five/fistbump
 
 #define STATUS_EFFECT_CHARGING /datum/status_effect/charging
 
@@ -231,11 +242,16 @@
 /// Causes a random safe teleport every 2 seconds for a limited time
 #define STATUS_EFFECT_TELEPORT_ROULETTE /datum/status_effect/teleport_roulette
 
+/// Use by hivelords to determine if they can attack yet.
+#define STATUS_EFFECT_HIVELORD_TRACKING /datum/status_effect/hivelord_tracking
+
 /// Status effects for different actions
 #define STATUS_EFFECT_REMOVE_CUFFS /datum/status_effect/action_status_effect/remove_handcuffs
 #define STATUS_EFFECT_REMOVE_MUZZLE /datum/status_effect/action_status_effect/remove_muzzle
 #define STATUS_EFFECT_UNBUCKLE /datum/status_effect/action_status_effect/unbuckle
 #define STATUS_EFFECT_EXIT_CRYOCELL /datum/status_effect/action_status_effect/exit_cryocell
+
+#define STATUS_EFFECT_REVIVE_NOTICE /datum/status_effect/revive_notice_delay
 
 //////////////////////////
 // Mind batter variants //

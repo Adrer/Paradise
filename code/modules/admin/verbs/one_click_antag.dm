@@ -1,15 +1,3 @@
-/client/proc/one_click_antag()
-	set name = "Create Antagonist"
-	set desc = "Auto-create an antagonist of your choice"
-	set category = "Event"
-
-	if(!check_rights(R_SERVER|R_EVENT))	return
-
-	if(holder)
-		holder.one_click_antag()
-	return
-
-
 /datum/admins/proc/one_click_antag()
 
 	var/dat = {"<B>One-click Antagonist</B><br>
@@ -17,11 +5,13 @@
 		<a href='byond://?src=[UID()];makeAntag=2'>Make Changelings</a><br>
 		<a href='byond://?src=[UID()];makeAntag=3'>Make Revolutionaries</a><br>
 		<a href='byond://?src=[UID()];makeAntag=4'>Make Cult</a><br>
+		<a href='byond://?src=[UID()];makeAntag=11'>Make Acolytes</a><br>
 		<a href='byond://?src=[UID()];makeAntag=5'>Make Wizard (Requires Ghosts)</a><br>
 		<a href='byond://?src=[UID()];makeAntag=6'>Make Vampires</a><br>
 		<a href='byond://?src=[UID()];makeAntag=7'>Make Abductor Team (Requires Ghosts)</a><br>
 		<a href='byond://?src=[UID()];makeAntag=8'>Make Mindflayers</a><br>
 		<a href='byond://?src=[UID()];makeAntag=9'>Make Event Characters</a><br>
+		<a href='byond://?src=[UID()];makeAntag=10'>Make Heretics</a><br>
 		"}
 	usr << browse(dat, "window=oneclickantag;size=400x400")
 	return
@@ -102,6 +92,36 @@
 			H.mind.add_antag_datum(/datum/antagonist/changeling)
 			candidates.Remove(H)
 			message_admins("[key_name(owner)] made [key_name_admin(H)] a Changeling with One-Click-Antag")
+
+		return TRUE
+	return FALSE
+
+/datum/admins/proc/makeAcolytes()
+	var/datum/game_mode/traitor/temp = new
+	if(GLOB.configuration.gamemode.prevent_mindshield_antags)
+		temp.restricted_jobs += temp.protected_jobs
+
+	var/list/mob/living/carbon/human/candidates = list()
+	var/mob/living/carbon/human/H = null
+
+	var/antnum = input(owner, "How many acolytes do you want to create? Enter 0 to cancel.","Amount:", 0) as num
+	if(!antnum || antnum <= 0)
+		return
+	log_admin("[key_name(owner)] tried making [antnum] acolytes with One-Click-Antag")
+	message_admins("[key_name_admin(owner)] tried making [antnum] acolytes with One-Click-Antag")
+
+	for(var/mob/living/carbon/human/applicant in GLOB.player_list)
+		if(CandCheck(ROLE_ACOLYTE, applicant, temp))
+			candidates += applicant
+
+	if(length(candidates))
+		var/numAcolytes = min(length(candidates), antnum)
+
+		for(var/i = 0, i<numAcolytes, i++)
+			H = pick(candidates)
+			H.mind.add_antag_datum(/datum/antagonist/acolyte)
+			candidates.Remove(H)
+			message_admins("[key_name(owner)] made [key_name_admin(H)] an Acolyte with One-Click-Antag")
 
 		return TRUE
 	return FALSE
@@ -319,6 +339,38 @@
 	qdel(temp)
 	return TRUE
 
+/datum/admins/proc/makeHeretics()
+	var/datum/game_mode/traitor/temp = new
+
+	if(GLOB.configuration.gamemode.prevent_mindshield_antags)
+		temp.restricted_jobs += temp.protected_jobs
+
+	var/list/mob/living/carbon/human/candidates = list()
+	var/mob/living/carbon/human/H = null
+
+	var/antnum = input(owner, "How many Heretics you want to create? Enter 0 to cancel","Amount:", 0) as num
+	if(!antnum || antnum <= 0)
+		return
+	log_admin("[key_name(owner)] tried making [antnum] Heretics with One-Click-Antag")
+	message_admins("[key_name_admin(owner)] tried making [antnum] Heretics with One-Click-Antag")
+
+	for(var/mob/living/carbon/human/applicant in GLOB.player_list)
+		if(CandCheck(ROLE_HERETIC, applicant, temp))
+			candidates += applicant
+
+	if(length(candidates))
+		var/numHeretics = min(length(candidates), antnum)
+
+		for(var/i = 0, i<numHeretics, i++)
+			H = pick(candidates)
+			H.mind.make_heretic()
+			log_admin("[key_name(H)] was made a heretic with one-click antag.")
+			candidates.Remove(H)
+
+		return 1
+	return 0
+
+
 /datum/admins/proc/makeEventCharacters()
 	var/list/mob/living/carbon/human/candidates = list()
 	var/mob/living/carbon/human/H = null
@@ -397,7 +449,7 @@
 		thunderdome_candidates.Cut(max_thunderdome_players + 1)
 	if(ISODD(length(thunderdome_candidates))) // We want fair fights
 		var/surplus_candidate = pick_n_take(thunderdome_candidates)
-		to_chat(surplus_candidate, "<span class='warning'>You were not chosen due to an odd number of participants.</span>")
+		to_chat(surplus_candidate, SPAN_WARNING("You were not chosen due to an odd number of participants."))
 	for(var/mob/dead/observer/candidate_to_spawn in thunderdome_candidates)
 		if(!candidate_to_spawn || !candidate_to_spawn.key || !candidate_to_spawn.client)
 			continue

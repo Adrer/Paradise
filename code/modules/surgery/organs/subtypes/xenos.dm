@@ -1,6 +1,7 @@
 /obj/item/organ/internal/alien
 	origin_tech = null
 	icon_state = null
+	inhand_icon_state = "meatball"
 	var/list/alien_powers = list()
 	var/list/human_powers = list()
 	icon = 'icons/obj/xeno_organs.dmi'
@@ -37,21 +38,21 @@
 
 /obj/item/organ/internal/alien/examine(mob/user)
 	. = ..()
-	. += "<span class='notice'>Can be sold on the cargo shuttle for [cargo_profit] credits.</span>"
+	. += SPAN_NOTICE("Can be sold on the cargo shuttle for [cargo_profit] credits.")
 	if(hijacked)
-		. += "<span class='notice'>This organ is hijacked, use a Hemostat on it to revert it to it's original function.</span>"
+		. += SPAN_NOTICE("This organ is hijacked, use a Hemostat on it to revert it to it's original function.")
 	else
-		. += "<span class='notice'>You can hijack the latent functions of this organ by using a Hemostat on it.</span>"
+		. += SPAN_NOTICE("You can hijack the latent functions of this organ by using a Hemostat on it.")
 
-/obj/item/organ/internal/alien/attackby__legacy__attackchain(obj/item/hemostat/item, mob/user, params)
-	if(istype(item))
-		if(!hijacked)
-			to_chat(user, "<span class='notice'>You slice off the control node of this organ. This organ will now be effective against aliens.</span>")
-		else
-			to_chat(user, "<span class='notice'>You reattach the control node of this organ. This organ will now be effective against those who attack the hive.</span>")
-		hijacked = !hijacked
-		return
-	return ..()
+/obj/item/organ/internal/alien/item_interaction(mob/living/user, obj/item/hemostat/used, list/modifiers)
+	if(!istype(used))
+		return ..()
+	if(!hijacked)
+		to_chat(user, SPAN_NOTICE("You slice off the control node of this organ. This organ will now be effective against aliens."))
+	else
+		to_chat(user, SPAN_NOTICE("You reattach the control node of this organ. This organ will now be effective against those who attack the hive."))
+	hijacked = !hijacked
+	return ITEM_INTERACT_COMPLETE
 
 /obj/item/organ/internal/alien/prepare_eat()
 	var/obj/S = ..()
@@ -75,6 +76,8 @@
 	var/max_plasma = 300
 	var/heal_rate = 5
 	var/plasma_rate = 10
+	/// For curing viruses
+	var/processing_ticks = 0
 
 /obj/item/organ/internal/alien/plasmavessel/prepare_eat()
 	var/obj/S = ..()
@@ -123,6 +126,15 @@
 			owner.adjustFireLoss(-heal_amt)
 			owner.adjustOxyLoss(-heal_amt)
 			owner.adjustCloneLoss(-heal_amt)
+		if(IS_HORIZONTAL(owner) && length(owner.viruses))
+			processing_ticks++
+			for(var/datum/disease/virus in owner.viruses)
+				if(virus.stage < 1 && processing_ticks >= 4)
+					virus.cure()
+					processing_ticks = 0
+				if(virus.stage > 1 && processing_ticks >= 4)
+					virus.stage--
+					processing_ticks = 0
 
 /obj/item/organ/internal/alien/plasmavessel/insert(mob/living/carbon/M, special = 0)
 	..()

@@ -8,6 +8,11 @@
 	pressure_resistance = 8
 	throwforce = 10
 	var/datum/mind/mind
+	/// The current client inhabiting this mob. Managed by login/logout
+	/// This exists so we can do cleanup in logout for occasions where a client was transfere rather then destroyed
+	/// We need to do this because the mob on logout never actually has a reference to client
+	/// We also need to clear this var/do other cleanup in client/Destroy, since that happens before logout
+	var/client/canon_client
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 	rad_insulation_beta = RAD_MOB_INSULATION
 	rad_insulation_gamma = RAD_MOB_INSULATION
@@ -99,6 +104,8 @@
 
 	var/in_throw_mode = FALSE
 
+	var/datum/language/default_language
+
 	// See /datum/emote
 
 	/// Cooldown on audio effects from emotes.
@@ -160,7 +167,7 @@
 
 	var/has_limbs = 1 //Whether this mob have any limbs he can move with
 
-	//SSD var, changed it up some so people can have special things happen for different mobs when SSD.
+	// Counts how many `Life()` ticks have occured on an SSD mob, for SSD handling. There isn't a `/mob`-level proc for SSD handling, so you must define one for any mob that you want to give SSD effects to.
 	var/player_logged = 0
 
 	//Ghosted var, set only if a player has manually ghosted out of this mob.
@@ -183,8 +190,6 @@
 
 	var/resize = 1 //Badminnery resize
 
-	var/datum/vision_override/vision_type = null //Vision override datum.
-
 	var/list/permanent_huds = list()
 
 	var/list/actions = list()
@@ -200,6 +205,8 @@
 
 	/// Overrides the health HUD element state if set.
 	var/health_hud_override = HEALTH_HUD_OVERRIDE_NONE
+	/// Overrides the nutrition HUD element state if set.
+	var/nutrition_hud_override = NUTRITION_HUD_OVERRIDE_NONE
 	/// A soft reference to the location where this mob's runechat message will appear. Uses `UID()`.
 	var/runechat_msg_location
 	/// The datum receiving keyboard input. parent mob by default.
@@ -259,3 +266,5 @@
 	/// For storing what do_after's something has, key = string, value = amount of interactions of that type happening.
 	var/list/do_afters
 	new_attack_chain = TRUE
+
+	var/list/mousepointers = list()

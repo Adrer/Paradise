@@ -67,7 +67,7 @@
 	if(!gender_prompt(user))
 		return
 	if(!loc || !uses && !permanent || QDELETED(src) || QDELETED(user))
-		to_chat(user, "<span class='warning'>The [name] is no longer usable!</span>")
+		to_chat(user, SPAN_WARNING("The [name] is no longer usable!"))
 		return
 	create(ckey = user.ckey, user = user)
 
@@ -105,18 +105,18 @@
 	if(SSticker.current_state != GAME_STATE_PLAYING || !loc || !ghost_usable)
 		return FALSE
 	if(!uses && !permanent)
-		to_chat(user, "<span class='warning'>This spawner is out of charges!</span>")
+		to_chat(user, SPAN_WARNING("This spawner is out of charges!"))
 		return FALSE
 	if((jobban_isbanned(user, ban_type) || (restrict_antagban && jobban_isbanned(user, ROLE_SYNDICATE))))
-		to_chat(user, "<span class='warning'>You are jobanned!</span>")
+		to_chat(user, SPAN_WARNING("You are jobanned!"))
 		return FALSE
 	if(!HAS_TRAIT(user, TRAIT_RESPAWNABLE) && restrict_respawnability)
-		to_chat(user, "<span class='warning'>You currently do not have respawnability!</span>")
+		to_chat(user, SPAN_WARNING("You currently do not have respawnability!"))
 		return FALSE
 	if(isobserver(user))
 		var/mob/dead/observer/O = user
 		if(!O.check_ahud_rejoin_eligibility() && restrict_ahud)
-			to_chat(user, "<span class='warning'>Upon using the antagHUD you forfeited the ability to join the round.</span>")
+			to_chat(user, SPAN_WARNING("Upon using the antagHUD you forfeited the ability to join the round."))
 			return FALSE
 	if(time_check(user))
 		return FALSE
@@ -126,8 +126,8 @@
 	var/deathtime = world.time - user.timeofdeath
 	var/joinedasobserver = FALSE
 	if(isobserver(user))
-		var/mob/dead/observer/G = user
-		if(G.started_as_observer)
+		var/mob/dead/observer/ghost = user
+		if(ghost.ghost_flags & GHOST_START_AS_OBSERVER)
 			joinedasobserver = TRUE
 
 	var/deathtimeminutes = round(deathtime / 600)
@@ -142,12 +142,13 @@
 
 	if(deathtime <= death_cooldown && !joinedasobserver)
 		to_chat(user, "You have been dead for[pluralcheck] [deathtimeseconds] seconds.")
-		to_chat(user, "<span class='warning'>You must wait [death_cooldown / 600] minutes to respawn!</span>")
+		to_chat(user, SPAN_WARNING("You must wait [death_cooldown / 600] minutes to respawn!"))
 		return TRUE
 	return FALSE
 
 /obj/effect/mob_spawn/proc/create(ckey, flavour = TRUE, name, mob/user = usr)
-	log_game("[ckey] became [mob_name]")
+	if(ckey) // we don't care about corpse spawners etc
+		log_game("[ckey] became [mob_name]")
 	var/mob/living/M = new mob_type(get_turf(src)) //living mobs only
 	if(mob_name)
 		M.rename_character(M.real_name, mob_name)
@@ -240,13 +241,8 @@
 	var/pda = -1
 	var/backpack_contents = -1
 	var/suit_store = -1
-	var/hair_style
-	var/facial_hair_style
-	var/hair_color
-	var/facial_hair_color
-	/// If set, should be a value between -185 and 220. Go to `random_skin_tone()` for species-specific numbers' range you'd like to use
-	var/skin_tone
-	var/eyes_color
+	// Whether this mob should have a random appearance. Turn off for loot spawners which SHOULD look like the thing you just killed
+	var/randomize_appearance = TRUE
 
 	var/list/del_types = list(/obj/item/pda, /obj/item/radio/headset)
 
@@ -279,13 +275,8 @@
 /obj/effect/mob_spawn/human/equip(mob/living/carbon/human/H)
 	if(mob_species)
 		H.set_species(mob_species)
-	if(mob_gender)
-		H.change_gender(mob_gender)
-		if(mob_gender == FEMALE)
-			H.change_body_type(FEMALE)
-	else if(prob(50))
-		H.change_gender(FEMALE)
-		H.change_body_type(FEMALE)
+	if(randomize_appearance)
+		H.generate_random_appearance(prosthesis_prob = 0, use_gender = mob_gender)
 	if(!mob_name) // randomise our name if it's not yet overriden
 		H.rename_character(H.real_name, random_name(H.gender, H.dna.species.name))
 
@@ -293,47 +284,10 @@
 		H.Drain()
 	else //Because for some reason I can't track down, things are getting turned into husks even if husk = false. It's in some damage proc somewhere.
 		H.cure_husk()
+
 	H.underwear = "Nude"
 	H.undershirt = "Nude"
 	H.socks = "Nude"
-	var/obj/item/organ/external/head/D = H.get_organ("head")
-	if(istype(D))
-		if(eyes_color)
-			H.change_eye_color(eyes_color, FALSE)
-
-		if(hair_style)
-			D.h_style = hair_style
-		else
-			D.h_style = random_hair_style(H.gender, D.dna.species.name)
-
-		if(facial_hair_style)
-			D.f_style = facial_hair_style
-		else if(H.gender != FEMALE) // no beard for women
-			D.f_style = random_facial_hair_style(H.gender, D.dna.species.name)
-
-		if(hair_color)
-			D.hair_colour = hair_color
-			D.sec_hair_colour = tint_color(hair_color, HAIR_TINT_RANGE)
-		else
-			D.hair_colour = random_hair_color(range = HAIR_TINT_RANGE)
-			D.sec_hair_colour = tint_color(D.hair_colour, HAIR_TINT_RANGE)
-
-		if(facial_hair_color)
-			D.facial_colour = facial_hair_color
-			D.sec_facial_colour = tint_color(facial_hair_color, HAIR_TINT_RANGE)
-		else
-			D.facial_colour = tint_color(D.hair_colour, HAIR_TINT_RANGE)
-			D.sec_facial_colour = tint_color(D.hair_colour, HAIR_TINT_RANGE)
-
-	if(!isnull(skin_tone))
-		H.change_skin_tone(skin_tone)
-	else
-		H.change_skin_tone(random_skin_tone(H.dna.species.name))
-
-	if(istype(D))
-		H.change_skin_color(tint_color(D.hair_colour))
-	else
-		H.change_skin_color(random_hair_color())
 
 	if(dna_scrambled)
 		H.get_dna_scrambled()
@@ -412,7 +366,7 @@
 	var/despawn = tgui_alert(user, "Return to cryosleep? (Warning, Your mob will be deleted!)", "Leave Bar", list("Yes", "No"))
 	if(despawn != "Yes" || !loc || !Adjacent(user))
 		return
-	user.visible_message("<span class='notice'>[user.name] climbs back into cryosleep...</span>")
+	user.visible_message(SPAN_NOTICE("[user.name] climbs back into cryosleep..."))
 	qdel(user)
 
 /datum/outfit/cryobartender
@@ -457,7 +411,7 @@
 
 /datum/outfit/abductorcorpse
 	name = "Abductor Corpse"
-	uniform = /obj/item/clothing/under/color/grey
+	uniform = /obj/item/clothing/under/abductor
 	shoes = /obj/item/clothing/shoes/combat
 
 /obj/effect/mob_spawn/human/corpse/ashwalker
@@ -620,6 +574,13 @@
 	id_job = "Medical Doctor"
 	outfit = /datum/outfit/job/doctor
 
+// Cargo tech corpse
+/obj/effect/mob_spawn/human/corpse/random_species/cargo_tech
+	name = "Cargo Technician"
+	mob_name = "Cargo Technician"
+	id_job = "Cargo Technician"
+	outfit = /datum/outfit/job/cargo_tech
+
 //Engineer corpse.
 /obj/effect/mob_spawn/human/corpse/engineer
 	name = "Engineer"
@@ -639,6 +600,7 @@
 	l_pocket = null
 	l_ear = null
 	id = null
+	can_be_admin_equipped = FALSE
 
 /obj/effect/mob_spawn/human/corpse/random_species/security_officer
 	name = "Security Officer"
@@ -689,11 +651,49 @@
 	id_job = "Scientist"
 	outfit = /datum/outfit/job/scientist
 
+/obj/effect/mob_spawn/human/corpse/random_species/miner
+	name = "Shaft Miner"
+	mob_name = "Shaft Miner"
+	id_job = "Shaft Miner"
+	outfit = /datum/outfit/job/mining/equipped/less
+
 /obj/effect/mob_spawn/human/corpse/skeleton
 	name = "skeletal remains"
 	mob_name = "skeleton"
 	mob_species = /datum/species/skeleton/brittle
 	mob_gender = NEUTER
+
+/obj/effect/mob_spawn/human/corpse/vulpkanin
+	name = "vulpkanin"
+	mob_species = /datum/species/vulpkanin
+
+/obj/effect/mob_spawn/human/corpse/vulpkanin/merc
+	outfit = /datum/outfit/vulpkanin_merc
+
+/datum/outfit/vulpkanin_merc
+	name = "vulpkanin mercenary"
+	uniform = /obj/item/clothing/under/syndicate/tacticool
+	suit = /obj/item/clothing/suit/armor/vest
+	shoes = /obj/item/clothing/shoes/jackboots
+	gloves = /obj/item/clothing/gloves/color/black
+
+/obj/effect/mob_spawn/human/corpse/vulpkanin/officer
+	outfit = /datum/outfit/vulpkanin_merc/officer
+
+/datum/outfit/vulpkanin_merc/officer
+	name = "vulpkanin officer"
+	uniform = /obj/item/clothing/under/rank/procedure/blueshield
+	suit = /obj/item/clothing/suit/armor/secjacket
+	head = /obj/item/clothing/head/beret/blue
+
+/obj/effect/mob_spawn/human/corpse/vulpkanin/captain
+	outfit = /datum/outfit/vulpkanin_merc/captain
+
+/datum/outfit/vulpkanin_merc/captain
+	name = "vulpkanin captain"
+	uniform = /obj/item/clothing/under/rank/captain
+	suit = /obj/item/clothing/suit/armor/secjacket
+	head = /obj/item/clothing/head/caphat
 
 /datum/outfit/randomizer
 	name = "randomizer"
@@ -732,6 +732,7 @@
 		/datum/species/drask,
 		/datum/species/grey,
 		/datum/species/diona,
+		/datum/species/skulk,
 	)
 	del_types |= /obj/item/card/id
 
@@ -752,6 +753,7 @@
 /obj/effect/mob_spawn/human/alive/zombie/equip(mob/living/carbon/human/H)
 	ADD_TRAIT(H, TRAIT_NPC_ZOMBIE, ROUNDSTART_TRAIT)
 	H.ForceContractDisease(new /datum/disease/zombie)
+	H.zone_selected = BODY_ZONE_CHEST
 	for(var/datum/disease/zombie/zomb in H.viruses)
 		zomb.stage = 8
 
@@ -792,7 +794,7 @@
 	pixel_x = -12
 
 /obj/effect/mob_spawn/corpse/goliath
-	mob_type = /mob/living/simple_animal/hostile/asteroid/goliath/beast
+	mob_type = /mob/living/basic/mining/goliath
 	icon = 'icons/mob/lavaland/lavaland_monsters.dmi'
 	icon_state = "goliath_dead"
 	pixel_x = -12

@@ -5,6 +5,7 @@
 	language = "Sol Common"
 	species_traits = list(LIPS)
 	skinned_type = /obj/item/stack/sheet/animalhide/human
+	meat_type = /obj/item/food/meat/human
 	clothing_flags = HAS_UNDERWEAR | HAS_UNDERSHIRT | HAS_SOCKS
 	bodyflags = HAS_ICON_SKIN_TONE | HAS_BODY_MARKINGS
 	dietflags = DIET_OMNI
@@ -14,7 +15,7 @@
 	making humans one of the most recognizable and socially diverse species in the sector."
 
 	/// Organized to be from Light to Dark.
-	icon_skin_tones = list(
+	icon_skin_tones = alist(
 		1 = "Default White",
 		2 = "Pale",
 		3 = "Classic",
@@ -63,5 +64,61 @@
 
 		H.change_icobase(new_icobase, owner_sensitive) //Update the icobase of all our organs, but make sure we don't mess with frankenstein limbs in doing so.
 
+/datum/species/human/randomize_gender()
+	return pickweight(list(MALE = 40, FEMALE = 40, PLURAL = 20))
 
+/datum/species/human/randomize_body_type(gender)
+	if(prob(50) && gender != PLURAL)
+		return gender
+	return ..()
 
+/datum/species/human/skin_tone_from_body_color(body_color)
+	var/list/skin_tones = list("#c4766b", "#cb9189", "#f29835", "#d78f84", "#af704e", "#a86859", "#975e3f", "#9e541d", "#76391e", "#77391b", "#49180e", "#602e29", "#26080e")
+	return skin_tones.Find(pick_closest_list_color(skin_tones, body_color))
+
+/datum/species/human/skin_tone_to_hex(skin_tone)
+	var/list/skin_tones = list("#c4766b", "#cb9189", "#f29835", "#d78f84", "#af704e", "#a86859", "#975e3f", "#9e541d", "#76391e", "#77391b", "#49180e", "#602e29", "#26080e")
+	return skin_tones[skin_tone]
+
+/datum/species/human/randomize_facial_hair_style(datum/robolimb/robohead, species_shaved_prob = 20, gender)
+	if(gender != FEMALE || prob(5))
+		return ..()
+	return "None"
+
+/datum/species/human/randomize_hair_colors(datum/robolimb/robohead, body_color = null, skin_tone = 1)
+	if(skin_tone < 7 || prob(30)) // make dark hair colors more common on dark skin tones
+		return ..()
+	var/list/hair_colors = list()
+	var/list/possible_colors = list(
+		// gray, black, blue - 7 total
+		COLOR_GRAY15,
+		COLOR_SILVER,
+		COLOR_WALL_GUNMETAL,
+		COLOR_GRAY,
+		COLOR_FULL_TONER_BLACK,
+		COLOR_DARK_GRAY,
+		COLOR_BLACK,
+		// brownish - 7 total
+		COLOR_DARK_BROWN,
+		COLOR_CHESTNUT,
+		COLOR_BEASTY_BROWN,
+		COLOR_BROWN_ORANGE,
+	)
+	if(prob(2))
+		hair_colors["h1"] = rand_hex_color()
+		if(prob(33))
+			hair_colors["f1"] = tint_color_hsl(pick(possible_colors), 10)
+		else if(prob(50))
+			hair_colors["f1"] = rand_hex_color()
+		else
+			hair_colors["f1"] = hair_colors["h1"]
+	else
+		hair_colors["h1"] = tint_color_hsl(pick(possible_colors), 10)
+		if(prob(2))
+			hair_colors["f1"] = rand_hex_color()
+		else
+			hair_colors["f1"] = hair_colors["h1"]
+	hair_colors["h2"] = rand_hex_color()
+	hair_colors["f2"] = rand_hex_color()
+
+	return hair_colors

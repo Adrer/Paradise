@@ -1,10 +1,8 @@
-
 /obj/item/encryptionkey
 	name = "Standard Encryption Key"
 	desc = "An encyption key for a radio headset. Contains cypherkeys."
 	icon = 'icons/obj/radio.dmi'
 	icon_state = "cypherkey"
-	item_state = ""
 	w_class = WEIGHT_CLASS_TINY
 	origin_tech = "engineering=2;bluespace=1"
 	var/translate_binary = FALSE
@@ -12,6 +10,7 @@
 	var/syndie = FALSE
 	var/change_voice = FALSE
 	var/list/channels = list()
+	new_attack_chain = TRUE
 
 /obj/item/encryptionkey/syndicate
 	name = "syndicate encryption key"
@@ -86,6 +85,11 @@
 	name = "Science Radio Encryption Key"
 	icon_state = "sci_cypherkey"
 	channels = list("Science" = 1)
+
+/obj/item/encryptionkey/headset_xenobio
+	name = "Xenobiology Radio Encryption Key"
+	icon_state = "xenobio_cypherkey"
+	channels = list("Science" = 1, "Supply" = 0)
 
 /obj/item/encryptionkey/headset_medsci
 	name = "Medical Research Radio Encryption Key"

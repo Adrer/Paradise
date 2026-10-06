@@ -44,10 +44,14 @@
 	/// If this camera doesnt add to camera chunks. Used by camera bugs.
 	var/non_chunking_camera = FALSE
 
-/obj/machinery/camera/Initialize(mapload, should_add_to_cameranet = TRUE)
+/obj/machinery/camera/Initialize(mapload, should_add_to_cameranet = TRUE, obj/item/camera_assembly/use_assembly = null)
 	. = ..()
 	wires = new(src)
-	assembly = new(src)
+	if(istype(use_assembly))
+		assembly = use_assembly
+	else
+		assembly = new(src)
+	apply_upgrades()
 	assembly.state = 4
 	assembly.anchored = TRUE
 	assembly.update_icon()
@@ -69,7 +73,7 @@
 
 /obj/machinery/camera/proc/create_prox_monitor()
 	if(!proximity_monitor)
-		proximity_monitor = new(src, 1)
+		proximity_monitor = new(src, CAMERA_VIEW_DISTANCE)
 		RegisterSignal(proximity_monitor, COMSIG_PARENT_QDELETING, PROC_REF(proximity_deleted))
 
 /obj/machinery/camera/Moved(atom/OldLoc, Dir, Forced)
@@ -95,14 +99,13 @@
 
 /obj/machinery/camera/examine(mob/user)
 	. = ..()
-	. += "<span class='notice'>[src]'s maintenance panel can be <b>screwed [panel_open ? "closed" : "open"]</b>.</span>"
+	. += SPAN_NOTICE("[src]'s maintenance panel can be <b>screwed [panel_open ? "closed" : "open"]</b>.")
 	if(panel_open)
-		. += "<span class='notice'>Upgrades can be added to [src] or <b>pried out</b>.</span>"
+		. += SPAN_NOTICE("Upgrades can be added to [src] or <b>pried out</b>.")
 		if(!wires.CanDeconstruct())
-			. += "<span class='notice'>[src]'s <b>internal wires</b> are preventing you from cutting it free.</span>"
+			. += SPAN_NOTICE("[src]'s <b>internal wires</b> are preventing you from cutting it free.")
 		else
-			. += "<span class='notice'>[src]'s <i>internal wires</i> are disconnected, but it can be <b>cut free</b>.</span>"
-
+			. += SPAN_NOTICE("[src]'s <i>internal wires</i> are disconnected, but it can be <b>cut free</b>.")
 
 /obj/machinery/camera/emp_act(severity)
 	if(!status)
@@ -142,38 +145,40 @@
 	..()
 
 /obj/machinery/camera/item_interaction(mob/living/user, obj/item/used, list/modifiers)
-	var/msg = "<span class='notice'>You attach [used] into the assembly inner circuits.</span>"
-	var/msg2 = "<span class='notice'>The camera already has that upgrade!</span>"
+	var/attach_msg = SPAN_NOTICE("You attach [used] to the inner circuits of [src].")
+	var/reject_msg = SPAN_WARNING("[src] already has that upgrade!")
 
 	if(istype(used, /obj/item/stack/sheet/mineral/plasma) && panel_open)
 		if(!user.canUnEquip(used, FALSE))
-			to_chat(user, "<span class='warning'>[used] is stuck to your hand!</span>")
+			to_chat(user, SPAN_WARNING("[used] is stuck to your hand!"))
 			return ITEM_INTERACT_COMPLETE
 		if(!isEmpProof())
 			var/obj/item/stack/sheet/mineral/plasma/P = used
+			if(!P.use(1))
+				to_chat(user, SPAN_WARNING("You need at least one sheet of plasma to add EMP shielding to [src]!"))
+				return ITEM_INTERACT_COMPLETE
 			upgradeEmpProof()
-			to_chat(user, "[msg]")
-			P.use(1)
+			to_chat(user, attach_msg)
 			return ITEM_INTERACT_COMPLETE
 		else
-			to_chat(user, "[msg2]")
+			to_chat(user, reject_msg)
 	else if(istype(used, /obj/item/assembly/prox_sensor) && panel_open)
 		if(!user.canUnEquip(used, FALSE))
-			to_chat(user, "<span class='warning'>[used] is stuck to your hand!</span>")
+			to_chat(user, SPAN_WARNING("[used] is stuck to your hand!"))
 			return ITEM_INTERACT_COMPLETE
 		if(!isMotion())
 			upgradeMotion()
-			to_chat(user, "[msg]")
+			to_chat(user, attach_msg)
 			qdel(used)
 		else
-			to_chat(user, "[msg2]")
+			to_chat(user, reject_msg)
 
 		return ITEM_INTERACT_COMPLETE
 
 	// OTHER
 	else if((istype(used, /obj/item/paper) || istype(used, /obj/item/pda)) && isliving(user))
 		if(!can_use())
-			to_chat(user, "<span class='warning'>You can't show something to a disabled camera!</span>")
+			to_chat(user, SPAN_WARNING("You can't show something to a disabled camera!"))
 			return ITEM_INTERACT_COMPLETE
 
 		var/mob/living/U = user
@@ -218,7 +223,7 @@
 	if(!I.use_tool(src, user, 0, volume = I.tool_volume))
 		return
 	panel_open = !panel_open
-	to_chat(user, "<span class='notice'>You screw [src]'s panel [panel_open ? "open" : "closed"].</span>")
+	to_chat(user, SPAN_NOTICE("You screw [src]'s panel [panel_open ? "open" : "closed"]."))
 
 /obj/machinery/camera/wirecutter_act(mob/user, obj/item/I)
 	. = TRUE
@@ -242,8 +247,10 @@
 		return
 	WELDER_ATTEMPT_WELD_MESSAGE
 	if(I.use_tool(src, user, 100, volume = I.tool_volume))
-		visible_message("<span class='warning'>[user] unwelds [src], leaving it as just a frame bolted to the wall.</span>",
-						"<span class='warning'>You unweld [src], leaving it as just a frame bolted to the wall</span>")
+		visible_message(
+			SPAN_WARNING("[user] unwelds [src], leaving it as just a frame bolted to the wall."),
+			SPAN_WARNING("You unweld [src], leaving it as just a frame bolted to the wall.")
+		)
 		deconstruct(TRUE)
 
 /obj/machinery/camera/run_obj_armor(damage_amount, damage_type, damage_flag = 0, attack_dir)
@@ -297,10 +304,10 @@
 
 	if(display_message)
 		if(user)
-			visible_message("<span class='danger'>[user] reactivates [src]!</span>")
+			visible_message(SPAN_DANGER("[user] reactivates [src]!"))
 			add_hiddenprint(user)
 		else
-			visible_message("<span class='danger'>\The [src] reactivates!</span>")
+			visible_message(SPAN_DANGER("\The [src] reactivates!"))
 		playsound(loc, toggle_sound, 100, TRUE)
 	update_icon(UPDATE_ICON_STATE)
 	SEND_SIGNAL(src, COMSIG_CAMERA_ON, user, display_message)
@@ -319,10 +326,10 @@
 
 	if(display_message)
 		if(user)
-			visible_message("<span class='danger'>[user] deactivates [src]!</span>")
+			visible_message(SPAN_DANGER("[user] deactivates [src]!"))
 			add_hiddenprint(user)
 		else
-			visible_message("<span class='danger'>\The [src] deactivates!</span>")
+			visible_message(SPAN_DANGER("\The [src] deactivates!"))
 		playsound(loc, toggle_sound, 100, 1)
 
 	update_icon(UPDATE_ICON_STATE)
@@ -339,10 +346,10 @@
 
 /obj/machinery/camera/proc/can_use()
 	if(!status)
-		return 0
+		return FALSE
 	if(stat & EMPED)
-		return 0
-	return 1
+		return FALSE
+	return TRUE
 
 /obj/machinery/camera/proc/can_see()
 	var/list/see = null
@@ -428,6 +435,9 @@
 	..()
 	return TRUE
 
+/obj/machinery/camera/get_internal_wires()
+	return wires
+
 /// Cameras which are placed inside of things, such as helmets.
 /obj/machinery/camera/portable
 	start_active = TRUE // theres no real way to reactivate these, so never break them when they init
@@ -449,7 +459,6 @@
 	SEND_SIGNAL(src, COMSIG_CAMERA_MOVED, prev_turf)
 	GLOB.cameranet.update_portable_camera(src, prev_turf)
 	prev_turf = get_turf(src)
-
 
 /obj/machinery/camera/toxins // cameras to be used in toxins
 	c_tag = "Research Toxins Test Chamber East";

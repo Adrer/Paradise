@@ -55,6 +55,7 @@
 	summoner = host
 	host.grant_guardian_actions(src)
 	RegisterSignal(summoner, COMSIG_LIVING_HEALTH_UPDATE, PROC_REF(update_health_hud))
+	RegisterSignal(summoner, COMSIG_SUMMONER_EXTRACTED, PROC_REF(handle_extraction))
 
 /mob/living/simple_animal/hostile/guardian/can_buckle()
 	return FALSE
@@ -88,13 +89,13 @@
 	if(summoner)
 		if(summoner.stat == DEAD || (!summoner.check_death_method() && summoner.health <= HEALTH_THRESHOLD_DEAD))
 			summoner.remove_guardian_actions()
-			to_chat(src, "<span class='danger'>Your summoner has died!</span>")
-			visible_message("<span class='danger'>[src] dies along with its user!</span>")
+			to_chat(src, SPAN_DANGER("Your summoner has died!"))
+			visible_message(SPAN_DANGER("[src] dies along with its user!"))
 			ghostize()
 			qdel(src)
 	snapback()
 	if(summoned && !summoner && !admin_spawned)
-		to_chat(src, "<span class='danger'>You somehow lack a summoner! As a result, you dispel!</span>")
+		to_chat(src, SPAN_DANGER("You somehow lack a summoner! As a result, you dispel!"))
 		ghostize()
 		qdel(src)
 
@@ -103,8 +104,8 @@
 	if(summoner && loc && summoner.loc)
 		if(get_dist(get_turf(summoner), get_turf(src)) <= range)
 			return
-		to_chat(src, "<span class='holoparasite'>You moved out of range, and were pulled back! You can only move [range] meters from [summoner.real_name]!</span>")
-		visible_message("<span class='danger'>[src] jumps back to its user.</span>")
+		to_chat(src, SPAN_HOLOPARASITE("You moved out of range, and were pulled back! You can only move [range] meters from [summoner.real_name]!"))
+		visible_message(SPAN_DANGER("[src] jumps back to its user."))
 		if(iseffect(summoner.loc) || istype(summoner.loc, /obj/machinery/atmospherics))
 			Recall(TRUE)
 		else
@@ -118,7 +119,7 @@
 
 /mob/living/simple_animal/hostile/guardian/AttackingTarget()
 	if(!is_deployed() && a_intent == INTENT_HARM)
-		to_chat(src, "<span class='danger'>You must be manifested to attack!</span>")
+		to_chat(src, SPAN_DANGER("You must be manifested to attack!"))
 		return FALSE
 	else if(!is_deployed() && a_intent == INTENT_HELP)
 		return FALSE
@@ -134,7 +135,7 @@
 	. = ..()
 	if(!.)
 		return FALSE
-	to_chat(summoner, "<span class='danger'>Your [name] died somehow!</span>")
+	to_chat(summoner, SPAN_DANGER("Your [name] died somehow!"))
 	UnregisterSignal(summoner, COMSIG_LIVING_HEALTH_UPDATE)
 	summoner.remove_guardian_actions()
 	summoner.death()
@@ -159,14 +160,14 @@
 
 	summoner.adjustBruteLoss(damage)
 	if(damage < 0)
-		to_chat(summoner, "<span class='notice'>Your [name] is receiving healing. It heals you!</span>")
+		to_chat(summoner, SPAN_NOTICE("Your [name] is receiving healing. It heals you!"))
 	else
-		to_chat(summoner, "<span class='danger'>Your [name] is under attack! You take damage!</span>")
+		to_chat(summoner, SPAN_DANGER("Your [name] is under attack! You take damage!"))
 		if(!stealthy_deploying)
-			summoner.visible_message("<span class='danger'>Blood sprays from [summoner] as [src] takes damage!</span>")
+			summoner.visible_message(SPAN_DANGER("Blood sprays from [summoner] as [src] takes damage!"))
 
 	if(summoner.stat == UNCONSCIOUS)
-		to_chat(summoner, "<span class='danger'>Your body can't take the strain of sustaining [src] in this condition, it begins to fall apart!</span>")
+		to_chat(summoner, SPAN_DANGER("Your body can't take the strain of sustaining [src] in this condition, it begins to fall apart!"))
 		summoner.adjustCloneLoss(damage / 2)
 
 /mob/living/simple_animal/hostile/guardian/ex_act(severity, target)
@@ -183,7 +184,7 @@
 /mob/living/simple_animal/hostile/guardian/gib()
 	if(summoner)
 		summoner.remove_guardian_actions()
-		to_chat(summoner, "<span class='danger'>Your [src] was blown up!</span>")
+		to_chat(summoner, SPAN_DANGER("Your [src] was blown up!"))
 		summoner.Weaken(20 SECONDS)// your fermillier has died! ROLL FOR CON LOSS!
 	UnregisterSignal(summoner, COMSIG_LIVING_HEALTH_UPDATE)
 	ghostize()
@@ -191,6 +192,13 @@
 
 /mob/living/simple_animal/hostile/guardian/Process_Spacemove(movement_dir = 0, continuous_move = FALSE)
 	return TRUE	//Works better in zero G, and not useless in space
+
+/mob/living/simple_animal/hostile/guardian/proc/handle_extraction()
+	if(summoner)
+		summoner.remove_guardian_actions()
+		UnregisterSignal(summoner, COMSIG_LIVING_HEALTH_UPDATE)
+	ghostize()
+	qdel(src)
 
 //Manifest, Recall, Communicate
 
@@ -227,15 +235,15 @@
 		return
 
 	// Show the message to the host and to the guardian.
-	to_chat(summoner, "<span class='changeling'><i>[src]:</i> [input]</span>")
-	to_chat(src, "<span class='changeling'><i>[src]:</i> [input]</span>")
+	to_chat(summoner, SPAN_CHANGELING("<i>[src]:</i> [input]"))
+	to_chat(src, SPAN_CHANGELING("<i>[src]:</i> [input]"))
 	log_say("(GUARDIAN to [key_name(summoner)]): [input]", src)
 	create_log(SAY_LOG, "GUARDIAN to HOST: [input]", summoner)
 
 	// Show the message to any ghosts/dead players.
 	for(var/mob/M in GLOB.dead_mob_list)
 		if(M && M.client && M.stat == DEAD && !isnewplayer(M))
-			to_chat(M, "<span class='changeling'><i>Guardian Communication from <b>[src]</b> ([ghost_follow_link(src, ghost=M)]): [input]</i>")
+			to_chat(M, SPAN_CHANGELING("<i>Guardian Communication from <b>[src]</b> ([ghost_follow_link(src, ghost=M)]): [input]</i>"))
 
 //override set to true if message should be passed through instead of going to host communication
 /mob/living/simple_animal/hostile/guardian/say(message, override = FALSE)
@@ -245,16 +253,16 @@
 
 
 /mob/living/simple_animal/hostile/guardian/proc/ToggleMode()
-	to_chat(src, "<span class='danger'>You dont have another mode!</span>")
+	to_chat(src, SPAN_DANGER("You dont have another mode!"))
 
 
 /mob/living/simple_animal/hostile/guardian/proc/ToggleLight()
 	if(!light_on)
 		set_light(luminosity_on)
-		to_chat(src, "<span class='notice'>You activate your light.</span>")
+		to_chat(src, SPAN_NOTICE("You activate your light."))
 	else
 		set_light(0)
-		to_chat(src, "<span class='notice'>You deactivate your light.</span>")
+		to_chat(src, SPAN_NOTICE("You deactivate your light."))
 	light_on = !light_on
 
 ////////Creation
@@ -264,6 +272,7 @@
 	desc = "An enchanted deck of tarot cards, rumored to be a source of unimaginable power. "
 	icon = 'icons/obj/playing_cards.dmi'
 	icon_state = "deck_syndicate_full"
+	new_attack_chain = TRUE
 	var/used = FALSE
 	var/theme = "magic"
 	var/mob_name = "Guardian Spirit"
@@ -274,7 +283,7 @@
 	var/ling_failure = "The deck refuses to respond to a souless creature such as you."
 	var/list/possible_guardians = list("Gaseous", "Standard", "Ranged", "Support", "Explosive", "Assassin", "Lightning", "Charger", "Protector")
 	var/random = FALSE
-	/// What type was picked the first activation
+	/// What type was picked the first activation.
 	var/picked_random_type
 	var/color_list = list("Pink" = "#FFC0CB",
 		"Red" = "#FF0000",
@@ -283,62 +292,69 @@
 		"Blue" = "#0000FF")
 	var/name_list = list("Aries", "Leo", "Sagittarius", "Taurus", "Virgo", "Capricorn", "Gemini", "Libra", "Aquarius", "Cancer", "Scorpio", "Pisces")
 
-/obj/item/guardiancreator/attack_self__legacy__attackchain(mob/living/user)
+/obj/item/guardiancreator/activate_self(mob/living/user)
+	if(..())
+		return ITEM_INTERACT_COMPLETE
+
 	if(has_guardian(user))
-		to_chat(user, "You already have a [mob_name]!")
-		return
-	if(user.mind && (IS_CHANGELING(user) || user.mind.has_antag_datum(/datum/antagonist/vampire) || IS_MINDFLAYER(user)))
-		to_chat(user, "[ling_failure]")
-		return
+		to_chat(user, SPAN_WARNING("You already have a [mob_name]!"))
+		return ITEM_INTERACT_COMPLETE
+
+	if(user.mind && (IS_CHANGELING(user) || user.mind.has_antag_datum(/datum/antagonist/vampire) || IS_MINDFLAYER(user)|| IS_HERETIC(user))) // God I hate this stupid check but it's needed.
+		to_chat(user, SPAN_WARNING("[ling_failure]"))
+		return ITEM_INTERACT_COMPLETE
+
 	if(used)
-		to_chat(user, "[used_message]")
-		return
+		to_chat(user, SPAN_WARNING("[used_message]"))
+		return ITEM_INTERACT_COMPLETE
+
 	used = TRUE // Set this BEFORE the popup to prevent people using the injector more than once, polling ghosts multiple times, and receiving multiple guardians.
 	var/choice = tgui_alert(user, "[confirmation_message]", "Confirm", list("Yes", "No"))
 	if(choice != "Yes")
-		to_chat(user, "<span class='warning'>You decide against using the [name].</span>")
+		to_chat(user, SPAN_WARNING("You decide against using the [name]."))
 		used = FALSE
-		return
+		return ITEM_INTERACT_COMPLETE
 	to_chat(user, "[use_message]")
 
 	var/guardian_type
 	if(random)
-		if(!picked_random_type) // Only pick the type once. No type fishing
+		if(!picked_random_type) // Only pick the type once. No type fishing.
 			picked_random_type = pick(possible_guardians)
 		guardian_type = picked_random_type
 	else
 		guardian_type = tgui_input_list(user, "Pick the type of [mob_name]", "[mob_name] Creation", possible_guardians)
 		if(!guardian_type)
-			to_chat(user, "<span class='warning'>You decide against using the [name].</span>")
+			to_chat(user, SPAN_WARNING("You decide against using the [name]."))
 			used = FALSE
-			return
+			return ITEM_INTERACT_COMPLETE
 
 	var/list/mob/dead/observer/candidates = SSghost_spawns.poll_candidates("Do you want to play as the [mob_name] ([guardian_type]) of [user.real_name]?", ROLE_GUARDIAN, FALSE, 10 SECONDS, source = src, role_cleanname = "[mob_name] ([guardian_type])")
 	var/mob/dead/observer/theghost = null
 
-	if(length(candidates))
-		theghost = pick(candidates)
-		if(has_guardian(user))
-			to_chat(user, "You already have a [mob_name]!")
-			used = FALSE
-			return
-		dust_if_respawnable(theghost)
-		spawn_guardian(user, theghost.key, guardian_type)
-	else
-		to_chat(user, "[failure_message]")
+	if(!length(candidates))
+		to_chat(user, SPAN_WARNING("[failure_message]"))
 		used = FALSE
+
+	theghost = pick(candidates)
+	if(has_guardian(user))
+		to_chat(user, SPAN_WARNING("You already have a [mob_name]!"))
+		used = FALSE
+		return ITEM_INTERACT_COMPLETE
+
+	dust_if_respawnable(theghost)
+	spawn_guardian(user, theghost.key, guardian_type)
+	return ITEM_INTERACT_COMPLETE
 
 /obj/item/guardiancreator/examine(mob/user, distance)
 	. = ..()
 	if(used)
-		. += "<span class='notice'>[used_message]</span>"
+		. += SPAN_NOTICE("[used_message]")
 
 /obj/item/guardiancreator/proc/has_guardian(mob/living/user)
 	for(var/mob/living/simple_animal/hostile/guardian/G in GLOB.alive_mob_list)
 		if(G.summoner == user)
 			return TRUE
 	return FALSE
-
 
 /obj/item/guardiancreator/proc/spawn_guardian(mob/living/user, key, guardian_type)
 	var/pickedtype = /mob/living/simple_animal/hostile/guardian/punch
@@ -378,7 +394,7 @@
 	to_chat(G, "You are capable of manifesting or recalling to your master with verbs in the Guardian tab. You will also find a verb to communicate with them privately there.")
 	to_chat(G, "While personally invincible, you will die if [user.real_name] does, and any damage dealt to you will have a portion passed on to them as you feed upon them to sustain yourself.")
 	to_chat(G, "[G.playstyle_string]")
-	to_chat(G, "<span class='motd'>For more information, check the wiki page: ([GLOB.configuration.url.wiki_url]/index.php/Guardian)</span>")
+	to_chat(G, SPAN_MOTD("For more information, check the wiki page: ([GLOB.configuration.url.wiki_url]/index.php/Guardian)"))
 	G.faction = user.faction
 
 	var/color = pick(color_list)

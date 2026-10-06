@@ -37,14 +37,18 @@
 	else
 		// First check if it's built in the usual place.
 		if(fexists("./rust/target/i686-pc-windows-msvc/debug/rustlibs.dll"))
+			log_world("\[Rustlibs] Loading debug build")
 			return __rustlib = "./rust/target/i686-pc-windows-msvc/debug/rustlibs.dll"
 		if(fexists("./rust/target/i686-pc-windows-msvc/release/rustlibs.dll"))
+			log_world("\[Rustlibs] Loading release build")
 			return __rustlib = "./rust/target/i686-pc-windows-msvc/release/rustlibs.dll"
 		// Then check in the current directory.
 		if(fexists("./rustlibs[RUSTLIBS_SUFFIX].dll"))
+			log_world("\[Rustlibs] Loading repository build A")
 			return __rustlib = "./rustlibs[RUSTLIBS_SUFFIX].dll"
 
 		// And elsewhere.
+		log_world("\[Rustlibs] Loading repository build B")
 		var/assignment_confirmed = (__rustlib = "rustlibs[RUSTLIBS_SUFFIX].dll")
 		// This being spanned over multiple lines is kinda scuffed, but its needed because of https://www.byond.com/forum/post/2072419
 		return assignment_confirmed
@@ -71,8 +75,8 @@
 	ASSERT(istype(high_corner))
 	return RUSTLIB_CALL(milla_load_turfs, "milla_data", low_corner, high_corner)
 
-/proc/set_tile_atmos(turf/T, airtight_north, airtight_east, airtight_south, airtight_west, atmos_mode, environment_id, oxygen, carbon_dioxide, nitrogen, toxins, sleeping_agent, agent_b, temperature, innate_heat_capacity, hotspot_temperature, hotspot_volume)
-	return RUSTLIB_CALL(milla_set_tile, T, airtight_north, airtight_east, airtight_south, airtight_west, atmos_mode, environment_id, oxygen, carbon_dioxide, nitrogen, toxins, sleeping_agent, agent_b, temperature, innate_heat_capacity, hotspot_temperature, hotspot_volume)
+/proc/set_tile_atmos(turf/T, airtight_north, airtight_east, airtight_south, airtight_west, atmos_mode, environment_id, oxygen, carbon_dioxide, nitrogen, toxins, sleeping_agent, agent_b, hydrogen, water_vapor, temperature, innate_heat_capacity, hotspot_temperature, hotspot_volume)
+	return RUSTLIB_CALL(milla_set_tile, T, airtight_north, airtight_east, airtight_south, airtight_west, atmos_mode, environment_id, oxygen, carbon_dioxide, nitrogen, toxins, sleeping_agent, agent_b, hydrogen, water_vapor, temperature, innate_heat_capacity, hotspot_temperature, hotspot_volume)
 
 /proc/get_tile_atmos(turf/T, list/L)
 	return RUSTLIB_CALL(milla_get_tile, T, L)
@@ -122,8 +126,8 @@
 /proc/get_random_interesting_tile()
 	return RUSTLIB_CALL(milla_get_random_interesting_tile)
 
-/proc/create_environment(oxygen, carbon_dioxide, nitrogen, toxins, sleeping_agent, agent_b, temperature)
-	return RUSTLIB_CALL(milla_create_environment, oxygen, carbon_dioxide, nitrogen, toxins, sleeping_agent, agent_b, temperature)
+/proc/create_environment(oxygen, carbon_dioxide, nitrogen, toxins, sleeping_agent, agent_b, hydrogen, water_vapor, temperature)
+	return RUSTLIB_CALL(milla_create_environment, oxygen, carbon_dioxide, nitrogen, toxins, sleeping_agent, agent_b, hydrogen, water_vapor, temperature)
 
 /proc/set_zlevel_freeze(z, bool_frozen)
 	return RUSTLIB_CALL(milla_set_zlevel_frozen, z, bool_frozen)
@@ -132,6 +136,23 @@
 
 /proc/mapmanip_read_dmm(mapname)
 	return RUSTLIB_CALL(mapmanip_read_dmm_file, mapname)
+
+// MARK: MFA
+
+/proc/rustlibs_mfa_generate_secret()
+	return RUSTLIB_CALL(mfa_generate_secret)
+
+/proc/rustlibs_mfa_generate_qr(secret, ckey)
+	return RUSTLIB_CALL(mfa_generate_qr, secret, ckey)
+
+/proc/rustlibs_mfa_verify_code(secret, code)
+	return RUSTLIB_CALL(mfa_verify_code, secret, code)
+
+
+// MARK: Misc
+
+/proc/rustlibs_generate_uuid()
+	return RUSTLIB_CALL(misc_new_uuid)
 
 // MARK: TOML
 /proc/rustlibs_read_toml_file(path)
@@ -202,7 +223,7 @@
 
 // MARK: Toast
 /// (Windows only) Triggers a desktop notification with the specified title and body
-/proc/rustlibs_create_toast(title, body) 
+/proc/rustlibs_create_toast(title, body)
 	return RUSTLIB_CALL(create_toast, title, body)
 
 
@@ -231,6 +252,25 @@
 #define RUSTLIBS_JOB_NO_SUCH_JOB "NO SUCH JOB"
 #define RUSTLIBS_JOB_ERROR "JOB PANICKED"
 
+// MARK: SQL
+/proc/rustlibs_sql_connect_pool(datum/db_connection_request/dbcreq)
+	return RUSTLIB_CALL(sql_connect_pool, dbcreq)
+
+/proc/rustlibs_sql_disconnect_pool(handle)
+	return RUSTLIB_CALL(sql_disconnect_pool, handle)
+
+/proc/rustlibs_sql_connected(handle)
+	return RUSTLIB_CALL(sql_connected, handle)
+
+/proc/rustlibs_sql_query_blocking(datum/db_query/query)
+	return RUSTLIB_CALL(sql_query_blocking, query)
+
+/proc/rustlibs_sql_query_async(datum/db_query/query)
+	return RUSTLIB_CALL(sql_query_async, query)
+
+/proc/rustlibs_sql_check_query(datum/db_query/query)
+	return RUSTLIB_CALL(sql_check_query, query)
+
 #undef RUSTLIB_CALL
 
 // Indexes for Tiles and InterestingTiles
@@ -242,28 +282,30 @@
 #define MILLA_INDEX_TOXINS					5
 #define MILLA_INDEX_SLEEPING_AGENT			6
 #define MILLA_INDEX_AGENT_B					7
-#define MILLA_INDEX_ATMOS_MODE				8
-#define MILLA_INDEX_ENVIRONMENT_ID			9
-#define MILLA_INDEX_SUPERCONDUCTIVITY_NORTH	10
-#define MILLA_INDEX_SUPERCONDUCTIVITY_EAST	11
-#define MILLA_INDEX_SUPERCONDUCTIVITY_SOUTH	12
-#define MILLA_INDEX_SUPERCONDUCTIVITY_WEST	13
-#define MILLA_INDEX_INNATE_HEAT_CAPACITY	14
-#define MILLA_INDEX_TEMPERATURE				15
-#define MILLA_INDEX_HOTSPOT_TEMPERATURE		16
-#define MILLA_INDEX_HOTSPOT_VOLUME			17
-#define MILLA_INDEX_WIND_X					18
-#define MILLA_INDEX_WIND_Y					19
-#define MILLA_INDEX_FUEL_BURNT				20
+#define MILLA_INDEX_HYDROGEN				8
+#define MILLA_INDEX_WATER_VAPOR				9
+#define MILLA_INDEX_ATMOS_MODE				10
+#define MILLA_INDEX_ENVIRONMENT_ID			11
+#define MILLA_INDEX_SUPERCONDUCTIVITY_NORTH	12
+#define MILLA_INDEX_SUPERCONDUCTIVITY_EAST	13
+#define MILLA_INDEX_SUPERCONDUCTIVITY_SOUTH	14
+#define MILLA_INDEX_SUPERCONDUCTIVITY_WEST	15
+#define MILLA_INDEX_INNATE_HEAT_CAPACITY	16
+#define MILLA_INDEX_TEMPERATURE				17
+#define MILLA_INDEX_HOTSPOT_TEMPERATURE		18
+#define MILLA_INDEX_HOTSPOT_VOLUME			19
+#define MILLA_INDEX_WIND_X					20
+#define MILLA_INDEX_WIND_Y					21
+#define MILLA_INDEX_FUEL_BURNT				22
 
 /// The number of values per tile.
 #define MILLA_TILE_SIZE						MILLA_INDEX_FUEL_BURNT
 
 // These are only for InterestingTiles.
-#define MILLA_INDEX_TURF					21
-#define MILLA_INDEX_INTERESTING_REASONS		22
-#define MILLA_INDEX_AIRFLOW_X				23
-#define MILLA_INDEX_AIRFLOW_Y				24
+#define MILLA_INDEX_TURF					23
+#define MILLA_INDEX_INTERESTING_REASONS		24
+#define MILLA_INDEX_AIRFLOW_X				25
+#define MILLA_INDEX_AIRFLOW_Y				26
 
 /// The number of values per interesting tile.
 #define MILLA_INTERESTING_TILE_SIZE			MILLA_INDEX_AIRFLOW_Y

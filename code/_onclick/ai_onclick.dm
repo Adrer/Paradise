@@ -57,6 +57,12 @@
 			controlled_mech.click_action(A, src, params) //Override AI normal click behavior.
 		return
 	if(modifiers["shift"])
+		if(isturf(A))
+			var/turf/clicked_turf = A
+			var/obj/machinery/door/AL = locate() in clicked_turf.contents
+			if(AL)
+				AL.try_to_activate_door(src)
+				return
 		ShiftClickOn(A)
 		return
 	if(modifiers["alt"]) // alt and alt-gr (rightalt)
@@ -196,7 +202,7 @@
 	if(stat & BROKEN)
 		return
 	if(!user.can_remote_apc_interface(src))
-		to_chat(user, "<span class='warning'>Unable to interface: Connection refused.</span>")
+		to_chat(user, SPAN_WARNING("Unable to interface: Connection refused."))
 		return
 	toggle_breaker(user)
 
@@ -235,7 +241,7 @@
 	if(!ai_control_check(user))
 		return
 	if(wires.is_cut(WIRE_ELECTRIFY))
-		to_chat(user, "<span class='warning'>The electrification wire is cut - Cannot electrify the door.</span>")
+		to_chat(user, SPAN_WARNING("The electrification wire is cut - Cannot electrify the door."))
 	if(isElectrified())
 		electrify(0, user, TRUE) // un-shock
 	else

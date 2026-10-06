@@ -8,7 +8,8 @@
 	amount_per_transfer_from_this = 10
 	volume = 100
 	throwforce = 15
-	item_state = "broken_beer" //Generic held-item sprite until unique ones are made.
+	icon = 'icons/obj/drinks/bottles.dmi'
+	inhand_icon_state = "beer" //Generic held-item sprite until unique ones are made.
 	var/const/duration = 13 //Directly relates to the 'weaken' duration. Lowered by armor (i.e. helmets)
 	var/is_glass = TRUE //Whether the 'bottle' is made of glass or not so that milk cartons dont shatter when someone gets hit by it
 
@@ -24,7 +25,7 @@
 		user.put_in_active_hand(B)
 	B.icon_state = icon_state
 
-	var/icon/I = new('icons/obj/drinks.dmi', icon_state)
+	var/icon/I = new('icons/obj/drinks/bottles.dmi', icon_state)
 	I.Blend(B.broken_outline, ICON_OVERLAY, rand(5), 1)
 	I.SwapColor(rgb(255, 0, 220, 255), rgb(0, 0, 0, 0))
 	B.icon = I
@@ -37,7 +38,7 @@
 		B.name = "broken carton"
 		B.force = 0
 		B.throwforce = 0
-		B.desc = "A carton with the bottom half burst open. Might give you a papercut."
+		B.desc = "A carton with the bottom half burst open. Might give you a paper cut."
 	transfer_fingerprints_to(B)
 
 	qdel(src)
@@ -46,17 +47,17 @@
 	if(user.a_intent != INTENT_HARM)
 		return ..()
 
-/obj/item/reagent_containers/drinks/bottle/pre_attack(atom/A, mob/living/user, params)
+/obj/item/reagent_containers/drinks/bottle/pre_attack(atom/target, mob/living/user, params)
 	if(..())
 		return FINISH_ATTACK
 
-	if(isliving(A))
+	if(isliving(target))
 		if(!is_glass)
-			mob_act(A, user)
+			mob_act(target, user)
 			return FINISH_ATTACK
 
 		if(HAS_TRAIT(user, TRAIT_PACIFISM))
-			to_chat(user, "<span class='warning'>You don't want to harm [A]!</span>")
+			to_chat(user, SPAN_WARNING("You don't want to harm [target]!"))
 			return FINISH_ATTACK
 
 /obj/item/reagent_containers/drinks/bottle/attack(mob/living/target, mob/living/user, params)
@@ -75,7 +76,7 @@
 
 		var/mob/living/carbon/human/H = target
 		var/headarmor = 0 // Target's head armor
-		armor_block = H.run_armor_check(affecting, MELEE, null, null, armour_penetration_flat, armour_penetration_percentage) // For normal attack damage
+		armor_block = H.run_armor_check(affecting, MELEE, null, null, armor_penetration_flat, armor_penetration_percentage) // For normal attack damage
 
 		//If they have a hat/helmet and the user is targeting their head.
 		if(istype(H.head, /obj/item/clothing/head) && affecting == "head")
@@ -113,11 +114,11 @@
 
 	//Display an attack message.
 	if(target != user)
-		target.visible_message("<span class='danger'>[user] has hit [target][head_attack_message] with a bottle of [name]!</span>", \
-				"<span class='userdanger'>[user] has hit [target][head_attack_message] with a bottle of [name]!</span>")
+		target.visible_message(SPAN_DANGER("[user] has hit [target][head_attack_message] with a bottle of [name]!"), \
+				SPAN_USERDANGER("[user] has hit [target][head_attack_message] with a bottle of [name]!"))
 	else
-		user.visible_message("<span class='danger'>[target] hits [target.p_themselves()] with a bottle of [name][head_attack_message]!</span>", \
-				"<span class='userdanger'>[target] hits [target.p_themselves()] with a bottle of [name][head_attack_message]!</span>")
+		user.visible_message(SPAN_DANGER("[target] hits [target.p_themselves()] with a bottle of [name][head_attack_message]!"), \
+				SPAN_USERDANGER("[target] hits [target.p_themselves()] with a bottle of [name][head_attack_message]!"))
 
 	//Attack logs
 	add_attack_logs(user, target, "Hit with [src]")
@@ -130,7 +131,7 @@
 
 /obj/item/reagent_containers/drinks/bottle/proc/SplashReagents(mob/M)
 	if(reagents && reagents.total_volume)
-		M.visible_message("<span class='danger'>The contents of \the [src] splashes all over [M]!</span>")
+		M.visible_message(SPAN_DANGER("The contents of \the [src] splashes all over [M]!"))
 		reagents.reaction(M, REAGENT_TOUCH)
 		reagents.clear_reagents()
 
@@ -150,17 +151,17 @@
 /obj/item/broken_bottle
 	name = "Broken Bottle"
 	desc = "A bottle with a sharp broken bottom."
-	icon = 'icons/obj/drinks.dmi'
+	icon = 'icons/obj/drinks/bottles.dmi'
 	icon_state = "broken_bottle"
+	inhand_icon_state = "broken_beer"
 	force = 9
 	throwforce = 5
 	throw_speed = 3
 	throw_range = 5
 	w_class = WEIGHT_CLASS_TINY
-	item_state = "beer"
 	hitsound = 'sound/weapons/bladeslice.ogg'
 	attack_verb = list("stabbed", "slashed", "attacked")
-	var/icon/broken_outline = icon('icons/obj/drinks.dmi', "broken")
+	var/icon/broken_outline = icon('icons/obj/drinks/misc_drinks.dmi', "broken")
 	sharp = TRUE
 
 /obj/item/broken_bottle/decompile_act(obj/item/matter_decompiler/C, mob/user)
@@ -182,7 +183,7 @@
 
 /obj/item/reagent_containers/drinks/bottle/vodka
 	name = "Tunguska Triple Distilled"
-	desc = "Aah, vodka. Prime choice of drink AND fuel by Russians worldwide."
+	desc = "Aah, vodka. Prime choice of drink AND fuel by Russians galaxy-wide."
 	icon_state = "vodkabottle"
 	list_reagents = list("vodka" = 100)
 
@@ -225,6 +226,7 @@
 /obj/item/reagent_containers/drinks/bottle/holywater
 	name = "flask of holy water"
 	desc = "A flask of the chaplain's holy water."
+	icon = 'icons/obj/drinks/flasks.dmi'
 	icon_state = "holyflask"
 	list_reagents = list("holywater" = 100)
 
@@ -305,8 +307,9 @@
 /obj/item/reagent_containers/drinks/bottle/orangejuice
 	name = "orange juice"
 	desc = "Full of vitamins and deliciousness!"
+	icon = 'icons/obj/drinks/cartons.dmi'
 	icon_state = "orangejuice"
-	item_state = "carton"
+	inhand_icon_state = "contvapour"
 	throwforce = 0
 	is_glass = FALSE
 	gender = PLURAL
@@ -315,8 +318,9 @@
 /obj/item/reagent_containers/drinks/bottle/cream
 	name = "milk cream"
 	desc = "It's cream. Made from milk. What else did you think you'd find in there?"
+	icon = 'icons/obj/drinks/cartons.dmi'
 	icon_state = "cream"
-	item_state = "carton"
+	inhand_icon_state = "contvapour"
 	throwforce = 0
 	is_glass = FALSE
 	gender = PLURAL
@@ -326,7 +330,7 @@
 	name = "tomato juice"
 	desc = "Well, at least it LOOKS like tomato juice. You can't tell with all that redness."
 	icon_state = "tomatojuice"
-	item_state = "carton"
+	inhand_icon_state = "contvapour"
 	throwforce = 0
 	is_glass = FALSE
 	gender = PLURAL
@@ -335,8 +339,9 @@
 /obj/item/reagent_containers/drinks/bottle/limejuice
 	name = "lime juice"
 	desc = "Sweet-sour goodness."
+	icon = 'icons/obj/drinks/cartons.dmi'
 	icon_state = "limejuice"
-	item_state = "carton"
+	inhand_icon_state = "contvapour"
 	throwforce = 0
 	is_glass = FALSE
 	gender = PLURAL
@@ -345,12 +350,24 @@
 /obj/item/reagent_containers/drinks/bottle/milk
 	name = "milk"
 	desc = "Soothing milk."
+	icon = 'icons/obj/drinks/cartons.dmi'
 	icon_state = "milk"
-	item_state = "carton"
+	inhand_icon_state = "contvapour"
 	throwforce = 0
 	is_glass = FALSE
 	gender = PLURAL
 	list_reagents = list("milk" = 100)
+
+/obj/item/reagent_containers/drinks/bottle/chocolate_milk
+	name = "chocolate milk"
+	desc = "Brown milk from brown cows. Maybe."
+	icon = 'icons/obj/drinks/cartons.dmi'
+	icon_state = "chocolatebox"
+	inhand_icon_state = "contvapour"
+	throwforce = 0
+	is_glass = FALSE
+	gender = PLURAL
+	list_reagents = list("chocolate_milk" = 50)
 
 ////////////////////////// MOLOTOV ///////////////////////
 /obj/item/reagent_containers/drinks/bottle/molotov
@@ -409,7 +426,7 @@
 		message_admins("[key_name(user)][ADMIN_QUE(user,"?")] has primed a [name] for detonation at <A href='byond://?_src_=holder;adminplayerobservecoodjump=1;X=[bombturf.x];Y=[bombturf.y];Z=[bombturf.z]'>[bombarea] (JMP)</a>.")
 		log_game("[key_name(user)] has primed a [name] for detonation at [bombarea] ([bombturf.x],[bombturf.y],[bombturf.z]).")
 
-		to_chat(user, "<span class='notice'>You light [src] on fire.</span>")
+		to_chat(user, SPAN_NOTICE("You light [src] on fire."))
 		if(!is_glass)
 			spawn(50)
 				if(active)
@@ -432,8 +449,46 @@
 
 	if(active)
 		if(!is_glass)
-			to_chat(user, "<span class='danger'>The flame's spread too far on it!</span>")
+			to_chat(user, SPAN_DANGER("The flame's spread too far on it!"))
 			return
-		to_chat(user, "<span class='notice'>You snuff out the flame on \the [src].</span>")
+		to_chat(user, SPAN_NOTICE("You snuff out the flame on \the [src]."))
 		active = FALSE
 		update_icon(UPDATE_OVERLAYS)
+
+// ----------- drinks from Hispania!
+
+/obj/item/reagent_containers/glass/beaker/waterbottle/fitnessshaker
+	name = "black fitness shaker"
+	desc = "Big enough to contain enough protein to get perfectly swole. Don't mind the bits."
+	icon_state = "fitness_cup_black"
+	materials = list(MAT_PLASTIC = 500)
+	list_reagents = list("nutriment" = 5, "iron" = 15, "protein" = 5, "water" = 25)
+
+/obj/item/reagent_containers/glass/beaker/waterbottle/fitnessshaker/red
+	name = "red fitness shaker"
+	icon_state = "fitness_cup_red"
+
+/obj/item/reagent_containers/glass/beaker/waterbottle/fitnessshaker/blue
+	name = "blue fitness shaker"
+	icon_state = "fitness_cup_blue"
+
+/obj/item/reagent_containers/drinks/bottle/mezcal
+	name = "400 Conejos"
+	desc = "A thin bottle with very transparent alcohol inside... Wait, is that a worm?"
+	icon_state = "mezcal_bottle"
+	list_reagents = list("mezcal" = 100)
+
+/obj/item/reagent_containers/drinks/bottle/vampire_bestfriend
+	name = "Alucard's guilty sin"
+	desc = "You can distinguish pieces of garlic floating inside."
+	icon = 'icons/obj/drinks/flasks.dmi'
+	icon_state = "vampire_bf_flask"
+	list_reagents = list("vampire_bf" = 100)
+
+/obj/item/reagent_containers/drinks/bottle/white_wine
+	name = "Corton-Charlemagne Grand Cru"
+	desc = "A bottle straight from Sol's most famous wine-making region... or a very convincing knock-off."
+	icon_state = "white_wine_bottle"
+	list_reagents = list("white_wine" = 100)
+
+// ----------- END of imports from Hispania!

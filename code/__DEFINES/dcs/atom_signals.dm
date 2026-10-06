@@ -69,6 +69,8 @@
 #define COMSIG_ATOM_SING_PULL "atom_sing_pull"
 ///from base of atom/set_light(): (l_range, l_power, l_color)
 #define COMSIG_ATOM_SET_LIGHT "atom_set_light"
+/// from base of atom/set_opacity(): (new_opacity)
+#define COMSIG_ATOM_SET_OPACITY "atom_set_opacity"
 ///from base of atom/setDir(): (old_dir, new_dir)
 #define COMSIG_ATOM_DIR_CHANGE "atom_dir_change"
 ///from [/datum/controller/subsystem/processing/dcs/proc/rotate_decals]: (list/datum/element/decal/rotating)
@@ -94,7 +96,7 @@
 #define COMSIG_ATOM_HITBY "atom_hitby"
 /// Called when an atom is sharpened or dulled.
 #define COMSIG_ATOM_UPDATE_SHARPNESS "atom_update_sharpness"
-///from base of atom/atom_prehit(obj/item/projectile/P):
+///from base of atom/atom_prehit(obj/projectile/P):
 #define COMSIG_ATOM_PREHIT "atom_prehit"
 	#define ATOM_PREHIT_SUCCESS (1<<0)
 	#define ATOM_PREHIT_FAILURE (1<<1)
@@ -163,3 +165,6 @@
 /// When using an insert on an item that can accept an insert
 #define COMSIG_INSERT_ATTACH "insert_attach"
 #define COMSIG_MINE_EXPOSE_GIBTONITE "mine_expose_gibtonite"
+
+/// Signal sent when a mouse is hovering over us, sent by atom/proc/on_mouse_entered.
+#define COMSIG_ATOM_MOUSE_ENTERED "mouse_entered"

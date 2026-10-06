@@ -34,6 +34,7 @@
 	butt_sprite = "vox"
 
 	reagent_tag = PROCESS_ORG | PROCESS_SYN
+	taste_category = TASTE_CATEGORY_BOTH
 	scream_verb = "shrieks"
 	male_scream_sound = 'sound/voice/shriek1.ogg'
 	female_scream_sound = 'sound/voice/shriek1.ogg'
@@ -42,7 +43,7 @@
 	male_sneeze_sound = 'sound/voice/shrieksneeze.ogg'
 	female_sneeze_sound = 'sound/voice/shrieksneeze.ogg'
 
-	icon_skin_tones = list(
+	icon_skin_tones = alist(
 		1 = "Default Lime",
 		2 = "Plum",
 		3 = "Brown",
@@ -53,6 +54,7 @@
 		8 = "Nebula"
 		)
 
+	meat_type = /obj/item/food/meat/human
 	has_organ = list(
 		"heart" =    /obj/item/organ/internal/heart/vox,
 		"lungs" =    /obj/item/organ/internal/lungs/vox,
@@ -92,9 +94,9 @@
 		if(!H.put_in_any_hand_if_possible(internal_tank))
 			H.drop_item_to_ground(H.l_hand)
 			H.equip_or_collect(internal_tank, ITEM_SLOT_LEFT_HAND)
-			to_chat(H, "<span class='boldannounceooc'>Could not find an empty slot for internals! Please report this as a bug</span>")
+			to_chat(H, SPAN_BOLDANNOUNCEOOC("Could not find an empty slot for internals! Please report this as a bug"))
 	H.internal = internal_tank
-	to_chat(H, "<span class='notice'>You are now running on nitrogen internals from [internal_tank]. Your species finds oxygen toxic, so you must breathe nitrogen only.</span>")
+	to_chat(H, SPAN_NOTICE("You are now running on nitrogen internals from [internal_tank]. Your species finds oxygen toxic, so you must breathe nitrogen only."))
 	H.update_action_buttons_icon()
 
 /datum/species/vox/on_species_gain(mob/living/carbon/human/H)
@@ -142,3 +144,56 @@
 
 /datum/species/vox/do_compressor_grind(mob/living/carbon/human/H)
 	new /obj/item/food/fried_vox(H.loc)
+
+/datum/species/vox/skin_tone_from_body_color(body_color)
+	var/list/skin_tones = list("#444706", "#251930", "#4a180c", "#2a2f1e", "#063000", "#082b21", "#661835", "#1e284d")
+	return skin_tones.Find(pick_closest_list_color(skin_tones, body_color))
+
+/datum/species/vox/skin_tone_to_hex(skin_tone)
+	var/list/skin_tones = list("#444706", "#251930", "#4a180c", "#2a2f1e", "#063000", "#082b21", "#661835", "#1e284d")
+	return skin_tones[skin_tone]
+
+
+/datum/species/vox/randomize_eye_color()
+	if(prob(70))
+		return rgb(rand(145, 165), rand(60, 95), rand(30, 80), space = COLORSPACE_HSL) // teal-turquoise
+	return rand_hex_color()
+
+/datum/species/vox/randomize_hair_style(datum/robolimb/robohead, species_bald_prob = 20)
+	return ..()
+
+/datum/species/vox/randomize_hair_colors(datum/robolimb/robohead, body_color = null, skin_tone = 1)
+	var/list/hair_colors = list()
+	if(prob(2))
+		hair_colors["h1"] = rgb(rand(0, 360), rand(0, 40), rand(0, 30), space = COLORSPACE_HSL)
+		if(prob(33))
+			hair_colors["f1"] = rgb(rand(0, 50), rand(0, 50), rand(0, 30), space = COLORSPACE_HSL)
+		else if(prob(50))
+			hair_colors["f1"] = rgb(rand(0, 360), rand(0, 40), rand(0, 30), space = COLORSPACE_HSL)
+		else
+			hair_colors["f1"] = hair_colors["h1"]
+	else
+		hair_colors["h1"] = rgb(rand(0, 50), rand(0, 50), rand(0, 30), space = COLORSPACE_HSL)
+		if(prob(2))
+			hair_colors["f1"] = rgb(rand(0, 360), rand(0, 40), rand(0, 30), space = COLORSPACE_HSL)
+		else
+			hair_colors["f1"] = hair_colors["h1"]
+	hair_colors["h2"] = rand_hex_color()
+	hair_colors["f2"] = rand_hex_color()
+
+	return hair_colors
+
+/datum/species/vox/randomize_body_markings_color(body_markings = "None", body_color = null, skin_tone = 1)
+	if(body_markings == "None")
+		return COLOR_BLACK
+	if(prob(1))
+		return rand_hex_color()
+	return rgb(rand(0, 360), rand(0, 30), rand(10, 60), space = COLORSPACE_HSL)
+
+/datum/species/vox/randomize_tail_markings_color(tail_markings = "None")
+	if(tail_markings == "None")
+		return COLOR_BLACK
+	if(prob(1))
+		return rand_hex_color()
+	return pick(rgb(rand(0, 360), rand(40, 60), rand(15, 25), space = COLORSPACE_HSL),
+		rgb(rand(0, 360), rand(0, 20), rand(0, 15), space = COLORSPACE_HSL))

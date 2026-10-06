@@ -12,7 +12,7 @@
 		return ..()
 
 
-/obj/docking_port/mobile/assault_pod/dock(obj/docking_port/stationary/S1)
+/obj/docking_port/mobile/assault_pod/dock(obj/docking_port/stationary/S1, force=FALSE, transit=FALSE)
 	..()
 	if(!istype(S1, /obj/docking_port/stationary/transit))
 		playsound(get_turf(src.loc), 'sound/effects/explosion1.ogg',50,1)
@@ -21,17 +21,16 @@
 
 /obj/item/assault_pod
 	name = "Assault Pod Targetting Device"
+	desc = "Used to select a landing zone for assault pods."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "gangtool-red"
-	item_state = "walkietalkie"
-	desc = "Used to select a landing zone for assault pods."
-	var/shuttle_id = "steel_rain"
+	inhand_icon_state = "radio"
+	var/target_shuttle_id = "steel_rain"
 	var/dwidth = 3
 	var/dheight = 0
 	var/width = 7
 	var/height = 7
-	var/lz_dir = 1
-
+	var/lz_dir = NORTH
 
 /obj/item/assault_pod/attack_self__legacy__attackchain(mob/living/user)
 	var/target_area
@@ -56,8 +55,9 @@
 	landing_zone.register() //new docking ports must be registered
 
 	for(var/obj/machinery/computer/shuttle/S in SSmachines.get_by_type(/obj/machinery/computer/shuttle))
-		if(S.shuttleId == shuttle_id)
-			S.possible_destinations = "[landing_zone.id]"
+		for(var/shuttle_id2 in S.shuttleIds)
+			if(shuttle_id2 == target_shuttle_id)
+				S.possibleDestinations2[target_shuttle_id] += "[landing_zone.id]"
 
 	to_chat(user, "Landing zone set.")
 

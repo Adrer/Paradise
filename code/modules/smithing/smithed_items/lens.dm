@@ -45,7 +45,7 @@
 	for(var/obj/item/ammo_casing/energy/casing in attached_gun.ammo_type)
 		casing.delay = casing.delay / fire_rate_mult
 		casing.e_cost = casing.e_cost * power_mult
-		casing.lens_damage_multiplier = casing.lens_damage_multiplier * damage_mult
+		casing.lens_damage_multiplier = casing.lens_damage_multiplier * min(attached_gun.lens_damage_cap, damage_mult)
 		casing.lens_speed_multiplier = casing.lens_speed_multiplier / laser_speed_mult
 
 /obj/item/smithed_item/lens/on_detached()
@@ -56,7 +56,7 @@
 	for(var/obj/item/ammo_casing/energy/casing in attached_gun.ammo_type)
 		casing.delay = casing.delay * fire_rate_mult
 		casing.e_cost = casing.e_cost / power_mult
-		casing.lens_damage_multiplier = casing.lens_damage_multiplier / damage_mult
+		casing.lens_damage_multiplier = casing.lens_damage_multiplier / min(attached_gun.lens_damage_cap, damage_mult)
 		casing.lens_speed_multiplier = casing.lens_speed_multiplier * laser_speed_mult
 	attached_gun.current_lens = null
 	attached_gun = null
@@ -74,7 +74,7 @@
 		if(20 to 39)
 			. +=  "It's been heavily used."
 		if(0 to 19)
-			. +=  "<span class='warning'>It's falling apart!</span>"
+			. +=  SPAN_WARNING("It's falling apart!")
 
 /obj/item/smithed_item/lens/proc/damage_lens()
 	durability--
@@ -153,16 +153,16 @@
 	if(!HAS_TRAIT(user.mind, TRAIT_SMITH))
 		return
 	if(do_after_once(user, 3 SECONDS, target = src, allow_moving = TRUE, must_be_held = TRUE))
-		var/compiled_message = "<span class='notice'>\
-		You determine the following properties on [src]: <br>\
-		Base Laser Speed mod: [base_laser_speed_mult] <br>\
-		Base Power Draw mod: [base_power_mult] <br>\
-		Base Damage mod: [base_damage_mult] <br>\
-		Base Fire Rate mod: [base_fire_rate_mult] <br>\
-		Laser Speed Multiplier: [laser_speed_mult] <br>\
-		Power Draw Multiplier: [power_mult] <br>\
-		Damage multiplier: [damage_mult] <br>\
-		Fire Rate Multiplier: [fire_rate_mult] <br>\
-		Durability: [durability] <br>\
-		</span>"
-		to_chat(user, compiled_message)
+		var/list/compiled_message = list(
+			"You determine the following properties on [src]:",
+			"Base Laser Speed mod: [base_laser_speed_mult]",
+			"Base Power Draw mod: [base_power_mult]",
+			"Base Damage mod: [base_damage_mult]",
+			"Base Fire Rate mod: [base_fire_rate_mult]",
+			"Laser Speed Multiplier: [laser_speed_mult]",
+			"Power Draw Multiplier: [power_mult]",
+			"Damage multiplier: [damage_mult]",
+			"Fire Rate Multiplier: [fire_rate_mult]",
+			"Durability: [durability]"
+		)
+		to_chat(user, SPAN_NOTICE(compiled_message.Join("<br>")))

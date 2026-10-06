@@ -156,7 +156,7 @@
 
 /obj/docking_port/proc/register()
 	return 0
-
+// MARK: Stationary port
 /obj/docking_port/stationary
 	name = "dock"
 
@@ -169,12 +169,6 @@
 	. = ..()
 	if(!mapload)
 		register()
-
-// Preset for adding whiteship docks to ruins. Has widths preset which will auto-assign the shuttle
-/obj/docking_port/stationary/whiteship
-	dwidth = 6
-	height = 19
-	width = 12
 
 /obj/docking_port/stationary/register()
 	if(!SSshuttle)
@@ -213,9 +207,15 @@
 
 	name = "In transit" //This looks weird, but- it means that the on-map instances can be named something actually usable to search for, but still appear correctly in terminals.
 
-	SSshuttle.transit_docking_ports += src
+	SSshuttle.transit_docking_ports |= src
 	return 1
 
+/obj/docking_port/stationary/transit/Destroy(force)
+	. = ..()
+	if(force && SSshuttle)
+		SSshuttle.transit_docking_ports -= src
+
+// MARK: Mobile port
 /obj/docking_port/mobile
 	name = "shuttle"
 	icon_state = "pinonclose"
@@ -588,6 +588,7 @@
 				W.update_eligible_areas()
 				W.update_audio()
 	mobile_port.unlockPortDoors(S1)
+	SEND_SIGNAL(mobile_port, COMSIG_MOBILE_PORT_DOCKED, S1)
 
 /obj/docking_port/mobile/proc/is_turf_blacklisted_for_transit(turf/T)
 	var/static/list/blacklisted_turf_types = typecacheof(list(/turf/space, /turf/simulated/floor/chasm, /turf/simulated/floor/lava, /turf/simulated/floor/plating/asteroid))
@@ -621,11 +622,6 @@
 		. = dock(port)
 	else
 		. = null
-
-/obj/effect/landmark/shuttle_import
-	name = "Shuttle Import"
-
-
 
 //shuttle-door closing is handled in the dock() proc whilst looping through turfs
 //this one closes the door where we are docked at, if there is one there.
@@ -676,10 +672,10 @@
 				if(L.incorporeal_move || L.status_flags & GODMODE)
 					continue
 				L.stop_pulling()
-				L.visible_message("<span class='warning'>[L] is hit by \
-								a hyperspace ripple!</span>",
-								"<span class='userdanger'>You feel an immense \
-								crushing pressure as the space around you ripples.</span>")
+				L.visible_message(
+					SPAN_DANGER("[L] is hit by a hyperspace ripple!"),
+					SPAN_USERDANGER("You feel an immense crushing pressure as the space around you ripples.")
+				)
 				L.gib()
 			else if(lance_docking) //corrupt the child, destroy them all
 				if(!AM.simulated)
@@ -829,9 +825,9 @@
 	SSshuttle.request_transit_dock(src)
 	return FALSE
 
-
+// MARK: Shuttle Ports
 /obj/docking_port/mobile/labour
-	dir = 8
+	dir = WEST
 	dwidth = 2
 	height = 5
 	id = "laborcamp"
@@ -842,7 +838,7 @@
 	port_direction = EAST
 
 /obj/docking_port/mobile/mining
-	dir = 8
+	dir = WEST
 	dwidth = 3
 	height = 5
 	id = "mining"
@@ -853,7 +849,7 @@
 	port_direction = EAST
 
 /obj/docking_port/mobile/specops
-	dir = 8
+	dir = WEST
 	dwidth = 2
 	height = 11
 	id = "specops"
@@ -862,7 +858,7 @@
 	preferred_direction = EAST
 
 /obj/docking_port/mobile/sit
-	dir = 8
+	dir = WEST
 	dwidth = 3
 	height = 5
 	id = "sit"
@@ -872,7 +868,7 @@
 	port_direction = WEST
 
 /obj/docking_port/mobile/sst
-	dir = 4
+	dir = EAST
 	dwidth = 7
 	height = 5
 	id = "sst"
@@ -882,7 +878,7 @@
 	port_direction = EAST
 
 /obj/docking_port/mobile/admin
-	dir = 2
+	dir = SOUTH
 	dwidth = 8
 	height = 15
 	id = "admin"
@@ -890,8 +886,35 @@
 	timid = TRUE
 	width = 18
 
+/obj/docking_port/stationary/gamma_armory
+	id = "gamma_home"
+	name = "Station Gamma Armory Shuttle Dock"
+	width = 7
+	dwidth = 3
+	height = 6
+
+/obj/docking_port/stationary/gamma_armory/centcomm
+	id = "gamma_away"
+	name = "Central Command Gamma Armory Shuttle Dock"
+
+/obj/docking_port/mobile/gamma_armory
+	id = "gamma_armory"
+	name = "Gamma Armory shuttle"
+	width = 7
+	dwidth = 3
+	height = 6
+	port_direction = EAST
+	timid = TRUE
+
+/obj/docking_port/mobile/gamma_armory/register()
+	if(!..())
+		return FALSE
+
+	SSshuttle.gamma_armory = src
+	return TRUE
+
 /obj/docking_port/mobile/ferry
-	dir = 8
+	dir = WEST
 	dwidth = 2
 	height = 12
 	id = "ferry"
@@ -899,27 +922,44 @@
 	width = 5
 	preferred_direction = EAST
 
+/obj/docking_port/stationary/trader
+	id = "trader_home"
+	name = "Docking bay 4 at station"
+	width = 22
+	dwidth = 11
+	height = 30
+
+/obj/docking_port/stationary/trader/centcom
+	id = "trader_away"
+	name = "Docking bay at trade hub"
+	dir = WEST
+
 /obj/docking_port/mobile/trader
-	dir = 8
+	dir = WEST
 	dwidth = 11
 	height = 30
 	id = "trader"
-	name = "sol trade shuttle"
+	name = "trade shuttle"
 	width = 22
 	preferred_direction = EAST
 	timid = TRUE
 
 /obj/docking_port/mobile/nuke_ops
 	dheight = 9
-	dir = 2
+	dir = SOUTH
 	dwidth = 5
 	height = 22
 	id = "syndicate"
 	name = "syndicate infiltrator"
 	width = 18
 
+/obj/docking_port/stationary/whiteship
+	dwidth = 6
+	height = 19
+	width = 12
+
 /obj/docking_port/mobile/whiteship
-	dir = 8
+	dir = WEST
 	id = "whiteship"
 	name = "NEV Cherub"
 	dwidth = 6
@@ -928,25 +968,21 @@
 	preferred_direction = WEST
 	port_direction = SOUTH
 
+// MARK: Shuttle Comp
 /obj/machinery/computer/shuttle
 	name = "Shuttle Console"
 	icon_screen = "shuttle"
 	icon_keyboard = "tech_key"
 	req_access = list()
 	circuit = /obj/item/circuitboard/shuttle
-	var/shuttleId
-	var/possible_destinations = ""
+	var/list/shuttleIds = list()
+	// Assoc list of destination to handle. Key is shuttle, value is destination.
+	var/alist/possibleDestinations2 = alist()
 	var/admin_controlled
 	var/max_connect_range = 7
 	var/moved = FALSE	//workaround for nukie shuttle, hope I find a better way to do this...
 	/// Do we want to search for shuttle destinations as part of Initialize (fixed) or when SSlate_mapping fires (variable)
 	var/find_destinations_in_late_mapping = FALSE
-
-/obj/machinery/computer/shuttle/New(location, obj/item/circuitboard/shuttle/C)
-	..()
-	if(istype(C))
-		possible_destinations = C.possible_destinations
-		shuttleId = C.shuttleId
 
 /obj/machinery/computer/shuttle/Initialize(mapload)
 	. = ..()
@@ -955,33 +991,16 @@
 
 	connect()
 
+// Stub to override for specific shuttles like the white ship
 /obj/machinery/computer/shuttle/proc/connect()
-	var/obj/docking_port/mobile/M
-	if(!shuttleId)
-		// find close shuttle that is ok to mess with
-		if(!SSshuttle) //intentionally mapping shuttle consoles without actual shuttles IS POSSIBLE OH MY GOD WHO KNEW *glare*
-			return
-		for(var/obj/docking_port/mobile/D in SSshuttle.mobile_docking_ports)
-			if(get_dist(src, D) <= max_connect_range && D.rebuildable)
-				M = D
-				shuttleId = M.id
-				break
-	else if(!possible_destinations && SSshuttle) //possible destinations should **not** always exist; so, if it's specifically set to null, don't make it exist
-		M = SSshuttle.getShuttle(shuttleId)
-
-	if(M && !possible_destinations)
-		// find perfect fits
-		possible_destinations = ""
-		for(var/obj/docking_port/stationary/S in SSshuttle.stationary_docking_ports)
-			if(!istype(S, /obj/docking_port/stationary/transit) && S.width == M.width && S.height == M.height && S.dwidth == M.dwidth && S.dheight == M.dheight && findtext(S.id, M.id))
-				possible_destinations += "[possible_destinations ? ";" : ""][S.id]"
+	return
 
 /obj/machinery/computer/shuttle/attack_hand(mob/user)
 	if(..(user))
 		return
-	if(!shuttleId)
+	if(!length(shuttleIds))
 		return
-	connect()
+	connect() // Refreshes whiteship docks on interact
 	add_fingerprint(user)
 	ui_interact(user)
 
@@ -995,50 +1014,65 @@
 		ui.open()
 
 /obj/machinery/computer/shuttle/ui_data(mob/user)
-	var/list/data = list()
-	var/obj/docking_port/mobile/M = SSshuttle.getShuttle(shuttleId)
-	data["status"] = M ? M.getStatusText() : null
-	if(M)
-		data["shuttle"] = TRUE	//this should just be boolean, right?
-		var/list/docking_ports = list()
-		data["docking_ports"] = docking_ports
-		var/list/options = params2list(possible_destinations)
-		for(var/obj/docking_port/stationary/S in SSshuttle.stationary_docking_ports)
-			if(!options.Find(S.id))
-				continue
-			if(!M.check_dock(S))
-				continue
-			docking_ports[++docking_ports.len] = list("name" = S.name, "id" = S.id)
-		data["docking_ports_len"] = length(docking_ports)
-		data["admin_controlled"] = admin_controlled
-	return data
+	var/list/final_data = list()
+	final_data["shuttles"] = list()
+	for(var/shuttle_id in shuttleIds)
+		var/list/data = list()
+		data["shuttle_id"] = shuttle_id
+		var/obj/docking_port/mobile/M = SSshuttle.getShuttle(shuttle_id)
+		data["status"] = M ? M.getStatusText() : null
+		data["shuttle_name"] = M ? M.name : "Unknown"
+
+		if(M)
+			data["shuttle"] = TRUE	//this should just be boolean, right?
+			var/list/docking_ports = list()
+			data["docking_ports"] = docking_ports
+			var/list/destinations = possibleDestinations2[shuttle_id]
+
+			for(var/obj/docking_port/stationary/S in SSshuttle.stationary_docking_ports)
+				if(!destinations.Find(S.id))
+					continue
+				if(!M.check_dock(S))
+					continue
+				docking_ports[++docking_ports.len] = list("name" = S.name, "id" = S.id)
+			data["docking_ports_len"] = length(docking_ports)
+			data["admin_controlled"] = admin_controlled
+
+		final_data["shuttles"] += list(data)
+
+	return final_data
 
 /obj/machinery/computer/shuttle/ui_act(action, params)
 	if(..())	//we can't actually interact, so no action
 		return TRUE
 	if(!allowed(usr))
-		to_chat(usr, "<span class='danger'>Access denied.</span>")
+		to_chat(usr, SPAN_DANGER("Access denied."))
 		return	TRUE
 	if(!can_call_shuttle(usr, action))
 		return TRUE
-	var/list/options = params2list(possible_destinations)
 	if(action == "move")
-		var/destination = params["move"]
-		if(!options.Find(destination))//figure out if this translation works
-			message_admins("<span class='boldannounceooc'>EXPLOIT:</span> [ADMIN_LOOKUPFLW(usr)] attempted to move [src] to an invalid location! [ADMIN_COORDJMP(src)]")
+		if(!(params["shuttle"] in shuttleIds))
+			message_admins("[SPAN_BOLDANNOUNCEOOC("EXPLOIT:")] [ADMIN_LOOKUPFLW(usr)] attempted to move a shuttle that the console didnt support! [ADMIN_COORDJMP(src)]")
 			return
-		switch(SSshuttle.moveShuttle(shuttleId, destination, TRUE, usr))
+
+		var/target_shuttle = params["shuttle"]
+		var/list/valid_options = possibleDestinations2[target_shuttle]
+		var/destination = params["move"]
+		if(!valid_options.Find(destination))//figure out if this translation works
+			message_admins("[SPAN_BOLDANNOUNCEOOC("EXPLOIT:")] [ADMIN_LOOKUPFLW(usr)] attempted to move [src] to an invalid location! [ADMIN_COORDJMP(src)]")
+			return
+		switch(SSshuttle.moveShuttle(target_shuttle, destination, TRUE, usr))
 			if(0)
 				atom_say("Shuttle departing! Please stand away from the doors.")
-				usr.create_log(MISC_LOG, "used [src] to call the [shuttleId] shuttle")
+				usr.create_log(MISC_LOG, "used [src] to call the [target_shuttle] shuttle")
 				if(!moved)
 					moved = TRUE
 				add_fingerprint(usr)
 				return TRUE
 			if(1)
-				to_chat(usr, "<span class='warning'>Invalid shuttle requested.</span>")
+				to_chat(usr, SPAN_WARNING("Invalid shuttle requested."))
 			if(2)
-				to_chat(usr, "<span class='notice'>Unable to comply.</span>")
+				to_chat(usr, SPAN_NOTICE("Unable to comply."))
 			if(3)
 				atom_say("Shuttle is refuelling at dock. Please wait...")
 			if(4)
@@ -1050,7 +1084,7 @@
 	if(!emagged)
 		src.req_access = list()
 		emagged = TRUE
-		to_chat(user, "<span class='notice'>You fried the consoles ID checking system.</span>")
+		to_chat(user, SPAN_NOTICE("You fried the consoles ID checking system."))
 		return TRUE
 
 //for restricting when the computer can be used, needed for some console subtypes.
@@ -1060,15 +1094,15 @@
 /obj/machinery/computer/shuttle/ferry
 	name = "transport ferry console"
 	circuit = /obj/item/circuitboard/ferry
-	shuttleId = "ferry"
-	possible_destinations = "ferry_home;ferry_away"
+	shuttleIds = list("ferry")
+	possibleDestinations2 = alist("ferry" = list("ferry_home", "ferry_away"))
 
 
 /obj/machinery/computer/shuttle/ferry/request
 	name = "ferry console"
 	circuit = /obj/item/circuitboard/ferry/request
 	var/next_request	//to prevent spamming admins
-	possible_destinations = "ferry_home"
+	possibleDestinations2 = alist("ferry" = list("ferry_home"))
 	admin_controlled = TRUE
 	resistance_flags = INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | ACID_PROOF
 
@@ -1078,26 +1112,42 @@
 	if(action == "request")
 		if(world.time < next_request)
 			return
+		if(!(params["shuttle"] in shuttleIds))
+			message_admins("[SPAN_BOLDANNOUNCEOOC("EXPLOIT:")] [ADMIN_LOOKUPFLW(usr)] attempted to request a shuttle that the console didnt support! [ADMIN_COORDJMP(src)]")
+			return
+
+		// This falls apart if something other than a ferry is on this console - oh well
 		next_request = world.time + 60 SECONDS	//1 minute cooldown
-		to_chat(usr, "<span class='notice'>Your request has been received by Centcom.</span>")
+		to_chat(usr, SPAN_NOTICE("Your request has been received by Centcom."))
 		log_admin("[key_name(usr)] requested to move the transport ferry to Centcom.")
 		message_admins("<b>FERRY: <font color='#EB4E00'>[key_name_admin(usr)] (<A href='byond://?_src_=holder;secretsfun=moveferry'>Move Ferry</a>)</b> is requesting to move the transport ferry to Centcom.</font>")
 		return TRUE
-
 
 /obj/machinery/computer/shuttle/white_ship
 	name = "Navigation console"
 	desc = "Used to control the NEV Limulus expeditionary vessel."
 	circuit = /obj/item/circuitboard/white_ship
-	shuttleId = "whiteship"
-	possible_destinations = null // Set at runtime
+	shuttleIds = list("whiteship")
+	possibleDestinations2 = alist("whiteship" = list()) // Added at runtime
 	find_destinations_in_late_mapping = TRUE
+
+/obj/machinery/computer/shuttle/white_ship/connect()
+	var/target_id = "whiteship"
+	var/obj/docking_port/mobile/M = SSshuttle.getShuttle(target_id)
+
+	if(M && !length(possibleDestinations2["whiteship"]))
+		possibleDestinations2["whiteship"] = list() // Reset this first
+
+		// Try find whiteship docks, by size and ID
+		for(var/obj/docking_port/stationary/S in SSshuttle.stationary_docking_ports)
+			if(!istype(S, /obj/docking_port/stationary/transit) && S.width == M.width && S.height == M.height && S.dwidth == M.dwidth && S.dheight == M.dheight && findtext(S.id, M.id))
+				possibleDestinations2["whiteship"] += S.id
 
 /obj/machinery/computer/shuttle/admin
 	name = "admin shuttle console"
 	req_access = list(ACCESS_CENT_GENERAL)
-	shuttleId = "admin"
-	possible_destinations = "admin_home;admin_away;admin_custom"
+	shuttleIds = list("admin")
+	possibleDestinations2 = alist("admin" = list("admin_home", "admin_away", "admin_custom"))
 	resistance_flags = INDESTRUCTIBLE
 
 /obj/machinery/computer/camera_advanced/shuttle_docker/admin
@@ -1115,20 +1165,14 @@
 
 /obj/machinery/computer/shuttle/trade/sol
 	req_access = list(ACCESS_TRADE_SOL)
-	possible_destinations = "trader_base;trade_dock"
-	shuttleId = "trader"
+	shuttleIds = list("trader")
+	possibleDestinations2 = alist("trader" = list("trader_away", "trader_home"))
 
 //#undef DOCKING_PORT_HIGHLIGHT
 
 /turf/proc/copyTurf(turf/T)
 	if(T.type != type)
-		var/obj/O
-		if(length(underlays))	//we have underlays, which implies some sort of transparency, so we want to a snapshot of the previous turf as an underlay
-			O = new()
-			O.underlays.Add(T)
 		T.ChangeTurf(type, keep_icon = FALSE)
-		if(length(underlays))
-			T.underlays = O.underlays
 	if(T.icon_state != icon_state)
 		T.icon_state = icon_state
 	if(T.icon != icon)

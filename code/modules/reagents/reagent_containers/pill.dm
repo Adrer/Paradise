@@ -6,8 +6,7 @@
 /obj/item/reagent_containers/pill
 	name = "pill"
 	desc = "A pill."
-	icon_state = null
-	item_state = "pill"
+	inhand_icon_state = "pill"
 	possible_transfer_amounts = null
 	visible_transfer_rate = FALSE
 	volume = 100
@@ -15,7 +14,7 @@
 /obj/item/reagent_containers/pill/Initialize(mapload)
 	. = ..()
 	if(!icon_state)
-		icon_state = "pill[rand(1, 20)]"
+		icon_state = "pill[rand(1, 28)]"
 
 /obj/item/reagent_containers/pill/activate_self(mob/user)
 	if(..())
@@ -34,18 +33,18 @@
 	if(ishuman(C))
 		var/mob/living/carbon/human/H = C
 		if(!H.check_has_mouth())
-			to_chat(user, "<span class='warning'>[user == H ? "You" : H] can't ingest [src]!</span>")
+			to_chat(user, SPAN_WARNING("[user == H ? "You" : H] can't ingest [src]!"))
 			return FALSE
 
 	if(user == C)
-		to_chat(user, "<span class='notice'>You swallow [src].</span>")
+		to_chat(user, SPAN_NOTICE("You swallow [src]."))
 	else
-		C.visible_message("<span class='warning'>[user] attempts to force [C] to swallow [src].</span>")
+		C.visible_message(SPAN_WARNING("[user] attempts to force [C] to swallow [src]."))
 		if(!do_after(user, 3 SECONDS, TRUE, C, TRUE))
 			return FALSE
 
 		C.forceFedAttackLog(src, user)
-		C.visible_message("<span class='warning'>[user] forces [C] to swallow [src].</span>")
+		C.visible_message(SPAN_WARNING("[user] forces [C] to swallow [src]."))
 
 	reagents.reaction(C, REAGENT_INGEST)
 	reagents.trans_to(C, reagents.total_volume)
@@ -67,12 +66,12 @@
 	if(!target.is_refillable())
 		return
 	if(target.reagents.holder_full())
-		to_chat(user, "<span class='warning'>[target] is full.</span>")
+		to_chat(user, SPAN_WARNING("[target] is full."))
 		return
 
-	to_chat(user, "<span class='notice'>You [!target.reagents.total_volume ? "break open" : "dissolve"] [src] in [target].</span>")
+	to_chat(user, SPAN_NOTICE("You [!target.reagents.total_volume ? "break open" : "dissolve"] [src] in [target]."))
 	for(var/mob/O in oviewers(2, user))
-		O.show_message("<span class='warning'>[user] puts something in [target].</span>", 1)
+		O.show_message(SPAN_WARNING("[user] puts something in [target]."), 1)
 	reagents.trans_to(target, reagents.total_volume)
 	qdel(src)
 
@@ -80,13 +79,13 @@
 /obj/item/reagent_containers/pill/tox
 	name = "\improper Toxin pill"
 	desc = "Highly toxic."
-	icon_state = "pill21"
+	icon_state = "pill_skull"
 	list_reagents = list("toxin" = 50)
 
 /obj/item/reagent_containers/pill/initropidril
 	name = "\improper Initropidril pill"
 	desc = "Don't swallow this."
-	icon_state = "pill21"
+	icon_state = "pill_skull"
 	list_reagents = list("initropidril" = 50)
 
 /obj/item/reagent_containers/pill/fakedeath
@@ -155,7 +154,7 @@
 	list_reagents = list("epinephrine" = 50)
 
 /obj/item/reagent_containers/pill/salicylic
-	name = "\improper Salicylic Acid pill"
+	name = "\improper Acetylsalicylic Acid pill"
 	desc = "Commonly used to treat moderate pain and fevers."
 	icon_state = "pill4"
 	list_reagents = list("sal_acid" = 20)
@@ -165,6 +164,12 @@
 	desc = "Used to treat respiratory distress."
 	icon_state = "pill8"
 	list_reagents = list("salbutamol" = 20)
+
+/obj/item/reagent_containers/pill/spaceacillin
+	name = "\improper Spaceacillin pill"
+	desc = "Used to treat bacterial infections."
+	icon_state = "pill3"
+	list_reagents = list("spaceacillin" = 5)
 
 /obj/item/reagent_containers/pill/hydrocodone
 	name = "\improper Hydrocodone pill"
@@ -205,7 +210,7 @@
 /obj/item/reagent_containers/pill/lazarus_reagent
 	name = "\improper Lazarus Reagent pill"
 	desc = "Miraculous drug used for revival. Use with caution. Improper use may cause bodies to violently blow apart."
-	icon_state = "pill9"
+	icon_state = "pill26"
 	list_reagents = list("lazarus_reagent" = 1)
 
 /obj/item/reagent_containers/pill/rezadone

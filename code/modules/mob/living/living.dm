@@ -59,14 +59,20 @@
 	if(mind?.current == src)
 		mind.unbind()
 	UnregisterSignal(src, COMSIG_ATOM_PREHIT)
+	for(var/s in ownedSoullinks)
+		var/datum/soullink/S = s
+		S.ownerDies(FALSE)
+		qdel(s) // If the owner is `destroy()`'d, the soul link is `destroy()`'d.
+	ownedSoullinks = null
+	for(var/s in sharedSoullinks)
+		var/datum/soullink/S = s
+		S.sharerDies(FALSE)
+		S.removeSoulsharer(src) // If a sharer is `destroy()`'d, they are simply removed.
+	sharedSoullinks = null
 	return ..()
 
-/mob/living/ghostize(can_reenter_corpse = 1)
-	var/prev_client = client
+/mob/living/ghostize(flags = GHOST_FLAGS_DEFAULT, ghost_name, ghost_color)
 	. = ..()
-	if(.)
-		if(ranged_ability && prev_client)
-			ranged_ability.remove_mousepointer(prev_client)
 	SEND_SIGNAL(src, COMSIG_LIVING_GHOSTIZED)
 
 /// Legacy method for simplemobs to handle turning off their AI.
@@ -112,7 +118,7 @@
 		var/mob/living/L = M
 		if(L.pulledby && L.pulledby != src && L.restrained())
 			if(!(world.time % 5))
-				to_chat(src, "<span class='warning'>[L] is restrained, you cannot push past.</span>")
+				to_chat(src, SPAN_WARNING("[L] is restrained, you cannot push past."))
 			return TRUE
 
 		if(pulledby == L && (a_intent != INTENT_HELP || L.a_intent != INTENT_HELP)) //prevents boosting the person pulling you, but you can still move through them on help intent
@@ -123,7 +129,7 @@
 				var/mob/P = L.pulling
 				if(P.restrained())
 					if(!(world.time % 5))
-						to_chat(src, "<span class='warning'>[L] is restrained, you cannot push past.</span>")
+						to_chat(src, SPAN_WARNING("[L] is restrained, you cannot push past."))
 					return TRUE
 
 	if(moving_diagonally) //no mob swap during diagonal moves.
@@ -239,9 +245,9 @@
 	for(var/datum/surgery/dissect/D in surgeries)
 		dissection = D
 	if(dissection)
-		. += "<span class='notice'>You detect the next dissection step will be: [dissection.get_surgery_step()]</span>"
+		. += SPAN_NOTICE("You detect the next dissection step will be: [dissection.get_surgery_step()]")
 	if(surgery_container && !contains_xeno_organ)
-		. += "<span class='warning'>[src] looks like [p_they()] [p_have()] had [p_their()] organs dissected!</span>"
+		. += SPAN_WARNING("[src] looks like [p_they()] [p_have()] had [p_their()] organs dissected!")
 
 
 /mob/living/item_interaction(mob/living/user, obj/item/I, list/modifiers)
@@ -338,24 +344,24 @@
 
 /mob/living/proc/do_succumb(cancel_on_no_words)
 	if(stat == DEAD)
-		to_chat(src, "<span class='notice'>It's too late, you're already dead!</span>")
+		to_chat(src, SPAN_NOTICE("It's too late, you're already dead!"))
 		return
 	if(health >= HEALTH_THRESHOLD_SUCCUMB)
-		to_chat(src, "<span class='warning'>You are unable to succumb to death! This life continues!</span>")
+		to_chat(src, SPAN_WARNING("You are unable to succumb to death! This life continues!"))
 		return
 
 	last_words = null // In case we kept some from last time
 	var/final_words = tgui_input_text(src, "Do you have any last words?", "Goodnight, Sweet Prince", encode = FALSE)
 
 	if(isnull(final_words) && cancel_on_no_words)
-		to_chat(src, "<span class='notice'>You decide you aren't quite ready to die.</span>")
+		to_chat(src, SPAN_NOTICE("You decide you aren't quite ready to die."))
 		return
 
 	if(stat == DEAD)
 		return
 
 	if(health >= HEALTH_THRESHOLD_SUCCUMB)
-		to_chat(src, "<span class='warning'>You are unable to succumb to death! This life continues!</span>")
+		to_chat(src, SPAN_WARNING("You are unable to succumb to death! This life continues!"))
 		return
 
 	if(!isnull(final_words))
@@ -378,7 +384,7 @@
 		addtimer(CALLBACK(src, PROC_REF(death)), 1 SECONDS)
 	else
 		death()
-	to_chat(src, "<span class='notice'>You have given up life and succumbed to death.</span>")
+	to_chat(src, SPAN_NOTICE("You have given up life and succumbed to death."))
 	apply_status_effect(STATUS_EFFECT_RECENTLY_SUCCUMBED)
 
 /mob/living/proc/InCritical()
@@ -390,7 +396,7 @@
 
 /mob/living/acid_act(acidpwr, acid_volume)
 	take_organ_damage(acidpwr * min(1, acid_volume * 0.1))
-	to_chat(src, "<span class='userdanger'>The acid burns you!</span>")
+	to_chat(src, SPAN_USERDANGER("The acid burns you!"))
 	playsound(src, 'sound/weapons/sear.ogg', 50, TRUE)
 	return 1
 
@@ -456,11 +462,6 @@
 		//for(var/obj/item/storage/S in Storage.return_inv()) //Check for storage items
 		//	L += get_contents(S)
 
-		for(var/obj/item/gift/G in Storage.return_inv()) //Check for gift-wrapped items
-			L += G.gift
-			if(isstorage(G.gift))
-				L += get_contents(G.gift)
-
 		for(var/obj/item/small_delivery/D in Storage.return_inv()) //Check for package wrapped items
 			L += D.wrapped
 			if(isstorage(D.wrapped)) //this should never happen
@@ -482,10 +483,6 @@
 			L += get_contents(S)
 		for(var/obj/item/bio_chip/storage/I in contents) //Check for storage implants.
 			L += I.get_contents()
-		for(var/obj/item/gift/G in contents) //Check for gift-wrapped items
-			L += G.gift
-			if(isstorage(G.gift))
-				L += get_contents(G.gift)
 
 		for(var/obj/item/small_delivery/D in contents) //Check for package wrapped items
 			L += D.wrapped
@@ -493,7 +490,8 @@
 				L += get_contents(D.wrapped)
 		for(var/obj/item/folder/F in contents)
 			L += F.contents //Folders can't store any storage items.
-
+		for(var/obj/item/organ/internal/headpocket/pocket in contents)
+			L += pocket.contents //Checks for items in headpockets
 		return L
 
 /mob/living/proc/check_contents_for(A)
@@ -622,6 +620,58 @@
 	stand_up() // wake the fuck up badmin, we've got an "event" to burn
 	return
 
+/**
+ * Heals up the mob up to [heal_to] of the main damage types.
+ * EX: If heal_to is 50, and they have 150 brute damage, they will heal 100 brute (up to 50 brute damage)
+ *
+ * If the target is dead, also revives them and heals their organs / restores blood.
+ * If we have a [revive_message], play a visible message if the revive was successful.
+ *
+ * Arguments
+ * * heal_to - the health threshold to heal the mob up to for each of the main damage types.
+ * * revive_message - if provided, a visible message to show on a successful revive.
+ *
+ * Returns TRUE if the mob is alive afterwards, or FALSE if they're still dead (revive failed).
+ */
+/mob/living/proc/heal_and_revive(heal_to = 50, revive_message)
+
+	// Heal their brute and burn up to the threshold we're looking for
+	var/brute_to_heal = heal_to - getBruteLoss()
+	var/burn_to_heal = heal_to - getFireLoss()
+	var/oxy_to_heal = heal_to - getOxyLoss()
+	var/tox_to_heal = heal_to - getToxLoss()
+	if(brute_to_heal < 0)
+		adjustBruteLoss(brute_to_heal, updating_health = FALSE)
+	if(burn_to_heal < 0)
+		adjustFireLoss(burn_to_heal, updating_health = FALSE)
+	if(oxy_to_heal < 0)
+		adjustOxyLoss(oxy_to_heal, updating_health = FALSE)
+	if(tox_to_heal < 0)
+		adjustToxLoss(tox_to_heal, updating_health = FALSE)
+
+	// Run updatehealth once to set health for the revival check
+	updatehealth()
+
+	// We've given them a decent heal.
+	// If they happen to be dead too, try to revive them - if possible.
+	if(stat == DEAD && can_be_revived())
+		// If the revive is successful, show our revival message (if present).
+		if(update_revive() && revive_message)
+			visible_message(revive_message)
+
+	// Finally update health again after we're all done
+	updatehealth()
+
+	return stat != DEAD
+
+
+/// Checks if we are actually able to ressuscitate this mob.
+/// (We don't want to revive then to have them instantly die again)
+/mob/living/proc/can_be_revived()
+	if(health <= HEALTH_THRESHOLD_DEAD)
+		return FALSE
+	return TRUE
+
 /mob/living/proc/remove_CC()
 	SetWeakened(0)
 	SetKnockDown(0)
@@ -698,6 +748,8 @@
 					existing_trail.color = H.dna.species.blood_color
 			else if(isalien(src))
 				existing_trail.color = "#05EE05"
+			else if(isflockmob(src))
+				existing_trail.color = COLOR_BLOOD_FLOCK
 			else
 				existing_trail.color = "#A10808"
 
@@ -778,16 +830,16 @@
 
 			if(GRAB_AGGRESSIVE)
 				if(prob(60))
-					visible_message("<span class='danger'>[src] has broken free of [G.assailant]'s grip!</span>")
+					visible_message(SPAN_DANGER("[src] has broken free of [G.assailant]'s grip!"))
 					qdel(G)
 
 			if(GRAB_NECK)
 				if(prob(5))
-					visible_message("<span class='danger'>[src] has broken free of [G.assailant]'s headlock!</span>")
+					visible_message(SPAN_DANGER("[src] has broken free of [G.assailant]'s headlock!"))
 					qdel(G)
 
 	if(resisting)
-		visible_message("<span class='danger'>[src] resists!</span>")
+		visible_message(SPAN_DANGER("[src] resists!"))
 		return 1
 
 /mob/living/proc/resist_buckle()
@@ -815,7 +867,7 @@
 	buckled.unbuckle_mob(src, force)
 
 /mob/living/proc/Exhaust()
-	to_chat(src, "<span class='notice'>You're too exhausted to keep going...</span>")
+	to_chat(src, SPAN_NOTICE("You're too exhausted to keep going..."))
 	Weaken(10 SECONDS)
 
 /mob/living/proc/get_visible_name()
@@ -859,10 +911,13 @@
 	return TRUE
 
 //called when the mob receives a bright flash
-/mob/living/proc/flash_eyes(intensity = 1, override_blindness_check = 0, affect_silicon = 0, visual = 0, laser_pointer = FALSE, type = /atom/movable/screen/fullscreen/stretch/flash)
+/mob/living/proc/flash_eyes(intensity = 1, override_blindness_check = 0, affect_silicon = 0, visual = 0, laser_pointer = FALSE, flash_type = /atom/movable/screen/fullscreen/stretch/flash)
 	SIGNAL_HANDLER
 	if(can_be_flashed(intensity, override_blindness_check))
-		overlay_fullscreen("flash", type)
+		var/atom/movable/screen/fullscreen/stretch/flash/flash = flash_type
+		if(client && client.prefs.toggles3 & PREFTOGGLE_3_DARK_FLASH)
+			flash_type = flash.dark_type
+		overlay_fullscreen("flash", flash_type)
 		addtimer(CALLBACK(src, PROC_REF(clear_fullscreen), "flash", 25), 25)
 		return 1
 
@@ -885,6 +940,13 @@
 		step_towards(src,S)
 
 /mob/living/narsie_act()
+	if(IS_HERETIC(src))
+		var/datum/antagonist/heretic/are_you_ascended = IS_HERETIC(src)
+		if(are_you_ascended.ascended && stat != DEAD)
+			to_chat(src, SPAN_USERDANGER("You feel the crushing presense of [GET_CULT_DATA(entity_name, "Nar'sie")] pushing down on you. You won't last long!)"))
+			adjustBruteLoss(40) //Note: Heretics take half damage, this is 20 brute.
+			adjustBrainLoss(5)
+			return
 	if(client)
 		make_new_construct(/mob/living/simple_animal/hostile/construct/harvester, src, cult_override = TRUE, create_smoke = TRUE)
 	spawn_dust()
@@ -952,33 +1014,34 @@
 
 /mob/living/proc/attempt_harvest(obj/item/I, mob/user)
 	if(user.a_intent == INTENT_HARM && stat == DEAD && butcher_results && I.sharp) //can we butcher it?
-		to_chat(user, "<span class='notice'>You begin to butcher [src]...</span>")
+		to_chat(user, SPAN_NOTICE("You begin to butcher [src]..."))
 		playsound(loc, 'sound/weapons/slice.ogg', 50, TRUE, -1)
 		if(user.mind && HAS_TRAIT(user.mind, TRAIT_BUTCHER))
-			if(do_mob(user, src, 3 SECONDS) && Adjacent(I))
-				harvest(user)
+			if(do_mob(user, src, butcher_time / 2) && Adjacent(I))
+				harvest(user, I)
 		else
-			if(do_mob(user, src, 8 SECONDS) && Adjacent(I))
-				harvest(user)
+			if(do_mob(user, src, butcher_time) && Adjacent(I))
+				harvest(user, I)
 		return TRUE
 
-/mob/living/proc/harvest(mob/living/user)
+/mob/living/proc/harvest(mob/living/user, obj/item/I)
 	if(QDELETED(src))
 		return
 	if(butcher_results)
 		for(var/path in butcher_results)
-			for(var/i = 1, i <= butcher_results[path], i++)
+			var/amount_to_drop = floor(butcher_results[path] * I.bit_productivity_mod)
+			for(var/i = 1, i <= amount_to_drop, i++)
 				new path(loc)
 			butcher_results.Remove(path) //In case you want to have things like simple_animals drop their butcher results on gib, so it won't double up below.
-		visible_message("<span class='notice'>[user] butchers [src].</span>")
+		visible_message(SPAN_NOTICE("[user] butchers [src]."))
 		gib()
 
 /mob/living/proc/can_use(atom/movable/M, be_close = FALSE)
 	if(HAS_TRAIT(src, TRAIT_HANDS_BLOCKED))
-		to_chat(src, "<span class='warning'>You can't do that right now!</span>")
+		to_chat(src, SPAN_WARNING("You can't do that right now!"))
 		return FALSE
 	if(be_close && !in_range(M, src))
-		to_chat(src, "<span class='warning'>You are too far away!</span>")
+		to_chat(src, SPAN_WARNING("You are too far away!"))
 		return FALSE
 	return TRUE
 
@@ -1029,10 +1092,10 @@
 
 /mob/living/proc/can_use_guns(obj/item/gun/G)
 	if(G.trigger_guard != TRIGGER_GUARD_ALLOW_ALL && !IsAdvancedToolUser() && !issmall(src))
-		to_chat(src, "<span class='warning'>You don't have the dexterity to do this!</span>")
+		to_chat(src, SPAN_WARNING("You don't have the dexterity to do this!"))
 		return FALSE
 	if(G.trigger_guard == TRIGGER_GUARD_NONE)
-		to_chat(src, "<span class='warning'>This gun is only built to be fired by machines!</span>")
+		to_chat(src, SPAN_WARNING("This gun is only built to be fired by machines!"))
 		return FALSE
 	return 1
 
@@ -1053,7 +1116,7 @@
 			return
 		stop_pulling()
 		if(AM.pulledby)
-			visible_message("<span class='danger'>[src] has pulled [AM] from [AM.pulledby]'s grip.</span>")
+			visible_message(SPAN_DANGER("[src] has pulled [AM] from [AM.pulledby]'s grip."))
 			AM.pulledby.stop_pulling() //an object can't be pulled by two mobs at once.
 	pulling = AM
 	AM.pulledby = src
@@ -1084,7 +1147,7 @@
 		var/old_level_new_clients = (registered_z ? length(SSmobs.clients_by_zlevel[registered_z]) : null)
 		// No one is left after we're gone, shut off inactive ones
 		if(registered_z && old_level_new_clients == 0)
-			for(var/datum/ai_controller/controller as anything in SSai_controllers.ai_controllers_by_zlevel[registered_z])
+			for(var/datum/ai_controller/controller as anything in GLOB.ai_controllers_by_zlevel[registered_z])
 				controller.set_ai_status(AI_STATUS_OFF)
 
 
@@ -1097,7 +1160,7 @@
 
 			if(new_level_old_clients == 0) // No one was here before, wake up all the AIs.
 				// Basic mob AI
-				for(var/datum/ai_controller/controller as anything in SSai_controllers.ai_controllers_by_zlevel[new_z])
+				for(var/datum/ai_controller/controller as anything in GLOB.ai_controllers_by_zlevel[new_z])
 					// We don't set them directly on, for instances like AIs acting while dead and other cases that may exist in the future.
 					// This isn't a problem for AIs with a client since the client will prevent this from being called anyway.
 					controller.set_ai_status(controller.get_expected_ai_status())
@@ -1127,7 +1190,7 @@
 
 	amount -= RAD_BACKGROUND_RADIATION // This will always be at least 1 because of how skin protection is calculated
 
-	var/blocked = getarmor(null, RAD)
+	var/blocked = getarmor(armor_type = RAD)
 	if(blocked == INFINITY) // Full protection, go no further.
 		return
 	if(amount > RAD_BURN_THRESHOLD)
@@ -1187,7 +1250,7 @@
 		var/amount =	tgui_input_number(usr, "Deal how much damage to mob? (Negative values here heal)", "Adjust [Text]loss", min_value = -10000, max_value = 10000)
 
 		if(QDELETED(src))
-			to_chat(usr, "<span class='notice'>Mob doesn't exist anymore.</span>")
+			to_chat(usr, SPAN_NOTICE("Mob doesn't exist anymore."))
 			return
 
 		switch(Text)
@@ -1214,7 +1277,7 @@
 			if("stamina")
 				adjustStaminaLoss(amount)
 			else
-				to_chat(usr, "<span class='notice'>You caused an error. DEBUG: Text:[Text] Mob:[src]</span>")
+				to_chat(usr, SPAN_NOTICE("You caused an error. DEBUG: Text:[Text] Mob:[src]"))
 				return
 
 		if(amount != 0)
@@ -1270,7 +1333,7 @@
 
 		C.KnockDown(3 SECONDS)
 
-	C.visible_message("<span class='danger'>[C] crashes into [src], knocking them both over!</span>", "<span class='userdanger'>You violently crash into [src]!</span>")
+	C.visible_message(SPAN_DANGER("[C] crashes into [src], knocking them both over!"), SPAN_USERDANGER("You violently crash into [src]!"))
 
 /**
   * Sets the mob's direction lock towards a given atom.
@@ -1281,7 +1344,7 @@
   */
 /mob/living/proc/set_forced_look(atom/A, track = FALSE)
 	forced_look = track ? A.UID() : get_cardinal_dir(src, A)
-	to_chat(src, "<span class='userdanger'>You are now facing [track ? A : dir2text(forced_look)]. To cancel this, shift-middleclick yourself.</span>")
+	to_chat(src, SPAN_USERDANGER("You are now facing [track ? A : dir2text(forced_look)]. To cancel this, shift-middleclick yourself."))
 	throw_alert("direction_lock", /atom/movable/screen/alert/direction_lock)
 
 /**
@@ -1295,7 +1358,7 @@
 		return
 	forced_look = null
 	if(!quiet)
-		to_chat(src, "<span class='notice'>Cancelled direction lock.</span>")
+		to_chat(src, SPAN_NOTICE("Cancelled direction lock."))
 	clear_alert("direction_lock")
 
 /mob/living/setDir(new_dir)
@@ -1337,7 +1400,7 @@
 		notransform = TRUE
 		status_flags |= GODMODE
 		addtimer(CALLBACK(plush_outcome, TYPE_PROC_REF(/obj/item/toy/plushie, un_plushify)), curse_time)
-	to_chat(plushvictim, "<span class='warning'>You have been cursed into an enchanted plush doll! At least you can still move around a bit...</span>")
+	to_chat(plushvictim, SPAN_WARNING("You have been cursed into an enchanted plush doll! At least you can still move around a bit..."))
 
 /mob/living/proc/sec_hud_set_ID()
 	return

@@ -5,7 +5,6 @@
 	desc = "A rusted and dulled blade. It doesn't look like it'd do much damage."
 	icon = 'icons/obj/weapons/magical_weapons.dmi'
 	icon_state = "spectral"
-	item_state = "spectral"
 	flags = CONDUCT
 	sharp = TRUE
 	w_class = WEIGHT_CLASS_BULKY
@@ -69,7 +68,7 @@
 	if(href_list["follow"])
 		var/mob/dead/observer/ghost = usr
 		if(istype(ghost))
-			ghost.ManualFollow(src)
+			ghost.manual_follow(src)
 
 /obj/item/melee/ghost_sword/proc/add_ghost(atom/movable/orbited, atom/orbiter)
 	SIGNAL_HANDLER	// COMSIG_ATOM_ORBIT_BEGIN
@@ -154,13 +153,12 @@
 	var/ghost_counter = length(orbs)
 
 	force = clamp((ghost_counter * 3), 0, 50)
-	user.visible_message("<span class='danger'>[user] strikes with the force of [ghost_counter] vengeful spirit\s!</span>")
+	user.visible_message(SPAN_DANGER("[user] strikes with the force of [ghost_counter] vengeful spirit\s!"))
 	..()
 
 /obj/effect/wisp/ghost
 	name = "mischievous wisp"
 	desc = "A wisp that seems to want to get up to shenanigans. It often seems disappointed, for some reason."
-	light_range = 0
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
 /obj/effect/wisp/ghost/Initialize(mapload, mob/dead/observer/ghost)
@@ -181,29 +179,33 @@
 	desc = "You're not actually going to drink this, are you?"
 	icon = 'icons/obj/wizard.dmi'
 	icon_state = "vial"
+	new_attack_chain = TRUE
 
-/obj/item/dragons_blood/attack_self__legacy__attackchain(mob/living/carbon/human/user)
+/obj/item/dragons_blood/activate_self(mob/living/carbon/human/user)
+	if(..())
+		return ITEM_INTERACT_COMPLETE
+
 	if(!istype(user))
 		return
 
-	var/mob/living/carbon/human/H = user
 	var/random = rand(1, 3)
 
 	switch(random)
 		if(1)
-			to_chat(user, "<span class='danger'>Your flesh begins to melt! Miraculously, you seem fine otherwise.</span>")
-			H.set_species(/datum/species/skeleton)
+			to_chat(user, SPAN_DANGER("Your flesh begins to melt! Miraculously, you seem fine otherwise."))
+			user.set_species(/datum/species/skeleton)
 		if(2)
-			to_chat(user, "<span class='danger'>Power courses through you! You can now shift your form at will.")
+			to_chat(user, SPAN_DANGER("Power courses through you! You can now shift your form at will."))
 			if(user.mind)
 				var/datum/spell/shapeshift/dragon/D = new
 				user.mind.AddSpell(D)
 		if(3)
-			to_chat(user, "<span class='danger'>You feel like you could walk straight through lava now.</span>")
-			H.weather_immunities |= "lava"
+			to_chat(user, SPAN_DANGER("You feel like you could walk straight through lava now."))
+			user.weather_immunities |= "lava"
 
 	playsound(user.loc, 'sound/items/drink.ogg', rand(10, 50), 1)
 	qdel(src)
+	return ITEM_INTERACT_COMPLETE
 
 /datum/disease/transformation/dragon
 	name = "dragon transformation"
@@ -212,11 +214,11 @@
 	agent = "dragon's blood"
 	desc = "What do dragons have to do with Space Station 13?"
 	stage_prob = 20
-	stage1	= list("Your bones ache.")
-	stage2	= list("Your skin feels scaley.")
-	stage3	= list("<span class='danger'>You have an overwhelming urge to terrorize some peasants.</span>", "<span class='danger'>Your teeth feel sharper.</span>")
-	stage4	= list("<span class='danger'>Your blood burns.</span>")
-	stage5	= list("<span class='danger'>You're a fucking dragon. However, any previous allegiances you held still apply. It'd be incredibly rude to eat your still human friends for no reason.</span>")
+	stage1	= list(SPAN_WARNING("Your bones ache."))
+	stage2	= list(SPAN_WARNING("Your skin feels scaley."))
+	stage3	= list(SPAN_DANGER("You have an overwhelming urge to terrorize some peasants."), SPAN_DANGER("Your teeth feel sharper."))
+	stage4	= list(SPAN_DANGER("Your blood burns."))
+	stage5	= list(SPAN_DANGER("You're a fucking dragon. However, any previous allegiances you held still apply. It'd be incredibly rude to eat your still human friends for no reason."))
 	new_form = /mob/living/simple_animal/hostile/megafauna/dragon/lesser
 
 //Lava Staff
@@ -228,7 +230,6 @@
 	icon_state = "lavastaff"
 	lefthand_file = 'icons/mob/inhands/staves_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/staves_righthand.dmi'
-	item_state = "lavastaff"
 	slot_flags = ITEM_SLOT_BACK
 	w_class = WEIGHT_CLASS_BULKY
 	force = 25
@@ -246,7 +247,7 @@
 	var/timer = 0
 	var/banned_turfs
 
-/obj/item/lava_staff/New()
+/obj/item/lava_staff/Initialize(mapload)
 	. = ..()
 	banned_turfs = typecacheof(list(/turf/space/transit, /turf/simulated/wall, /turf/simulated/mineral))
 
@@ -261,13 +262,13 @@
 
 	if(target == user)
 		user.visible_message(
-			"<span class='notice'>[user] holds the tip of [src] near [user.p_their()] [cig.name] until it is suddenly set alight.</span>",
-			"<span class='notice'>You hold the tip of [src] near [cig] until it is suddenly set alight.</span>",
+			SPAN_NOTICE("[user] holds the tip of [src] near [user.p_their()] [cig.name] until it is suddenly set alight."),
+			SPAN_NOTICE("You hold the tip of [src] near [cig] until it is suddenly set alight."),
 		)
 	else
 		user.visible_message(
-			"<span class='notice'>[user] points [src] at [target] until [target.p_their()] [cig.name] is suddenly set alight.</span>",
-			"<span class='notice'>You point [src] at [target] until [target.p_their()] [cig] is suddenly set alight.</span>",
+			SPAN_NOTICE("[user] points [src] at [target] until [target.p_their()] [cig.name] is suddenly set alight."),
+			SPAN_NOTICE("You point [src] at [target] until [target.p_their()] [cig] is suddenly set alight."),
 		)
 	cig.light(user, target)
 	return TRUE
@@ -282,7 +283,7 @@
 
 	if(!is_mining_level(user.z) && !iswizard(user)) //Will only spawn a few sparks if not on mining z level, unless a wizard uses it.
 		timer = world.time + create_delay + 1
-		user.visible_message("<span class='danger'>[user]'s [src] malfunctions!</span>")
+		user.visible_message(SPAN_DANGER("[user]'s [src] malfunctions!"))
 		do_sparks(5, FALSE, user)
 		return
 
@@ -295,10 +296,10 @@
 			var/obj/effect/temp_visual/lavastaff/L = new /obj/effect/temp_visual/lavastaff(T)
 			L.alpha = 0
 			animate(L, alpha = 255, time = create_delay)
-			user.visible_message("<span class='danger'>[user] points [src] at [T]!</span>")
+			user.visible_message(SPAN_DANGER("[user] points [src] at [T]!"))
 			timer = world.time + create_delay + 1
 			if(do_after(user, create_delay, target = T))
-				user.visible_message("<span class='danger'>[user] turns \the [T] into [transform_string]!</span>")
+				user.visible_message(SPAN_DANGER("[user] turns \the [T] into [transform_string]!"))
 				message_admins("[key_name_admin(user)] fired the lava staff at [get_area(target)] (<A href='byond://?_src_=holder;adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>JMP</a>).")
 				log_game("[key_name(user)] fired the lava staff at [get_area(target)] ([T.x], [T.y], [T.z]).")
 				T.TerraformTurf(turf_type, keep_icon = FALSE)
@@ -309,7 +310,7 @@
 				qdel(L)
 				return
 		else
-			user.visible_message("<span class='danger'>[user] turns \the [T] into [reset_string]!</span>")
+			user.visible_message(SPAN_DANGER("[user] turns \the [T] into [reset_string]!"))
 			T.TerraformTurf(reset_turf_type, keep_icon = FALSE)
 			timer = world.time + reset_cooldown
 		playsound(T,'sound/magic/fireball.ogg', 200, 1)

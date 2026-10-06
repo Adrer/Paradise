@@ -10,7 +10,6 @@
 	icon_state = "generic" //Shows up as a auto surgeon, used as a placeholder when a implant doesn't have a sprite
 	origin_tech = "materials=2;biotech=3;programming=2"
 	actions_types = list(/datum/action/item_action/hands_free/activate)
-	item_color = "black"
 	flags = DROPDEL  // By default, don't let implants be harvestable.
 
 	///which implant overlay should be used for implant cases. This should point to a state in bio_chips.dmi
@@ -36,6 +35,7 @@
 
 	///the implant_fluff datum attached to this implant, purely cosmetic "lore" information
 	var/datum/implant_fluff/implant_data = /datum/implant_fluff
+	new_attack_chain = TRUE
 
 /obj/item/bio_chip/Initialize(mapload)
 	. = ..()
@@ -69,17 +69,17 @@
 
 	if(LAZYIN(trigger_emotes, emote_key) && !on_implant)
 		if(!silent)
-			to_chat(user, "<span class='warning'>You've already registered [emote_key]!")
+			to_chat(user, SPAN_WARNING("You've already registered [emote_key]!"))
 		return FALSE
 
 	if(emote_key == "me" || emote_key == "custom")
 		if(!silent)
-			to_chat(user, "<span class='warning'>You can't trigger [src] with a custom emote.")
+			to_chat(user, SPAN_WARNING("You can't trigger [src] with a custom emote."))
 		return FALSE
 
 	if(!(emote_key in user.usable_emote_keys(trigger_causes & BIOCHIP_EMOTE_TRIGGER_INTENTIONAL)))
 		if(!silent)
-			to_chat(user, "<span class='warning'>You can't trigger [src] with that emote! Try *help to see emotes you can use.</span>")
+			to_chat(user, SPAN_WARNING("You can't trigger [src] with that emote! Try *help to see emotes you can use."))
 		return FALSE
 
 	if(!(emote_key in user.usable_emote_keys(trigger_causes & BIOCHIP_EMOTE_TRIGGER_UNINTENTIONAL)))
@@ -156,7 +156,6 @@
 			return 1
 		else
 			return 0
-
 
 	loc = source
 	imp_in = source

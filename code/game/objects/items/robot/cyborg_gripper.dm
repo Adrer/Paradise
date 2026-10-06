@@ -16,6 +16,7 @@
 	icon_state = "gripper"
 	actions_types = list(/datum/action/item_action/drop_gripped_item)
 	flags = ABSTRACT
+	flags_2 = RAD_NO_CONTAMINATE_2
 	new_attack_chain = TRUE
 	/// Set to TRUE to removal of cells/lights from machine objects containing them.
 	var/engineering_machine_interaction = FALSE
@@ -33,9 +34,9 @@
 /obj/item/gripper/examine(mob/user)
 	. = ..()
 	if(!gripped_item)
-		. += "<span class='notice'>[src] is empty.</span>"
+		. += SPAN_NOTICE("[src] is empty.")
 		return
-	. += "<span class='notice'>[src] is currently holding [gripped_item].</span>"
+	. += SPAN_NOTICE("[src] is currently holding [gripped_item].")
 
 /obj/item/gripper/examine_more(mob/user)
 	. = ..()
@@ -53,10 +54,10 @@
 
 /obj/item/gripper/proc/drop_gripped_item(mob/user, silent = FALSE)
 	if(!gripped_item)
-		to_chat(user, "<span class='warning'>[src] is empty.</span>")
+		to_chat(user, SPAN_WARNING("[src] is empty."))
 		return FALSE
 	if(!silent)
-		to_chat(user, "<span class='warning'>You drop [gripped_item].</span>")
+		to_chat(user, SPAN_WARNING("You drop [gripped_item]."))
 	gripped_item.forceMove(get_turf(src))
 	gripped_item = null
 	return TRUE
@@ -64,7 +65,7 @@
 /obj/item/gripper/activate_self(mob/user)
 	. = ..()
 	if(!gripped_item)
-		to_chat(user, "<span class='warning'>[src] is empty.</span>")
+		to_chat(user, SPAN_WARNING("[src] is empty."))
 		return ITEM_INTERACT_COMPLETE
 
 	if(gripped_item.new_attack_chain)
@@ -105,14 +106,18 @@
 	// Is the gripper interacting with an item?
 	if(isitem(target))
 		var/obj/item/I = target
+		if(I.is_robot_module())
+			to_chat(user, SPAN_WARNING("You can't grab your own modules!"))
+			return ITEM_INTERACT_COMPLETE
+
 		// Make sure the item is something the gripper can hold
 		if(can_hold_all_items || is_type_in_typecache(I, can_hold))
-			to_chat(user, "<span class='notice'>You collect [I].</span>")
+			to_chat(user, SPAN_NOTICE("You collect [I]."))
 			I.forceMove(src)
 			gripped_item = I
 			return ITEM_INTERACT_COMPLETE
 
-		to_chat(user, "<span class='warning'>You hold your gripper over [target], but no matter how hard you try, you cannot make yourself grab it.</span>")
+		to_chat(user, SPAN_WARNING("You hold your gripper over [target], but no matter how hard you try, you cannot make yourself grab it."))
 		return ITEM_INTERACT_COMPLETE
 
 	// Everything past this point requires being able to engineer.
@@ -132,22 +137,22 @@
 			A.charging = APC_NOT_CHARGING
 			A.update_icon()
 			user.visible_message(
-				"<span class='warning'>[user] removes the cell from [A]!</span>",
-				"<span class='warning'>You remove the cell from [A].</span>"
+				SPAN_WARNING("[user] removes the cell from [A]!"),
+				SPAN_WARNING("You remove the cell from [A].")
 				)
 		return ITEM_INTERACT_COMPLETE
 
 	// Removing cells from cell chargers.
 	if(istype(target, /obj/machinery/cell_charger))
 		var/obj/machinery/cell_charger/cell_charger = target
-		if(cell_charger.charging)
-			gripped_item = cell_charger.charging
-			cell_charger.charging.add_fingerprint(user)
-			cell_charger.charging.forceMove(src)
+		if(cell_charger.cell_inside)
+			gripped_item = cell_charger.cell_inside
+			cell_charger.cell_inside.add_fingerprint(user)
+			cell_charger.cell_inside.forceMove(src)
 			cell_charger.removecell()
 		user.visible_message(
-			"<span class='notice'>[user] removes the cell from [cell_charger].</span>",
-			"<span class='notice'>You remove the cell from [cell_charger].</span>"
+			SPAN_NOTICE("[user] removes the cell from [cell_charger]."),
+			SPAN_NOTICE("You remove the cell from [cell_charger].")
 			)
 		return ITEM_INTERACT_COMPLETE
 
@@ -158,9 +163,22 @@
 		L.forceMove(src)
 		gripped_item = L
 		user.visible_message(
-			"<span class='notice'>[user] removes [L] from [light].</span>",
-			"<span class='notice'>You remove [L] from [light].</span>"
+			SPAN_NOTICE("[user] removes [L] from [light]."),
+			SPAN_NOTICE("You remove [L] from [light].")
 			)
+		return ITEM_INTERACT_COMPLETE
+
+	if(istype(target, /obj/machinery/atmospherics/reactor_chamber))
+		var/obj/machinery/atmospherics/reactor_chamber/chamber = target
+		if(chamber.chamber_state == CHAMBER_OPEN && chamber.held_rod)
+			chamber.held_rod.forceMove(src)
+			gripped_item = chamber.held_rod
+			user.visible_message(
+			SPAN_NOTICE("[user] removes [chamber.held_rod] from [chamber]."),
+			SPAN_NOTICE("You remove [chamber.held_rod] from [chamber].")
+			)
+			chamber.held_rod = null
+			chamber.update_appearance(UPDATE_OVERLAYS)
 		return ITEM_INTERACT_COMPLETE
 
 /obj/item/gripper/emag_act(mob/user)
@@ -168,18 +186,16 @@
 	..()
 	return TRUE
 
-/obj/item/gripper/pre_attack(atom/A, mob/living/user, params)
-	// This is required to avoid hypersonic interaction speed.
-	user.changeNext_move(CLICK_CD_MELEE)
+/obj/item/gripper/pre_attack(atom/atom_target, mob/living/user, params)
+	. = FINISH_ATTACK | MELEE_COOLDOWN_PREATTACK
 	if(gripped_item)
-		gripped_item.attack(A, user)
-		return TRUE
+		gripped_item.attack(atom_target, user)
+		return
 
-	if(!ismob(A))
+	if(!ismob(atom_target))
 		return ..()
 
-	. = TRUE
-	var/mob/living/target = A
+	var/mob/living/target = atom_target
 	// If a human target is horizonal, try to help them up. Unless you're trying to kill them.
 	if(ishuman(target) && user.a_intent == INTENT_HELP && can_help_up)
 		var/mob/living/carbon/human/pickup_target = target
@@ -195,16 +211,16 @@
 			pickup_target.stand_up()
 			playsound(user.loc, 'sound/weapons/thudswoosh.ogg', 50, TRUE, -1)
 			user.visible_message(
-				"<span class='notice'>[user] shakes [pickup_target] trying to wake [pickup_target.p_them()] up!</span>",
-				"<span class='notice'>You shake [pickup_target] trying to wake [pickup_target.p_them()] up!</span>"
+				SPAN_NOTICE("[user] shakes [pickup_target] trying to wake [pickup_target.p_them()] up!"),
+				SPAN_NOTICE("You shake [pickup_target] trying to wake [pickup_target.p_them()] up!")
 				)
 			return
 
 	if(user.a_intent == INTENT_HELP)
 		if(target == user)
 			user.visible_message(
-				"<span class='notice'>[user] gives [user.p_themselves()] a hug to make [user.p_themselves()] feel better.</span>",
-				"<span class='notice'>You give yourself a hug to make yourself feel better.</span>"
+				SPAN_NOTICE("[user] gives [user.p_themselves()] a hug to make [user.p_themselves()] feel better."),
+				SPAN_NOTICE("You give yourself a hug to make yourself feel better.")
 				)
 			playsound(loc, 'sound/weapons/thudswoosh.ogg', 50, TRUE, -1)
 			return
@@ -218,8 +234,8 @@
 
 		if(user.zone_selected == BODY_ZONE_HEAD)
 			user.visible_message(
-				"<span class='notice'>[user] playfully boops [target] on the head.</span>",
-				"<span class='notice'>You playfully boop [target] on the head.</span>"
+				SPAN_NOTICE("[user] playfully boops [target] on the head."),
+				SPAN_NOTICE("You playfully boop [target] on the head.")
 				)
 			user.do_attack_animation(target, ATTACK_EFFECT_BOOP)
 			playsound(loc, 'sound/weapons/tap.ogg', 50, TRUE, -1)
@@ -227,13 +243,13 @@
 
 		if(ishuman(target))
 			user.visible_message(
-				"<span class='notice'>[user] hugs [target] to make [target.p_them()] feel better.</span>",
-				"<span class='notice'>You hug [target] to make [target.p_them()] feel better.</span>"
+				SPAN_NOTICE("[user] hugs [target] to make [target.p_them()] feel better."),
+				SPAN_NOTICE("You hug [target] to make [target.p_them()] feel better.")
 				)
 		else
 			user.visible_message(
-				"<span class='notice'>[user] pets [target]!</span>",
-				"<span class='notice'>You pet [target]!</span>"
+				SPAN_NOTICE("[user] pets [target]!"),
+				SPAN_NOTICE("You pet [target]!")
 				)
 		playsound(loc, 'sound/weapons/thudswoosh.ogg', 50, TRUE, -1)
 		return
@@ -241,23 +257,23 @@
 	if(user.a_intent == INTENT_HARM && !emagged)
 		if(target == user)
 			user.visible_message(
-			"<span class='notice'>[user] gives [user.p_themselves()] a firm bear-hug to make [user.p_themselves()] feel better.</span>",
-			"<span class='notice'>You give yourself a firm bear-hug to make yourself feel better.</span>"
+			SPAN_NOTICE("[user] gives [user.p_themselves()] a firm bear-hug to make [user.p_themselves()] feel better."),
+			SPAN_NOTICE("You give yourself a firm bear-hug to make yourself feel better.")
 			)
 			playsound(loc, 'sound/weapons/thudswoosh.ogg', 50, TRUE, -1)
 			return
 
 		if(!ishuman(target) || user.zone_selected == BODY_ZONE_HEAD)
 			user.visible_message(
-				"<span class='warning'>[user] bops [target] on the head!</span>",
-				"<span class='warning'>You bop [target] on the head!</span>"
+				SPAN_WARNING("[user] bops [target] on the head!"),
+				SPAN_WARNING("You bop [target] on the head!")
 				)
 			user.do_attack_animation(target, ATTACK_EFFECT_PUNCH)
 			playsound(loc, 'sound/weapons/tap.ogg', 50, TRUE, -1)
 		else
 			user.visible_message(
-				"<span class='warning'>[user] hugs [target] in a firm bear-hug! [target] looks uncomfortable...</span>",
-				"<span class='warning'>You hug [target] firmly to make [target.p_them()] feel better! [target] looks uncomfortable...</span>"
+				SPAN_WARNING("[user] hugs [target] in a firm bear-hug! [target] looks uncomfortable..."),
+				SPAN_WARNING("You hug [target] firmly to make [target.p_them()] feel better! [target] looks uncomfortable...")
 				)
 			playsound(loc, 'sound/weapons/thudswoosh.ogg', 50, TRUE, -1)
 		return
@@ -268,8 +284,8 @@
 
 	if(target == user)
 		user.visible_message(
-			"<span class='danger'>[user] punches [user.p_themselves()] in the face!.</span>",
-			"<span class='userdanger'>You punch yourself in the face!</span>"
+			SPAN_DANGER("[user] punches [user.p_themselves()] in the face!."),
+			SPAN_USERDANGER("You punch yourself in the face!")
 			)
 		user.do_attack_animation(target, ATTACK_EFFECT_PUNCH)
 		playsound(loc, 'sound/weapons/smash.ogg', 50, TRUE, -1)
@@ -280,8 +296,8 @@
 		// Try to punch them in the face... Unless it fell off or something.
 		if(user.zone_selected == BODY_ZONE_HEAD && target.get_organ("head"))
 			user.visible_message(
-				"<span class='danger'>[user] punches [target] squarely in the face!</span>",
-				"<span class='danger'>You punch [target] in the face!</span>"
+				SPAN_DANGER("[user] punches [target] squarely in the face!"),
+				SPAN_DANGER("You punch [target] in the face!")
 				)
 			var/obj/item/organ/external/head/their_face = target.get_organ("head")
 			user.do_attack_animation(target, ATTACK_EFFECT_PUNCH)
@@ -291,8 +307,8 @@
 			return
 
 	user.visible_message(
-		"<span class='danger'>[user] crushes [target] in [user.p_their()] grip!</span>",
-		"<span class='danger'>You crush [target] in your grip!</span>"
+		SPAN_DANGER("[user] crushes [target] in [user.p_their()] grip!"),
+		SPAN_DANGER("You crush [target] in your grip!")
 		)
 	playsound(loc, 'sound/weapons/smash.ogg', 50, TRUE, -1)
 	target.adjustBruteLoss(15)
@@ -319,14 +335,20 @@
 
 // Medical Gripper
 // For medical borgs, for doing medical stuff!
-// Not giving this anything to hold yet, but stuff may be added in the future. Organs/implants are currently viewed as too strong to hold.
 /obj/item/gripper/medical
 	name = "medical gripper"
 	desc = "A grasping tool for cyborgs. This one is covered with hygenic medical-grade silicone rubber. \
 	Use it to help patients up once surgery is complete, or to substitute for hands in surgical operations."
 	can_help_up = TRUE
-	// REMOVE actions_types from here if you add a can_hold list for this gripper!
-	actions_types = list()
+	can_hold = list(
+		/obj/item/clothing/head,
+		/obj/item/key/ambulance, // I mean, the paramedic never uses it, so...
+		/obj/item/reagent_containers/glass/beaker,
+		/obj/item/reagent_containers/glass/bottle,
+		/obj/item/reagent_containers/applicator,
+		/obj/item/reagent_containers/patch,
+		/obj/item/reagent_containers/pill
+	)
 
 /obj/item/gripper/medical/Initialize(mapload)
 	. = ..()
@@ -341,13 +363,14 @@
 	can_help_up = TRUE
 	// Everything in this list is currently for either playing games or otherwise assisting the crew in mundane, non-impactful ways.
 	can_hold = list(
+		/obj/item/clothing/head,
 		/obj/item/deck,
 		/obj/item/cardhand,
 		/obj/item/coin,
 		/obj/item/paper,
 		/obj/item/photo,
 		/obj/item/toy/plushie,
-		/obj/item/clothing/mask/cigarette
+		/obj/item/clothing/mask/cigarette,
 	)
 
 // Mining Gripper
@@ -356,9 +379,10 @@
 	name = "mining gripper"
 	desc = "A grasping tool for cyborgs. This ruggedized version will let you add goliath plating to yourself and activate survival capsules. You could also use it to swing a pickaxe if you don't feel like using your drill."
 	can_hold = list(
+		/obj/item/clothing/head,
 		/obj/item/pickaxe,	// Because the image of a mining borg ignoring its built-in drill and instead choosing to swing an old-fashioned pickaxe is funny.
 		/obj/item/stack/sheet/animalhide/goliath_hide,
-		/obj/item/survivalcapsule
+		/obj/item/survivalcapsule,
 	)
 
 //	Engineering Gripper
@@ -368,6 +392,7 @@
 	desc = "A grasping tool for cyborgs. This version can hold a wide variety of constructon components for use in engineering work."
 	engineering_machine_interaction = TRUE
 	can_hold = list(
+		/obj/item/clothing/head,
 		/obj/item/firealarm_electronics,
 		/obj/item/airalarm_electronics,
 		/obj/item/airlock_electronics,
@@ -386,5 +411,30 @@
 		/obj/item/circuitboard,
 		/obj/item/stack/ore/bluespace_crystal,
 		/obj/item/stack/tile/light,
-		/obj/item/light
+		/obj/item/light,
+		/obj/item/nuclear_rod,
+	)
+
+// Janitorial Gripper
+// For Janitorial borgs. Mostly just to let them put on a hat.
+/obj/item/gripper/janitor
+	name = "janitorial gripper"
+	desc = "A grasping tool for cyborgs. This version is made from hygenic easy-clean material so you can easily keep it (and everything else) clean."
+	can_hold = list(
+		/obj/item/clothing/head,
+		/obj/item/caution, // Holosigns are overrated!
+		/obj/item/key/janitor, // It'll be funny I swear.
+	)
+
+// Security Gripper
+// For secruity borgs. Mostly just to let them put on a hat.
+/obj/item/gripper/security
+	name = "security gripper"
+	desc = "A grasping tool for cyborgs. This version can hold a few basic security items, but isn't too useful on the front line."
+	can_hold = list(
+		/obj/item/clothing/head,
+		/obj/item/key/security, // Secway!
+		/obj/item/taperecorder,
+		/obj/item/tape,
+		/obj/item/food/donut, // "Borg! Bring me a donut, with the sprinkles!"
 	)

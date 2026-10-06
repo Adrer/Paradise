@@ -16,8 +16,8 @@
 
 /obj/machinery/atmospherics/pipe/simple/visible/scrubbers/examine(mob/user)
 	. = ..()
-	. += "<span class='notice'>This is a special 'scubber' pipe, which does not connect to 'normal' pipes. If you want to connect it, use \
-			a Universal Adapter pipe.</span>"
+	. += SPAN_NOTICE("This is a special 'scrubber' pipe, which does not connect to 'normal' pipes. If you want to connect it, use \
+			a Universal Pipe Adapter.")
 
 /obj/machinery/atmospherics/pipe/simple/visible/supply
 	name = "Air supply pipe"
@@ -31,8 +31,8 @@
 
 /obj/machinery/atmospherics/pipe/simple/visible/supply/examine(mob/user)
 	. = ..()
-	. += "<span class='notice'>This is a special 'supply' pipe, which does not connect to 'normal' pipes. If you want to connect it, use \
-			a Universal Adapter pipe.</span>"
+	. += SPAN_NOTICE("This is a special 'supply' pipe, which does not connect to 'normal' pipes. If you want to connect it, use \
+			a Universal Pipe Adapter.")
 
 /obj/machinery/atmospherics/pipe/simple/visible/yellow
 	color = PIPE_COLOR_YELLOW
@@ -60,7 +60,7 @@
 
 /obj/machinery/atmospherics/pipe/simple/visible/universal/examine(mob/user)
 	. = ..()
-	. += "<span class='notice'>This allows you to connect 'normal' pipes, red 'scrubber' pipes, and blue 'supply' pipes.</span>"
+	. += SPAN_NOTICE("This allows you to connect 'normal' pipes, red 'scrubber' pipes, and blue 'supply' pipes.")
 
 /obj/machinery/atmospherics/pipe/simple/visible/universal/update_overlays()
 	. = list()

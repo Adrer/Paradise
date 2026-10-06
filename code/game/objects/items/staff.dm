@@ -10,9 +10,10 @@
 	throw_speed = 1
 	throw_range = 5
 	w_class = WEIGHT_CLASS_SMALL
-	armour_penetration_percentage = 100
+	armor_penetration_percentage = 100
 	attack_verb = list("bludgeoned", "whacked", "disciplined")
 	resistance_flags = FLAMMABLE
+	new_attack_chain = TRUE
 
 /obj/item/staff/Initialize(mapload)
 	. = ..()
@@ -22,7 +23,6 @@
 	name = "broom"
 	desc = "Used for sweeping, and flying into the night while cackling. Black cat not included."
 	icon_state = "broom"
-	item_state = "broom0"
 
 /obj/item/staff/broom/Initialize(mapload)
 	. = ..()
@@ -36,7 +36,7 @@
 		ADD_TRAIT(user, TRAIT_FLYING, "broomstick")
 		user.say("QUID 'ITCH")
 		animate(user, pixel_y = pixel_y + 10 , time = 10, loop = 1, easing = SINE_EASING)
-	to_chat(user, "<span class='notice'>You hold [src] between your legs.</span>")
+	to_chat(user, SPAN_NOTICE("You hold [src] between your legs."))
 
 /obj/item/staff/broom/proc/unwield(obj/item/source, mob/user)
 	attack_verb = list("bludgeoned", "whacked", "cleaned")
@@ -48,14 +48,17 @@
 		animate(user, pixel_y = pixel_y, time = 10, loop = 1, easing = SINE_EASING)
 		animate(user)
 
-/obj/item/staff/broom/attackby__legacy__attackchain(obj/O, mob/user)
-	if(istype(O, /obj/item/clothing/mask/horsehead))
-		new/obj/item/staff/broom/horsebroom(get_turf(src))
-		user.unequip(O)
-		qdel(O)
-		qdel(src)
-		return
-	..()
+/obj/item/staff/broom/item_interaction(mob/living/user, obj/item/used, list/modifiers)
+	if(!istype(used, /obj/item/clothing/mask/horsehead))
+		return ..()
+	var/obj/item/staff/broom/horsebroom/new_broom = new(get_turf(src))
+	transfer_fingerprints_to(new_broom)
+	used.transfer_fingerprints_to(new_broom)
+	new_broom.add_fingerprint(user)
+	user.unequip(used)
+	qdel(used)
+	qdel(src)
+	return ITEM_INTERACT_COMPLETE
 
 /obj/item/staff/broom/dropped(mob/user)
 	REMOVE_TRAIT(user, TRAIT_FLYING, "broomstick")
@@ -65,9 +68,3 @@
 	name = "broomstick horse"
 	desc = "Saddle up!"
 	icon_state = "horsebroom"
-	item_state = "horsebroom0"
-
-/obj/item/staff/broom/horsebroom/attack_self__legacy__attackchain(mob/user as mob)
-	..()
-	item_state = "horsebroom[HAS_TRAIT(src, TRAIT_WIELDED) ? 1 : 0]"
-

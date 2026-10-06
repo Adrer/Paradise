@@ -29,6 +29,8 @@
 	var/tail
 	/// like tail but wings
 	var/wing
+	/// like wings but spines
+	var/spines
 	var/datum/unarmed_attack/unarmed                  //For empty hand harm-intent attack
 	var/unarmed_type = /datum/unarmed_attack
 
@@ -44,8 +46,9 @@
 
 	var/body_temperature = 310.15	//non-IS_SYNTHETIC species will try to stabilize at this temperature. (also affects temperature processing)
 	var/reagent_tag                 //Used for metabolizing reagents.
-	var/hunger_drain = HUNGER_FACTOR
-	var/taste_sensitivity = TASTE_SENSITIVITY_NORMAL //the most widely used factor; humans use a different one
+	var/hunger_drain = HUNGER_FACTOR // the most widely used factor; humans use a different one
+	var/taste_sensitivity = TASTE_SENSITIVITY_NORMAL
+	var/taste_category = TASTE_CATEGORY_ORGANIC // what kinds of taste messages will they get?
 	var/hunger_icon = 'icons/mob/screen_hunger.dmi'
 
 	var/siemens_coeff = 1 //base electrocution coefficient
@@ -66,7 +69,6 @@
 	var/speed_mod = 0	// this affects the race's speed. positive numbers make it move slower, negative numbers make it move faster
 	///Additional armour value for the species.
 	var/armor = 0
-	var/blood_damage_type = OXY //What type of damage does this species take if it's low on blood?
 	var/total_health = 100
 	var/punchdamagelow = 0       //lowest possible punch damage
 	var/punchdamagehigh = 9      //highest possible punch damage
@@ -89,10 +91,12 @@
 	var/clothing_flags = 0 // Underwear and socks.
 	var/exotic_blood
 	var/own_species_blood = FALSE // Can it only use blood from it's species?
+	/// Type of skin produced when butchered.
 	var/skinned_type
+	/// Type of meat produced in the gibber/meating. Distinct from `butcher_results`.
+	var/meat_type = /obj/item/food/meat
 	var/no_equip	// bitflags of slots the race can't equip stuff to
 	var/nojumpsuit = 0	// this is sorta... weird. it basically lets you equip stuff that usually needs jumpsuits without one, like belts and pockets and ids
-	var/can_craft = TRUE // Can this mob using crafting or not?
 
 	var/bodyflags = 0
 	var/dietflags  = 0	// Make sure you set this, otherwise it won't be able to digest a lot of foods
@@ -255,14 +259,13 @@
 	LAZYREINITLIST(H.bodyparts)
 	LAZYREINITLIST(H.bodyparts_by_name)
 	LAZYREINITLIST(H.internal_organs)
-
 	for(var/limb_name in has_limbs)
 		if(bodyparts_to_omit && (limb_name in bodyparts_to_omit))
 			H.bodyparts_by_name[limb_name] = null  // Null it out, but leave the name here so it's still "there"
 			continue
 		var/list/organ_data = has_limbs[limb_name]
 		var/limb_path = organ_data["path"]
-		var/obj/item/organ/O = new limb_path(H)
+		var/obj/item/organ/O = new limb_path(H, H)
 		organ_data["descriptor"] = O.name
 		// Transfer things from the old organ to the new
 		if(istype(O, /obj/item/organ/external) && transfer_list[limb_name])
@@ -292,7 +295,7 @@
 		// not doing so (as of now) causes weird issues for some organs like posibrains, which need a mob on init or they'll qdel themselves.
 		// for the record: this caused every single IPC's brain to be deleted randomly throughout a round, killing them instantly.
 
-		new organ_path(H)
+		new organ_path(H, H)
 
 	create_mutant_organs(H)
 
@@ -315,7 +318,7 @@
 		qdel(ears)
 
 	if(mutantears && !isnull(H.bodyparts_by_name[initial(mutantears.parent_organ)]))
-		new mutantears(H)
+		new mutantears(H, H)
 
 /datum/species/proc/breathe(mob/living/carbon/human/H)
 	var/datum/organ/lungs/lung = H.get_int_organ_datum(ORGAN_DATUM_LUNGS)
@@ -381,7 +384,7 @@
 	var/hungry = (500 - H.nutrition) / 5 // So overeat would be 100 and default level would be 80
 	if((hungry >= 70) && !flight)
 		. += hungry/50
-	if(HAS_TRAIT(H, TRAIT_FAT))
+	if(HAS_TRAIT(H, TRAIT_FAT) && !HAS_TRAIT(H, TRAIT_GLUTTON))
 		. += (1.5 - flight)
 
 	if(H.bodytemperature < H.dna.species.cold_level_1 && !HAS_TRAIT(H, TRAIT_RESISTCOLD))
@@ -404,6 +407,8 @@
 				. += ((health_deficiency / 25) - 1.1) //Once damage is over 40, you get the harsh formula
 			else
 				. += 0.5 //Otherwise, slowdown (from pain) is capped to 0.5 until you hit 40 damage. This only effects people with fractional slowdowns, and prevents some harshness from the lowered threshold
+	if(istype(H.ai_controller))
+		H.ai_controller.movement_delay = .
 
 #undef ADD_SLOWDOWN
 #undef SLOWDOWN_INCREMENT
@@ -500,6 +505,9 @@
 			var/damage_amount = ARMOUR_EQUATION(damage, total_armour, brute_mod * H.physiology.brute_mod)
 			if(damage_amount)
 				H.damageoverlaytemp = 20
+				// IPCs spark when taking brute
+				if(ismachineperson(H) && prob(10))
+					do_sparks(1, 0, H)
 
 			if(organ)
 				if(organ.receive_damage(damage_amount, 0, sharp, used_weapon))
@@ -567,7 +575,7 @@
 
 /datum/species/proc/harm(mob/living/carbon/human/user, mob/living/carbon/human/target, datum/martial_art/attacker_style)
 	if(HAS_TRAIT(user, TRAIT_PACIFISM))
-		to_chat(user, "<span class='warning'>You don't want to harm [target]!</span>")
+		to_chat(user, SPAN_WARNING("You don't want to harm [target]!"))
 		return FALSE
 	if(target != user && handle_harm_antag(user, target))
 		return FALSE
@@ -589,7 +597,7 @@
 	user.do_attack_animation(target, attack.animation_type)
 	if(attack.harmless)
 		playsound(target.loc, attack.attack_sound, 25, TRUE, -1)
-		target.visible_message("<span class='danger'>[user] [pick(attack.attack_verb)]ed [target]!</span>")
+		target.visible_message(SPAN_DANGER("[user] [pick(attack.attack_verb)]ed [target]!"))
 		return FALSE
 	add_attack_logs(user, target, "Melee attacked with fists", target.ckey ? null : ATKLOG_ALL)
 
@@ -600,20 +608,25 @@
 	damage += user.physiology.melee_bonus
 	if(!damage)
 		playsound(target.loc, attack.miss_sound, 25, TRUE, -1)
-		target.visible_message("<span class='danger'>[user] tried to [pick(attack.attack_verb)] [target]!</span>")
+		target.visible_message(SPAN_DANGER("[user] tried to [pick(attack.attack_verb)] [target]!"))
 		return FALSE
 
 
 	var/obj/item/organ/external/affecting = target.get_organ(ran_zone(user.zone_selected))
 	var/armor_block = target.run_armor_check(affecting, MELEE)
 
-	playsound(target.loc, attack.attack_sound, 25, TRUE, -1)
+	// IPCs make clang sound like borgs when punched
+	var/punch_sound = attack.attack_sound
+	if(ismachineperson(target))
+		punch_sound = 'sound/effects/bang.ogg'
 
-	target.visible_message("<span class='danger'>[user] [pick(attack.attack_verb)]ed [target]!</span>")
+	playsound(target.loc, punch_sound, 25, TRUE, -1)
+
+	target.visible_message(SPAN_DANGER("[user] [pick(attack.attack_verb)]ed [target]!"))
 	target.apply_damage(damage, BRUTE, affecting, armor_block, sharp = attack.sharp)
 	if((target.stat != DEAD) && damage >= user.dna.species.punchstunthreshold)
-		target.visible_message("<span class='danger'>[user] has knocked down [target]!</span>", \
-						"<span class='userdanger'>[user] has knocked down [target]!</span>")
+		target.visible_message(SPAN_DANGER("[user] has knocked down [target]!"), \
+						SPAN_USERDANGER("[user] has knocked down [target]!"))
 		target.KnockDown(4 SECONDS)
 	SEND_SIGNAL(target, COMSIG_ATTACK_BY)
 
@@ -623,7 +636,7 @@
 	if(SEND_SIGNAL(target, COMSIG_HUMAN_ATTACKED, user) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return FALSE
 	if(target.absorb_stun(0))
-		target.visible_message("<span class='warning'>[target] is not affected by [user]'s disarm attempt!</span>")
+		target.visible_message(SPAN_WARNING("[target] is not affected by [user]'s disarm attempt!"))
 		user.do_attack_animation(target, ATTACK_EFFECT_DISARM)
 		playsound(target.loc, 'sound/weapons/punchmiss.ogg', 25, TRUE, -1)
 		return FALSE
@@ -677,8 +690,8 @@
 	var/moved = target.Move(shove_to, shove_dir)
 	if(!moved) //they got pushed into a dense object
 		add_attack_logs(user, target, "Disarmed into a dense object", ATKLOG_ALL)
-		target.visible_message("<span class='warning'>[user] slams [target] into an obstacle!</span>", \
-								"<span class='userdanger'>You get slammed into the obstacle by [user]!</span>", \
+		target.visible_message(SPAN_WARNING("[user] slams [target] into an obstacle!"), \
+								SPAN_USERDANGER("You get slammed into the obstacle by [user]!"), \
 								"You hear a loud thud.")
 		if(!HAS_TRAIT(target, TRAIT_FLOORED))
 			target.KnockDown(3 SECONDS)
@@ -694,7 +707,7 @@
 			target.Slowed(2.5 SECONDS, 0.5)
 			var/obj/item/I = target.get_active_hand()
 			if(I)
-				to_chat(target, "<span class='warning'>Your grip on [I] loosens!</span>")
+				to_chat(target, SPAN_WARNING("Your grip on [I] loosens!"))
 			add_attack_logs(user, target, "Disarmed, shoved back", ATKLOG_ALL)
 	target.stop_pulling()
 
@@ -707,7 +720,7 @@
 		if(M.hand)
 			temp = M.bodyparts_by_name["l_hand"]
 		if(!temp || !temp.is_usable())
-			to_chat(M, "<span class='warning'>You can't use your hand.</span>")
+			to_chat(M, SPAN_WARNING("You can't use your hand."))
 			return
 
 	if(M.mind)
@@ -715,7 +728,7 @@
 
 	if((M != H) && M.a_intent != INTENT_HELP && H.check_shields(M, 0, M.name, attack_type = UNARMED_ATTACK))
 		add_attack_logs(M, H, "Melee attacked with fists (miss/block)")
-		H.visible_message("<span class='warning'>[M] attempted to touch [H]!</span>")
+		H.visible_message(SPAN_WARNING("[M] attempted to touch [H]!"))
 		return FALSE
 
 	switch(M.a_intent)
@@ -821,7 +834,7 @@
 
 			if(!H.w_uniform && !nojumpsuit && !(O?.status & ORGAN_ROBOT) && !(I.flags_2 & ALLOW_BELT_NO_JUMPSUIT_2))
 				if(!disable_warning)
-					to_chat(H, "<span class='alert'>You need a jumpsuit before you can attach this [I.name].</span>")
+					to_chat(H, SPAN_ALERT("You need a jumpsuit before you can attach this [I.name]."))
 				return FALSE
 			if(!(I.slot_flags & ITEM_SLOT_BELT))
 				return
@@ -843,7 +856,7 @@
 
 			if(!H.w_uniform && !nojumpsuit && !(O?.status & ORGAN_ROBOT))
 				if(!disable_warning)
-					to_chat(H, "<span class='alert'>You need a jumpsuit before you can attach this [I.name].</span>")
+					to_chat(H, SPAN_ALERT("You need a jumpsuit before you can attach this [I.name]."))
 				return FALSE
 			if(!(I.slot_flags & ITEM_SLOT_ID))
 				return FALSE
@@ -855,7 +868,7 @@
 
 			if(!H.w_uniform && !nojumpsuit && !(O?.status & ORGAN_ROBOT))
 				if(!disable_warning)
-					to_chat(H, "<span class='alert'>You need a jumpsuit before you can attach this [I.name].</span>")
+					to_chat(H, SPAN_ALERT("You need a jumpsuit before you can attach this [I.name]."))
 				return FALSE
 			if(!(I.slot_flags & ITEM_SLOT_PDA))
 				return FALSE
@@ -869,7 +882,7 @@
 
 			if(!H.w_uniform && !nojumpsuit && !(O?.status & ORGAN_ROBOT))
 				if(!disable_warning)
-					to_chat(H, "<span class='alert'>You need a jumpsuit before you can attach this [I.name].</span>")
+					to_chat(H, SPAN_ALERT("You need a jumpsuit before you can attach this [I.name]."))
 				return FALSE
 			if(I.w_class <= WEIGHT_CLASS_SMALL || (I.slot_flags & ITEM_SLOT_BOTH_POCKETS))
 				return TRUE
@@ -882,7 +895,7 @@
 
 			if(!H.w_uniform && !nojumpsuit && !(O?.status & ORGAN_ROBOT))
 				if(!disable_warning)
-					to_chat(H, "<span class='alert'>You need a jumpsuit before you can attach this [I.name].</span>")
+					to_chat(H, SPAN_ALERT("You need a jumpsuit before you can attach this [I.name]."))
 				return FALSE
 			if(I.w_class <= WEIGHT_CLASS_SMALL || (I.slot_flags & ITEM_SLOT_BOTH_POCKETS))
 				return TRUE
@@ -894,7 +907,7 @@
 				return FALSE
 			if(!H.wear_suit)
 				if(!disable_warning)
-					to_chat(H, "<span class='alert'>You need a suit before you can attach this [I.name].</span>")
+					to_chat(H, SPAN_ALERT("You need a suit before you can attach this [I.name]."))
 				return FALSE
 			if(!H.wear_suit.allowed)
 				if(!disable_warning)
@@ -902,7 +915,7 @@
 				return FALSE
 			if(I.w_class > H.wear_suit.max_suit_w)
 				if(!disable_warning)
-					to_chat(H, "<span class='warning'>[I] is too big to attach.</span>")
+					to_chat(H, SPAN_WARNING("[I] is too big to attach."))
 				return FALSE
 			if(istype(I, /obj/item/pda) || is_pen(I) || is_type_in_list(I, H.wear_suit.allowed))
 				return TRUE
@@ -929,11 +942,11 @@
 			var/obj/item/clothing/under/uniform = H.w_uniform
 			if(!uniform)
 				if(!disable_warning)
-					to_chat(H, "<span class='warning'>You need a jumpsuit before you can attach this [I.name].</span>")
+					to_chat(H, SPAN_WARNING("You need a jumpsuit before you can attach this [I.name]."))
 				return FALSE
 			if(length(uniform.accessories) && !uniform.can_attach_accessory(I))
 				if(!disable_warning)
-					to_chat(H, "<span class='warning'>You already have an accessory of this type attached to your [uniform].</span>")
+					to_chat(H, SPAN_WARNING("You already have an accessory of this type attached to your [uniform]."))
 				return FALSE
 			if(!(I.slot_flags & ITEM_SLOT_ACCESSORY))
 				return FALSE
@@ -953,14 +966,14 @@
 		if(!H.IsWeakened())
 			H.emote("collapse")
 		H.Weaken(RAD_MOB_KNOCKDOWN_AMOUNT)
-		to_chat(H, "<span class='danger'>You feel weak.</span>")
+		to_chat(H, SPAN_DANGER("You feel weak."))
 
 	if(radiation > RAD_MOB_VOMIT && prob(RAD_MOB_VOMIT_PROB))
 		H.vomit(10, TRUE)
 
-	if(radiation > RAD_MOB_MUTATE)
+	if(radiation > RAD_MOB_MUTATE && !HAS_TRAIT(H, TRAIT_GENELESS))
 		if(prob(1))
-			to_chat(H, "<span class='danger'>You mutate!</span>")
+			to_chat(H, SPAN_DANGER("You mutate!"))
 			randmutb(H)
 			H.emote("gasp")
 			domutcheck(H)
@@ -970,7 +983,7 @@
 		if(!istype(head_organ) || (NO_HAIR in species_traits))
 			return
 		if(prob(15) && head_organ.h_style != "Bald")
-			to_chat(H, "<span class='danger'>Your hair starts to fall out in clumps...</span>")
+			to_chat(H, SPAN_DANGER("Your hair starts to fall out in clumps..."))
 			addtimer(CALLBACK(src, PROC_REF(go_bald), H), 5 SECONDS)
 
 /datum/species/proc/go_bald(mob/living/carbon/human/H)
@@ -1045,13 +1058,6 @@ It'll return null if the organ doesn't correspond, so include null checks when u
 			if(!isnull(hat.lighting_alpha))
 				H.lighting_alpha = min(hat.lighting_alpha, H.lighting_alpha)
 
-	if(H.vision_type)
-		H.sight |= H.vision_type.sight_flags
-		H.see_in_dark = max(H.see_in_dark, H.vision_type.see_in_dark)
-
-		if(!isnull(H.vision_type.lighting_alpha))
-			H.lighting_alpha = min(H.vision_type.lighting_alpha, H.lighting_alpha)
-
 	if(HAS_TRAIT(H, TRAIT_MESON_VISION))
 		H.sight |= SEE_TURFS
 		H.lighting_alpha = min(H.lighting_alpha, LIGHTING_PLANE_ALPHA_MOSTLY_VISIBLE)
@@ -1074,10 +1080,9 @@ It'll return null if the organ doesn't correspond, so include null checks when u
 	H.sync_lighting_plane_alpha()
 
 /datum/species/proc/water_act(mob/living/carbon/human/M, volume, temperature, source, method = REAGENT_TOUCH)
-	if(abs(temperature - M.bodytemperature) > 10) // If our water and mob temperature varies by more than 10K, cool or/ heat them appropriately.
-		M.bodytemperature = (temperature + M.bodytemperature) * 0.5 // Approximation for gradual heating or cooling.
+	M.adjust_bodytemperature(clamp((temperature + M.bodytemperature) * 0.5 - M.bodytemperature, BODYTEMP_COOLING_MAX, BODYTEMP_HEATING_MAX)) // Approximation for gradual heating or cooling.
 
-/datum/species/proc/bullet_act(obj/item/projectile/P, mob/living/carbon/human/H) //return TRUE if hit, FALSE if stopped/reflected/etc
+/datum/species/proc/bullet_act(obj/projectile/P, mob/living/carbon/human/H) //return TRUE if hit, FALSE if stopped/reflected/etc
 	return TRUE
 
 /datum/species/proc/spec_hitby(atom/movable/AM, mob/living/carbon/human/H)
@@ -1134,7 +1139,7 @@ It'll return null if the organ doesn't correspond, so include null checks when u
 				to_chat(user, "<span class='warning zombie'>Our bite fails to pierce [target]!</span>")
 				return FALSE
 
-			user.visible_message("<span class='danger'>[user] violently bites [target]!</span>")
+			user.visible_message(SPAN_DANGER("[user] violently bites [target]!"))
 			playsound(user.loc, 'sound/weapons/bite.ogg', 20, TRUE)
 			playsound(user.loc, 'sound/misc/moist_impact.ogg', 50, TRUE)
 			user.do_attack_animation(target, ATTACK_EFFECT_BITE)
@@ -1178,11 +1183,11 @@ It'll return null if the organ doesn't correspond, so include null checks when u
 			return TRUE
 
 		eat_brain.custom_pain("OH GOD!!! THEY'RE EATING MY [uppertext(eat_brain.name)]!!") // gnarly
-		user.visible_message("<span class='danger'>[user] digs their claws into [target]'s [brain_house.name], eating their [eat_brain]!</span>", "<span class='danger zombie'>We feast on [target]'s brains.</span>")
+		user.visible_message(SPAN_DANGER("[user] digs their claws into [target]'s [brain_house.name], eating their [eat_brain]!"), "<span class='danger zombie'>We feast on [target]'s brains.</span>")
 		if(!HAS_TRAIT(user, TRAIT_NON_INFECTIOUS_ZOMBIE))
 			if(!target.HasDisease(/datum/disease/zombie))
 				var/datum/disease/zombie/zomb = new /datum/disease/zombie
-				target.ContractDisease(zomb)
+				target.ContractDisease(zomb, SPREAD_BLOOD)
 
 			for(var/datum/disease/zombie/zomb in target.viruses)
 				zomb.stage = max(5, zomb.stage)
@@ -1207,13 +1212,13 @@ It'll return null if the organ doesn't correspond, so include null checks when u
 	var/datum/antagonist/vampire/V = user?.mind?.has_antag_datum(/datum/antagonist/vampire)
 	if(V && !V.draining && user.zone_selected == BODY_ZONE_HEAD)
 		if((NO_BLOOD in target.dna.species.species_traits) || !target.blood_volume)
-			to_chat(user, "<span class='warning'>They have no blood!</span>")
+			to_chat(user, SPAN_WARNING("They have no blood!"))
 			return TRUE
 		if(target.mind && (target.mind.has_antag_datum(/datum/antagonist/vampire) || target.mind.has_antag_datum(/datum/antagonist/mindslave/thrall)))
-			to_chat(user, "<span class='warning'>Your fangs fail to pierce [target.name]'s cold flesh!</span>")
+			to_chat(user, SPAN_WARNING("Your fangs fail to pierce [target.name]'s cold flesh!"))
 			return TRUE
 		if(HAS_TRAIT(target, TRAIT_SKELETONIZED))
-			to_chat(user, "<span class='warning'>There is no blood in a skeleton!</span>")
+			to_chat(user, SPAN_WARNING("There is no blood in a skeleton!"))
 			return TRUE
 		//we're good to suck the blood, blaah
 		V.handle_bloodsucking(target)
@@ -1228,3 +1233,335 @@ It'll return null if the organ doesn't correspond, so include null checks when u
 /// Prototype for additional behaviour when a specific species is ground by a compressor.
 /datum/species/proc/do_compressor_grind(mob/living/carbon/human)
 	return
+
+/* Random Appearance Procs by Species
+	These are here instead of in appearance.dm so that they can be accessed by the character creator
+	and other abstract procs without generating an entirely new mob. Each species is expected
+	to override these procs to generate appropriate values.
+*/
+
+/datum/species/proc/generate_random_appearance(prosthesis_prob = 5, datum/character_save/appearance = null, use_gender = null)
+	if(!istype(appearance))
+		appearance = new
+	appearance.species = name
+	appearance.height = pick(GLOB.character_heights)
+	appearance.physique = pick(GLOB.character_physiques)
+
+	// Gender.
+	appearance.gender = use_gender ? use_gender : randomize_gender()
+	appearance.body_type = randomize_body_type(appearance.gender)
+
+	// Prostheses / Alternate robotic parts
+	if(prob(prosthesis_prob))
+		var/list/prostheses = randomize_chassis_brands()
+		for(var/organ_name in prostheses)
+			var/datum/robolimb/one_prosthesis = prostheses[organ_name]
+			appearance.organ_data[organ_name] = "cyborg"
+			appearance.rlimb_data[organ_name] = one_prosthesis.company
+
+	// This needs to go after prostheses
+	var/datum/robolimb/robohead
+	if(bodyflags & ALL_RPARTS)
+		if(appearance.rlimb_data["head"])
+			robohead = GLOB.all_robolimbs[appearance.rlimb_data["head"]]
+		else
+			robohead = GLOB.all_robolimbs["Morpheus Cyberkinetics"]
+
+	// Body color.
+	if(bodyflags & HAS_SKIN_TONE|HAS_ICON_SKIN_TONE)
+		appearance.s_tone = randomize_skin_tone()
+	if(bodyflags & HAS_SKIN_COLOR)
+		appearance.s_colour = randomize_body_color()
+
+	// Eyes.
+	if(!(bodyflags & ALL_RPARTS || eyes == "blank_eyes" || bodyflags & NO_EYES))
+		appearance.e_colour = randomize_eye_color()
+
+	// Hair.
+	if(!(bodyflags & BALD))
+		appearance.h_style = randomize_hair_style(robohead)
+	if(!(bodyflags & SHAVED))
+		appearance.f_style = randomize_facial_hair_style(robohead, gender = appearance.gender)
+	if(!(bodyflags & BALD&SHAVED))
+		var/list/hair_colors = randomize_hair_colors(robohead, appearance.s_colour, appearance.s_tone)
+		appearance.h_colour = hair_colors["h1"]
+		appearance.h_sec_colour = hair_colors["h2"]
+		appearance.f_colour = hair_colors["f1"]
+		appearance.f_sec_colour = hair_colors["f2"]
+
+	// Accessories.
+	if(bodyflags & HAS_BODY_ACCESSORY)
+		appearance.m_styles["tail"] = "None"
+		appearance.body_accessory = randomize_body_accessory()
+	if(bodyflags & HAS_HEAD_ACCESSORY)
+		appearance.ha_style = randomize_head_accessory()
+		appearance.hacc_colour = randomize_head_accessory_color(appearance.ha_style, appearance.s_colour, appearance.h_colour)
+	if(bodyflags & HAS_ALT_HEADS)
+		appearance.alt_head = randomize_alt_head()
+
+	// Markings.
+	if(bodyflags & HAS_BODY_MARKINGS)
+		appearance.m_styles["body"] = randomize_body_markings()
+		appearance.m_colours["body"] = randomize_body_markings_color(appearance.m_styles["body"], appearance.s_colour, appearance.s_tone)
+
+	if(bodyflags & HAS_HEAD_MARKINGS)
+		appearance.m_styles["head"] = randomize_head_markings(alt_head = appearance.alt_head)
+		appearance.m_colours["head"] = randomize_head_markings_color(appearance.m_styles["head"], appearance.s_colour)
+
+	if(bodyflags & HAS_TAIL_MARKINGS)
+		appearance.m_styles["tail"] = randomize_tail_markings(tail_type = appearance.body_accessory ? appearance.body_accessory : null)
+		appearance.m_colours["tail"] = randomize_tail_markings_color(appearance.m_styles["tail"])
+
+	return appearance
+
+/datum/species/proc/randomize_gender()
+	return pick(MALE, FEMALE, PLURAL)
+
+/datum/species/proc/randomize_body_type(gender)
+	return pick(MALE, FEMALE)
+
+/datum/species/proc/randomize_chassis_brands()
+	var/list/limb_choices = list()
+	var/list/limb_list = list("l_hand", "l_foot", "r_hand", "r_foot")
+	var/brand_choice = pickweight(list(
+		/datum/robolimb/bishop = 2,
+		/datum/robolimb/hephaestus = 2,
+		/datum/robolimb/wardtakahashi = 1,
+		/datum/robolimb/xion = 2,
+		/datum/robolimb/zenghu = 2,
+		/datum/robolimb/shellguard = 2,)
+	)
+
+	// there should be a decreasing chance to add each additional limb prosthesis
+	for(var/limb in limb_list)
+		if(!length(limb_choices) || prob(30 / length(limb_choices)))
+			if(prob(50))
+				var/upper_limb = "[findtext(limb, "l") ? "l" : "r"]_[findtext(limb, "hand") ? "arm" : "leg"]"
+				limb_choices[upper_limb] = brand_choice
+			limb_choices[limb] = brand_choice
+
+	return limb_choices
+
+/datum/species/proc/randomize_skin_tone()
+	if(bodyflags & HAS_ICON_SKIN_TONE)
+		return random_skin_tone(name)
+	return 35 - random_skin_tone(name)
+
+/datum/species/proc/randomize_body_color()
+	if(!(bodyflags & HAS_SKIN_COLOR))
+		return
+	return base_color
+
+/datum/species/proc/convert_skin(datum/species/old_species, old_color = null)
+	// If the new species has no body coloration it doesn't matter.
+	if(!(bodyflags & (HAS_ICON_SKIN_TONE|HAS_SKIN_COLOR|HAS_SKIN_TONE)))
+		return COLOR_BLACK
+
+	// Old color is the old species' body color, skin tone, or nothing, depending on species.
+	if(!old_color || !(old_species.bodyflags & (HAS_ICON_SKIN_TONE|HAS_SKIN_COLOR|HAS_SKIN_TONE)))
+		// No body color/skin tone on the old species? Default to old species' flesh color.
+		old_color = old_species.flesh_color
+		if(bodyflags & HAS_SKIN_COLOR)
+			// Flesh color can straightforwardly become a new body color.
+			return old_color
+		return skin_tone_from_body_color(old_color)
+
+	if(bodyflags & HAS_SKIN_COLOR && old_species.bodyflags & HAS_SKIN_COLOR)
+		// If we can keep it the same, keep it the same.
+		return old_color
+
+	if(bodyflags & HAS_SKIN_COLOR)
+		// The old species doesn't have a body color, but this one does, so convert it
+		return old_species.skin_tone_to_hex(old_color)
+
+	if(old_species.bodyflags & HAS_SKIN_COLOR)
+		// The new species doesn't have a body color, but the old one does, so try to approximate skin tone
+		return skin_tone_from_body_color(old_color)
+
+	// Neither have body colors, but neither are blank, so they must be skin tones.
+	return skin_tone_from_skin_tone(old_species, old_color)
+
+/// Tries to pick the closest skin tone of this species (icon or value) to a given hex color
+/datum/species/proc/skin_tone_from_body_color(body_color)
+	return randomize_skin_tone()
+
+/// Tries to pick the closest skin tone of this species to the skin tone of another
+/datum/species/proc/skin_tone_from_skin_tone(datum/species/old_species, skin_tone)
+	return skin_tone_from_body_color(old_species.skin_tone_to_hex(skin_tone))
+
+/// Represents this species' skin tone as a hex color for species changes.
+/datum/species/proc/skin_tone_to_hex(skin_tone)
+	return COLOR_BLACK
+
+/datum/species/proc/randomize_eye_color()
+	if(prob(1))
+		return rand_hex_color()
+	var/chosen_color = pick(
+		rgb(0, 0, 0), // black
+		rgb(150, 150, 150), // grey
+		rgb(102, 51, 0), // brown
+		rgb(153, 102, 0), // chestnut
+		rgb(51, 102, 204), // blue
+		rgb(102, 204, 255), // lighter blue
+		rgb(0, 102, 0), // green
+		rgb(220, 80, 80), // albino reddish
+		)
+	chosen_color = tint_color_hsl(chosen_color)
+	return chosen_color
+
+/datum/species/proc/randomize_hair_style(datum/robolimb/robohead, species_bald_prob = 5)
+	if(bodyflags & BALD)
+		return "Bald"
+	if(prob(species_bald_prob))
+		return "Bald"
+	var/list/generic_hair_styles = list_valid_hairstyles("Human")
+	var/list/all_hair_styles = list_valid_hairstyles(name, robohead)
+	var/list/exclusive_hair_styles = all_hair_styles - generic_hair_styles
+
+	if(prob(70) && length(exclusive_hair_styles))
+		return pick(exclusive_hair_styles)
+
+	return pick(all_hair_styles)
+
+/datum/species/proc/randomize_facial_hair_style(datum/robolimb/robohead, species_shaved_prob = 20, gender)
+	if(bodyflags & SHAVED)
+		return "Shaved"
+	if(prob(species_shaved_prob))
+		return "Shaved"
+	var/list/generic_hair_styles = list_valid_facial_hairstyles("Human")
+	var/list/all_hair_styles = list_valid_facial_hairstyles(name, robohead)
+	var/list/exclusive_hair_styles = all_hair_styles - generic_hair_styles
+
+	if(prob(70) && length(exclusive_hair_styles))
+		return pick(exclusive_hair_styles)
+
+	return pick(all_hair_styles)
+
+/datum/species/proc/randomize_hair_colors(robohead, body_color = null, skin_tone = null)
+	var/list/hair_colors = list()
+	var/list/possible_colors = list(
+		// gray, black, blue - 10 total
+		COLOR_GRAY15,
+		COLOR_GRAY40,
+		COLOR_SILVER,
+		COLOR_DARK_BLUE_GRAY,
+		COLOR_WALL_GUNMETAL,
+		COLOR_OFF_WHITE,
+		COLOR_GRAY,
+		COLOR_FULL_TONER_BLACK,
+		COLOR_DARK_GRAY,
+		COLOR_BLACK,
+		// yellow, red, orange - 7 total
+		COLOR_YELLOW_GRAY,
+		COLOR_WARM_YELLOW,
+		COLOR_DARK_ORANGE,
+		COLOR_PALE_ORANGE,
+		COLOR_SUN,
+		COLOR_GOLD,
+		COLOR_WHEAT,
+		// brownish - 7 total
+		COLOR_DARK_BROWN,
+		COLOR_CHESTNUT,
+		COLOR_SEDONA,
+		COLOR_BEASTY_BROWN,
+		COLOR_BROWN_ORANGE,
+		COLOR_BROWN,
+		COLOR_CARGO_BROWN,
+	)
+	if(prob(2))
+		hair_colors["h1"] = pick(rand_hex_color())
+		if(prob(33))
+			hair_colors["f1"] = tint_color_hsl(pick(possible_colors), 10)
+		else if(prob(50))
+			hair_colors["f1"] = pick(rand_hex_color())
+		else
+			hair_colors["f1"] = hair_colors["h1"]
+	else
+		hair_colors["h1"] = tint_color_hsl(pick(possible_colors), 10)
+		if(prob(2))
+			hair_colors["f1"] = pick(rand_hex_color())
+		else
+			hair_colors["f1"] = hair_colors["h1"]
+	hair_colors["h2"] = pick(rand_hex_color())
+	hair_colors["f2"] = pick(rand_hex_color())
+
+	return hair_colors
+
+/datum/species/proc/randomize_body_accessory(prob_to_apply = 50)
+	if(!(bodyflags & HAS_BODY_ACCESSORY))
+		return "None"
+	var/list/possible_accessories = list_valid_body_accessories(name)
+	if(!prob(prob_to_apply) && ("None" in possible_accessories))
+		return "None"
+
+	return pick(possible_accessories)
+
+/datum/species/proc/randomize_head_accessory(prob_to_apply = 50)
+	if(!(bodyflags & HAS_HEAD_ACCESSORY))
+		return "None"
+	var/list/possible_accessories = list_valid_head_accessories(name)
+	if(!prob(prob_to_apply) && ("None" in possible_accessories))
+		return "None"
+
+	return pick(possible_accessories)
+
+/datum/species/proc/randomize_head_accessory_color(head_accessory = "None", body_color = null, hair_color = null)
+	if(head_accessory == "None")
+		return COLOR_BLACK
+	return rand_hex_color()
+
+/datum/species/proc/randomize_alt_head(prob_to_apply = 40)
+	if(!(bodyflags & HAS_ALT_HEADS))
+		return "None"
+	var/list/possible_heads = list_valid_alt_heads(name)
+	if(!prob(prob_to_apply) && ("None" in possible_heads))
+		return "None"
+
+	return pick(possible_heads)
+
+/datum/species/proc/randomize_body_markings(prob_to_apply = 20)
+	if(!(bodyflags & HAS_BODY_MARKINGS))
+		return "None"
+	var/list/possible_markings = list_valid_marking_styles("body", name)
+	if(!prob(prob_to_apply) && ("None" in possible_markings))
+		return "None"
+	var/list/generic_markings = list_valid_marking_styles("body", "Human")
+	var/list/exclusive_markings = possible_markings - generic_markings
+
+	if(prob(70) && length(exclusive_markings))
+		return pick(exclusive_markings)
+
+	return pick(possible_markings)
+
+/datum/species/proc/randomize_body_markings_color(body_markings = "None", body_color = null, skin_tone = null)
+	if(body_markings == "None")
+		return COLOR_BLACK
+	return rand_hex_color()
+
+/datum/species/proc/randomize_head_markings(prob_to_apply = 70, alt_head)
+	if(!(bodyflags & HAS_HEAD_MARKINGS))
+		return "None"
+	var/list/possible_markings = list_valid_marking_styles("head", name, alt_head = alt_head)
+	if(!prob(prob_to_apply) && ("None" in possible_markings))
+		return "None"
+
+	return pick(possible_markings)
+
+/datum/species/proc/randomize_head_markings_color(head_markings = "None", body_color = null)
+	if(head_markings == "None")
+		return COLOR_BLACK
+	return rand_hex_color()
+
+/datum/species/proc/randomize_tail_markings(prob_to_apply = 70, tail_type = null)
+	if(!(bodyflags & HAS_TAIL_MARKINGS))
+		return "None"
+	var/list/possible_markings = list_valid_marking_styles("tail", name, null, tail_type)
+	if(!prob(prob_to_apply) && ("None" in possible_markings))
+		return "None"
+
+	return pick(possible_markings)
+
+/datum/species/proc/randomize_tail_markings_color(tail_markings = "None")
+	if(tail_markings == "None")
+		return COLOR_BLACK
+	return rand_hex_color()

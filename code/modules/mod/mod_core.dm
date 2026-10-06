@@ -3,7 +3,7 @@
 	desc = "A non-functional MOD core. Inform the admins if you see this."
 	icon = 'icons/obj/clothing/modsuit/mod_construction.dmi'
 	icon_state = "mod-core"
-	item_state = "electronic"
+	inhand_icon_state = "electronic"
 	lefthand_file = 'icons/mob/inhands/items/devices_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/items/devices_righthand.dmi'
 	/// MOD unit we are powering.
@@ -99,8 +99,8 @@
 		on_wearer_unset(mod, mod.wearer)
 	return ..()
 
-/obj/item/mod/core/proc/on_attackby(obj/item/attacking_item, mob/user, params)
-	return
+/obj/item/mod/core/item_interaction(mob/living/user, obj/item/used, list/modifiers)
+	return NONE
 
 /obj/item/mod/core/standard/charge_source()
 	return cell
@@ -152,8 +152,8 @@
 /obj/item/mod/core/standard/proc/install_cell(new_cell)
 	cell = new_cell
 	cell.forceMove(src)
-	RegisterSignal(src, COMSIG_ATOM_EXITED, PROC_REF(on_exit))
-	RegisterSignal(cell, COMSIG_PARENT_QDELETING, PROC_REF(remove_cell))
+	RegisterSignal(src, COMSIG_ATOM_EXITED, PROC_REF(on_exit), override = TRUE)
+	RegisterSignal(cell, COMSIG_PARENT_QDELETING, PROC_REF(remove_cell), override = TRUE)
 
 /obj/item/mod/core/standard/proc/uninstall_cell()
 	if(!cell)
@@ -193,34 +193,37 @@
 
 /obj/item/mod/core/standard/proc/mod_uninstall_cell(mob/living/user)
 	if(!cell)
-		to_chat(user, "<span class='warning'>No cell installed!</span>")
+		to_chat(user, SPAN_WARNING("No cell installed!"))
 		return
 	if(!do_after(user, 1.5 SECONDS, target = user))
 		return
-	to_chat(user, "<span class='notice'>You remove the cell.</span>")
+	to_chat(user, SPAN_NOTICE("You remove the cell."))
 	playsound(mod, 'sound/machines/click.ogg', 50, TRUE, SILENCED_SOUND_EXTRARANGE)
 	var/obj/item/cell_to_move = cell
 	cell_to_move.forceMove(drop_location())
 	user.put_in_hands(cell_to_move)
 	mod.update_charge_alert()
 
-/obj/item/mod/core/standard/on_attackby(obj/item/attacking_item, mob/user, params)
-	if(istype(attacking_item, /obj/item/stock_parts/cell))
-		if(!mod.open)
-			to_chat(user, "<span class='warning'>Open the cover first!</span>")
-			playsound(mod, 'sound/machines/scanbuzz.ogg', 25, TRUE, SILENCED_SOUND_EXTRARANGE)
-			return NONE
-		if(cell)
-			to_chat(user, "<span class='warning'>Cell already installed!</span>")
-			playsound(mod, 'sound/machines/scanbuzz.ogg', 25, TRUE, SILENCED_SOUND_EXTRARANGE)
-			return COMPONENT_SKIP_AFTERATTACK
-		user.drop_item()
-		install_cell(attacking_item)
-		to_chat(user, "<span class='notice'>You install the cell.</span>")
-		playsound(mod, 'sound/machines/click.ogg', 50, TRUE, SILENCED_SOUND_EXTRARANGE)
-		mod.update_charge_alert()
-		return COMPONENT_SKIP_AFTERATTACK
-	return NONE
+/obj/item/mod/core/standard/item_interaction(mob/living/user, obj/item/used, list/modifiers)
+	if(!istype(used, /obj/item/stock_parts/cell))
+		return NONE
+
+	if(mod && !mod.open)
+		to_chat(user, SPAN_WARNING("Open the cover first!"))
+		playsound(mod, 'sound/machines/scanbuzz.ogg', 25, TRUE, SILENCED_SOUND_EXTRARANGE)
+		return ITEM_INTERACT_COMPLETE
+
+	if(cell)
+		to_chat(user, SPAN_WARNING("Cell already installed!"))
+		playsound(mod, 'sound/machines/scanbuzz.ogg', 25, TRUE, SILENCED_SOUND_EXTRARANGE)
+		return ITEM_INTERACT_COMPLETE
+
+	user.drop_item()
+	install_cell(used)
+	to_chat(user, SPAN_NOTICE("You install the cell."))
+	playsound(mod, 'sound/machines/click.ogg', 50, TRUE, SILENCED_SOUND_EXTRARANGE)
+	mod?.update_charge_alert()
+	return ITEM_INTERACT_COMPLETE
 
 /obj/item/mod/core/standard/proc/on_wearer_set(datum/source, mob/user)
 	SIGNAL_HANDLER
@@ -251,11 +254,6 @@
 	var/charge = 10000
 	/// Associated list of charge sources, only stacks allowed.
 	var/list/charger_list = list(/obj/item/stack/ore/plasma, /obj/item/stack/sheet/mineral/plasma)
-
-/obj/item/mod/core/plasma/attackby__legacy__attackchain(obj/item/attacking_item, mob/user, params)
-	if(charge_plasma(attacking_item, user))
-		return TRUE
-	return ..()
 
 /obj/item/mod/core/plasma/charge_source()
 	return src
@@ -291,20 +289,27 @@
 		else
 			mod.wearer.throw_alert("mod_charge", /atom/movable/screen/alert/emptycell)
 
-/obj/item/mod/core/plasma/on_attackby(obj/item/attacking_item, mob/user, params)
-	charge_plasma(attacking_item, user)
+/obj/item/mod/core/plasma/item_interaction(mob/living/user, obj/item/used, list/modifiers)
+	if(!istype(used, /obj/item/stack))
+		return NONE
+
+	if(!mod)
+		return NONE
+
+	charge_plasma(used, user)
+	return ITEM_INTERACT_COMPLETE
 
 /obj/item/mod/core/plasma/proc/charge_plasma(obj/item/stack/plasma, mob/user)
 	var/charge_given = is_type_in_list(plasma, charger_list)
 	if(!charge_given)
 		return FALSE
 	if(charge_amount() == max_charge_amount())
-		to_chat(user, "<span class='notice'>[src] is already fully charged!</span>")
+		to_chat(user, SPAN_NOTICE("[src] is already fully charged!"))
 		// We didn't succeed but we don't want to treat it as an attackby
 		return TRUE
 	var/uses_needed = min(plasma.amount, ((max_charge_amount() - charge_amount()) / 2000))
 	if(!plasma.use(uses_needed))
 		return FALSE
 	add_charge(uses_needed * 2000)
-	to_chat(user, "<span class='notice'>You insert [plasma] in [src], recharging it.</span>")
+	to_chat(user, SPAN_NOTICE("You insert [plasma] in [src], recharging it."))
 	return TRUE

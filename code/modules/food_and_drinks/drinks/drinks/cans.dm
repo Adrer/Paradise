@@ -1,4 +1,5 @@
 /obj/item/reagent_containers/drinks/cans
+	icon = 'icons/obj/drinks/cans.dmi'
 	container_type = NONE
 	var/can_opened = FALSE
 	var/is_glass = FALSE
@@ -7,13 +8,14 @@
 	var/can_shake = TRUE
 	var/can_burst = FALSE
 	var/burst_chance = 0
+	materials = list(MAT_METAL = 200)
 
 /obj/item/reagent_containers/drinks/cans/examine(mob/user)
 	. = ..()
 	if(can_opened)
-		. += "<span class='notice'>It has been opened.</span>"
-	else
-		. += "<span class='notice'>Ctrl-click to shake it up!</span>"
+		. += SPAN_NOTICE("It has been opened.")
+	else if(can_shake)
+		. += SPAN_NOTICE("Ctrl-click to shake it up!")
 
 /obj/item/reagent_containers/drinks/cans/activate_self(mob/user)
 	if(..() || can_opened)
@@ -25,7 +27,8 @@
 	playsound(loc, 'sound/effects/canopen.ogg', rand(10, 50), 1)
 	can_opened = TRUE
 	container_type |= OPENCONTAINER
-	to_chat(user, "<span class='notice'>You open the drink with an audible pop!</span>")
+	to_chat(user, SPAN_NOTICE("You open the drink with an audible pop!"))
+	add_fingerprint(user)
 
 /obj/item/reagent_containers/drinks/cans/proc/crush(mob/user)
 	var/obj/item/trash/can/crushed_can = new /obj/item/trash/can(user.loc)
@@ -38,6 +41,8 @@
 		crushed_can.name = "broken bottle"
 	else
 		playsound(user.loc, 'sound/weapons/pierce.ogg', rand(10, 50), 1)
+	transfer_fingerprints_to(crushed_can)
+	crushed_can.add_fingerprint(user)
 	qdel(src)
 	return crushed_can
 
@@ -47,14 +52,15 @@
 		return ..()
 	H = user
 	if(can_opened)
-		to_chat(H, "<span class='warning'>You can't shake up an already opened drink!")
+		to_chat(H, SPAN_WARNING("You can't shake up an already opened drink!"))
 		return
 	if(H.is_holding(src))
 		can_shake = FALSE
+		add_fingerprint(user)
 		addtimer(CALLBACK(src, PROC_REF(reset_shakable)), 1 SECONDS, TIMER_UNIQUE | TIMER_OVERRIDE)
-		to_chat(H, "<span class='notice'>You start shaking up [src].</span>")
+		to_chat(H, SPAN_NOTICE("You start shaking up [src]."))
 		if(do_after(H, 1 SECONDS, target = H))
-			visible_message("<span class='warning'>[user] shakes up [src]!</span>")
+			visible_message(SPAN_WARNING("[user] shakes up [src]!"))
 			if(times_shaken == 0)
 				times_shaken++
 				addtimer(CALLBACK(src, PROC_REF(reset_shaken)), 1 MINUTES, TIMER_UNIQUE | TIMER_OVERRIDE | TIMER_NO_HASH_WAIT)
@@ -69,14 +75,18 @@
 
 /obj/item/reagent_containers/drinks/cans/interact_with_atom(atom/target, mob/living/user, list/modifiers)
 	if(target == user && !reagents.total_volume && user.a_intent == INTENT_HARM && user.zone_selected == "head")
-		user.visible_message("<span class='warning'>[user] crushes [src] on [user.p_their()] forehead!</span>", "<span class='notice'>You crush [src] on your forehead.</span>")
+		user.visible_message(SPAN_WARNING("[user] crushes [src] on [user.p_their()] forehead!"), SPAN_NOTICE("You crush [src] on your forehead."))
 		crush(user)
 		return ITEM_INTERACT_COMPLETE
 	return ..()
 
 /obj/item/reagent_containers/drinks/cans/item_interaction(mob/living/user, obj/item/used, list/modifiers) // This doesn't belong here.
 	if(istype(used, /obj/item/storage/bag/trash/cyborg))
-		user.visible_message("<span class='notice'>[user] crushes [src] in [user.p_their()] trash compactor.</span>", "<span class='notice'>You crush [src] in your trash compactor.</span>")
+		user.visible_message(
+			SPAN_NOTICE("[user] crushes [src] in [user.p_their()] trash compactor."),
+			SPAN_NOTICE("You crush [src] in your trash compactor."),
+			SPAN_HEAR("You hear the crunch of a flimsy can.")
+		)
 		// Automatic crushed can pickup seems to be broken until storage is migrated.
 		crush(user)
 		return ITEM_INTERACT_COMPLETE
@@ -94,21 +104,21 @@
 	container_type |= OPENCONTAINER
 
 	if(!burstopen && user)
-		to_chat(user, "<span class='notice'>You open the drink with an audible pop!</span>")
+		to_chat(user, SPAN_NOTICE("You open the drink with an audible pop!"))
 	else
-		visible_message("<span class='warning'>[src] bursts open!</span>")
+		visible_message(SPAN_WARNING("[src] bursts open!"))
 
 	if(times_shaken < 5)
-		visible_message("<span class='warning'>[src] fizzes violently!</span>")
+		visible_message(SPAN_WARNING("[src] fizzes violently!"))
 	else
-		visible_message("<span class='boldwarning'>[src] erupts into foam!</span>")
+		visible_message(SPAN_BOLDWARNING("[src] erupts into foam!"))
 		if(reagents.total_volume)
 			var/datum/effect_system/foam_spread/sodafizz = new
 			sodafizz.set_up(1, get_turf(src), reagents)
 			sodafizz.start()
 
 	for(var/mob/living/carbon/C in range(1, get_turf(src)))
-		to_chat(C, "<span class='warning'>You are splattered with [name]!</span>")
+		to_chat(C, SPAN_WARNING("You are splattered with [name]!"))
 		reagents.reaction(C, REAGENT_TOUCH)
 		C.wetlevel = max(C.wetlevel + 1, times_shaken)
 
@@ -152,6 +162,7 @@
 /obj/item/reagent_containers/drinks/cans/adminbooze
 	name = "admin booze"
 	desc = "Bottled Griffon tears. Drink with caution."
+	icon = 'icons/obj/drinks/bottles.dmi'
 	icon_state = "adminbooze"
 	is_glass = TRUE
 	list_reagents = list("adminordrazine" = 5, "capsaicin" = 5, "methamphetamine"= 20, "thirteenloko" = 20)
@@ -159,6 +170,7 @@
 /obj/item/reagent_containers/drinks/cans/madminmalt
 	name = "madmin malt"
 	desc = "Bottled essence of angry admins. Drink with <i>EXTREME</i> caution."
+	icon = 'icons/obj/drinks/bottles.dmi'
 	icon_state = "madminmalt"
 	is_glass = TRUE
 	list_reagents = list("hell_water" = 20, "neurotoxin" = 15, "thirteenloko" = 15)
@@ -166,6 +178,7 @@
 /obj/item/reagent_containers/drinks/cans/badminbrew
 	name = "badmin brew"
 	desc = "Bottled trickery and terrible admin work. Probably shouldn't drink this one at all."
+	icon = 'icons/obj/drinks/bottles.dmi'
 	icon_state = "badminbrew"
 	is_glass = TRUE
 	list_reagents = list("mutagen" = 25, "charcoal" = 10, "thirteenloko" = 15)
@@ -219,6 +232,13 @@
 	icon_state = "purple_can"
 	list_reagents = list("grapejuice" = 30)
 
+/obj/item/reagent_containers/drinks/cans/electrolytes
+	name = "Electrolytez"
+	desc = "The fastest way to rehydration. Now with a giant Z on the can. Or is it a lightning bolt?"
+	icon_state = "electrolytes_can"
+	can_shake = FALSE
+	list_reagents = list("electrolytes" = 50)
+
 /obj/item/reagent_containers/drinks/cans/tonic
 	name = "T-Borg's Tonic Water"
 	desc = "Quinine tastes funny, but at least it'll keep that Space Malaria away."
@@ -231,6 +251,12 @@
 	icon_state = "sodawater"
 	list_reagents = list("sodawater" = 50)
 
+/obj/item/reagent_containers/drinks/cans/ginger_ale
+	name = "Zingiber Gold"
+	desc = "A can of ginger ale. Second-best thing for a tummy ache."
+	icon_state = "ginger_ale_can"
+	list_reagents = list("ginger_ale" = 50)
+
 /obj/item/reagent_containers/drinks/cans/synthanol
 	name = "Beep's Classic Synthanol"
 	desc = "A can of IPC booze, however that works."
@@ -239,7 +265,8 @@
 
 /obj/item/reagent_containers/drinks/cans/bottler
 	name = "generic beverage container"
-	desc = "this shouldn't ever be spawned. shame on you"
+	desc = ABSTRACT_TYPE_DESC
+	icon = 'icons/obj/drinks/paradise_punch.dmi'
 	icon_state = "glass_bottle"
 
 /obj/item/reagent_containers/drinks/cans/bottler/on_reagent_change()
@@ -282,3 +309,36 @@
 	name = "metal can"
 	desc = "A metal can suitable for beverages."
 	icon_state = "metal_can"
+
+// ----------- drinks from Hispania!
+
+/obj/item/reagent_containers/drinks/cans/mrs_brown
+	name = "Mrs Brown"
+	desc = "A can of iced coffee. The can sports a big red star."
+	icon_state = "mrs_brown"
+	can_shake = FALSE
+	list_reagents = list("icecoffee" = 30)
+
+/obj/item/reagent_containers/drinks/cans/behemoth_energy
+	name = "Behemoth Energy"
+	desc = "Tear into a can of the meanest energy drink on the planet, Behemoth Energy."
+	icon_state = "behemoth"
+	list_reagents = list("sugar" = 5, "ale" = 10, "sodawater" = 10)
+
+/obj/item/reagent_containers/drinks/cans/behemoth_energy/Initialize(mapload)
+	..()
+	if(prob(30))
+		reagents.add_reagent("methamphetamine", 3)
+
+/obj/item/reagent_containers/drinks/cans/behemoth_energy_lite
+	name = "Behemoth Energy Zero"
+	desc = "Tear into a can of the meanest energy drink on the planet, Behemoth Energy. Yup, Quake was a good game."
+	icon_state = "behemoth_lite"
+	list_reagents = list("ale" = 10, "sodawater" = 20)
+
+/obj/item/reagent_containers/drinks/cans/behemoth_energy_lite/Initialize(mapload)
+	..()
+	if(prob(10))
+		reagents.add_reagent("methamphetamine", 3)
+
+// ----------- END of imports from Hispania!

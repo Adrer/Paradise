@@ -22,6 +22,10 @@
 #define BB_BASIC_MOB_FLEE_DISTANCE "BB_BASIC_FLEE_DISTANCE"
 #define DEFAULT_BASIC_FLEE_DISTANCE 9
 
+/// Path we should use next time we use the JPS movement datum
+#define BB_PATH_TO_USE "BB_path_to_use"
+/// Max path length we should use next time we use the JPS movement datum
+#define BB_PATH_MAX_LENGTH "BB_path_max_length"
 // Searching
 
 /// key holding a range to look for stuff in
@@ -53,6 +57,8 @@
 #define BB_OBSTACLE_TARGETING_WHITELIST "BB_targeting_whitelist"
 /// some behaviors that check current_target also set this on deep crit mobs
 #define BB_BASIC_MOB_EXECUTION_TARGET "BB_basic_execution_target"
+/// Blackboard key storing how long your targeting strategy has held a particular target
+#define BB_BASIC_MOB_HAS_TARGET_TIME "BB_BASIC_MOB_HAS_TARGET_TIME"
 
 //Hunting BB keys
 
@@ -90,6 +96,12 @@
 
 // Food and eating
 
+/// time until we should next eat, set by the generic hunger subtree
+#define BB_NEXT_HUNGRY "BB_NEXT_HUNGRY"
+/// what we're going to eat next
+#define BB_FOOD_TARGET "bb_food_target"
+/// are we hungry? determined by the udder component
+#define BB_CHECK_HUNGRY "BB_check_hungry"
 /// list of foods this mob likes
 #define BB_BASIC_FOODS "BB_BASIC_FOODS"
 /// key holding any food we've found
@@ -211,6 +223,9 @@
 #define BB_INCURSION_HOME_PORTAL_TARGET "BB_INCURSION_HOME_PORTAL_TARGET"
 #define BB_PROWL_TARGET "BB_PROWL_TARGET"
 
+#define BB_TRAVEL_DESTINATION "BB_TRAVEL_DESTINATION"
+
+#define BB_SHAPESHIFT_ACTION "BB_SHAPESHIFT_ACTION"
 // Giant Spiders
 /// Our webbing target
 #define BB_SPIDER_WEB_TARGET "BB_spider_web_target"
@@ -224,3 +239,23 @@
 #define BB_SPIDER_EGG_LAYING_ACTION "BB_spider_egg_laying_action"
 /// Key used by changelings who control spiders
 #define BB_CHANGELING_SPIDER_ORDER "BB_changeling_spider_order"
+
+// Malf Drones
+/// Are we active?
+#define BB_MALF_DRONE_PASSIVE "BB_MALF_DRONE_PASSIVE"
+
+// bee keys
+/// the bee hive we live inside
+#define BB_CURRENT_HOME "BB_current_home"
+/// the hydro we will pollinate
+#define BB_TARGET_HYDRO "BB_target_hydro"
+
+// Goliath AI keys
+/// Key where we store the tentacleing ability
+#define BB_GOLIATH_TENTACLES "BB_GOLIATH_TENTACLES"
+/// Key where goliath stores a hole it wants to get into
+#define BB_GOLIATH_HOLE_TARGET "BB_GOLIATH_HOLE"
+
+// Nian Caterpillar Keys
+/// Key that stores the silk spin ability
+#define BB_NIAN_CATERPILLAR_SPIN_MOTHSILK_ACTION "BB_nian_caterpillar_spin_mothsilk_action"

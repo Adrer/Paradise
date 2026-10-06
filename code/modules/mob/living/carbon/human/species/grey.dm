@@ -12,13 +12,14 @@
 	eyes = "grey_eyes_s"
 	butt_sprite = "grey"
 
-	icon_skin_tones = list(
+	icon_skin_tones = alist(
 		1 = "Default Grey",
 		2 = "Grey Green",
 		3 = "Grey Blue",
 		4 = "Grey Red"
 	)
 
+	meat_type = /obj/item/food/meat/human
 	has_organ = list(
 		"heart" =    /obj/item/organ/internal/heart/grey,
 		"lungs" =    /obj/item/organ/internal/lungs/grey,
@@ -81,11 +82,11 @@
 		else
 			H.take_organ_damage(5, 10)
 	else
-		to_chat(H, "<span class='warning'>The water stings[volume < 10 ? " you, but isn't concentrated enough to harm you" : null]!</span>")
+		to_chat(H, SPAN_WARNING("The water stings[volume < 10 ? " you, but isn't concentrated enough to harm you" : null]!"))
 		if(volume >= 10)
 			H.adjustFireLoss(min(max(4, (volume - 10) * 2), 20))
 			H.emote("scream")
-			to_chat(H, "<span class='warning'>The water stings[volume < 10 ? " you, but isn't concentrated enough to harm you" : null]!</span>")
+			to_chat(H, SPAN_WARNING("The water stings[volume < 10 ? " you, but isn't concentrated enough to harm you" : null]!"))
 
 /datum/species/grey/after_equip_job(datum/job/J, mob/living/carbon/human/H)
 	var/translator_pref = H.client.prefs.active_character.speciesprefs
@@ -100,7 +101,7 @@
 		var/obj/item/organ/internal/cyberimp/brain/speech_translator/implant = new
 		implant.insert(H)
 		if(!translator_pref && istype(J))
-			to_chat(H, "<span class='notice'>A speech translator implant has been installed due to your role on the station.</span>")
+			to_chat(H, SPAN_NOTICE("A speech translator implant has been installed due to your role on the station."))
 
 /datum/species/grey/handle_reagents(mob/living/carbon/human/H, datum/reagent/R)
 	if(R.id == "sacid" || R.id == "facid")
@@ -111,3 +112,30 @@
 		return TRUE
 	return ..()
 
+/datum/species/grey/skin_tone_from_body_color(body_color)
+	var/list/body_rgb = rgb2num(body_color)
+	if(body_rgb[1] == body_rgb[2] && body_rgb[2] == body_rgb[3])
+		return 1
+	if(body_rgb[1] > body_rgb[2] && body_rgb[1] > body_rgb[3])
+		return 4
+	if(body_rgb[2] > body_rgb[3])
+		return 2
+	return 3
+
+/datum/species/grey/skin_tone_to_hex(skin_tone)
+	var/list/tone_colors = list("#575757", "#576b57", "#57576b", "#6b5757")
+	return tone_colors[skin_tone]
+
+/datum/species/grey/randomize_eye_color()
+	if(prob(1))
+		return rand_hex_color()
+	// random dark, muted color
+	return rgb(rand(0, 360), rand(0, 60), rand(0, 35), space = COLORSPACE_HSL)
+
+/datum/species/grey/randomize_body_markings(prob_to_apply = 35)
+	return ..()
+
+/datum/species/grey/randomize_body_markings_color(body_markings, body_color = null, skin_tone = 1)
+	if(body_markings == "None")
+		return COLOR_BLACK
+	return rgb(rand(0, 360), rand(0, 60), rand(0, 40), space = COLORSPACE_HSL)

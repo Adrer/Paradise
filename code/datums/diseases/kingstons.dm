@@ -18,33 +18,38 @@
 		if(1)
 			if(prob(10))
 				if(istajaran(affected_mob))
-					to_chat(affected_mob, "<span class='notice'>You feel good.</span>")
+					to_chat(affected_mob, SPAN_NOTICE("You feel good."))
 				else
-					to_chat(affected_mob, "<span class='notice'>You feel like playing with string.</span>")
+					to_chat(affected_mob, SPAN_NOTICE("You feel like playing with string."))
 		if(2)
 			if(prob(10))
 				if(istajaran(affected_mob))
-					to_chat(affected_mob, "<span class='danger'>Something in your throat itches.</span>")
+					to_chat(affected_mob, SPAN_DANGER("Something in your throat itches."))
 				else
-					to_chat(affected_mob, "<span class='danger'>You NEED to find a mouse.</span>")
+					to_chat(affected_mob, SPAN_DANGER("You NEED to find a mouse."))
 		if(3)
 			if(prob(10))
 				if(istajaran(affected_mob))
-					to_chat(affected_mob, "<span class='danger'>You feel something in your throat!</span>")
+					to_chat(affected_mob, SPAN_DANGER("You feel something in your throat!"))
 					affected_mob.emote("cough")
 				else
 					affected_mob.say(pick("Mew", "Meow!", "Nya!~"))
 		if(4)
 			if(prob(5))
 				if(istajaran(affected_mob))
-					affected_mob.visible_message("<span class='danger'>[affected_mob] coughs up a hairball!</span>", \
-													"<span class='userdanger'>You cough up a hairball!</span>")
-					affected_mob.Stun(10 SECONDS)
+					affected_mob.custom_emote(EMOTE_VISIBLE, "coughs up a hairball!", FALSE)
+					affected_mob.SetDizzy(6 SECONDS)
 				else
-					affected_mob.visible_message("<span class='danger'>[affected_mob]'s form contorts into something more feline!</span>", \
-													"<span class='userdanger'>YOU TURN INTO A TAJARAN!</span>")
+					affected_mob.visible_message(SPAN_DANGER("[affected_mob]'s form contorts into something more feline!"), \
+													SPAN_USERDANGER("YOU TURN INTO A TAJARAN!"))
 					var/mob/living/carbon/human/catface = affected_mob
+					var/datum/species/old_species = catface.dna.species
+					var/old_body_color = catface.skin_colour
+					if(old_species.bodyflags & (HAS_SKIN_TONE|HAS_ICON_SKIN_TONE))
+						old_body_color = catface.s_tone
 					catface.set_species(/datum/species/tajaran, retain_damage = TRUE, keep_missing_bodyparts = TRUE)
+					catface.skin_colour = catface.dna.species.convert_skin(old_species, old_body_color)
+					catface.regenerate_icons()
 
 // Not a subtype of regular Kingstons as it would inherit its `stage_act()`
 /datum/disease/kingstons_advanced
@@ -60,8 +65,8 @@
 	permeability_mod = 0.75
 	desc = "If left untreated the subject will mutate to a different species."
 	severity = VIRUS_BIOHAZARD
-	var/list/virspecies = list(/datum/species/human, /datum/species/tajaran, /datum/species/unathi,/datum/species/skrell, /datum/species/vulpkanin, /datum/species/diona,
-		/datum/species/slime, /datum/species/kidan, /datum/species/drask, /datum/species/grey, /datum/species/moth) // No IPCs (not organic), or vox+plasmemes because of air requirements
+	var/list/virspecies = list(/datum/species/human, /datum/species/tajaran, /datum/species/unathi, /datum/species/skrell, /datum/species/vulpkanin, /datum/species/diona,
+		/datum/species/slime, /datum/species/kidan, /datum/species/drask, /datum/species/grey, /datum/species/moth, /datum/species/skulk) // No IPCs (not organic), or vox+plasmemes because of air requirements
 	var/list/virsuffix = list("pox", "rot", "flu", "cough", "-gitis", "cold", "rash", "itch", "decay")
 	var/datum/species/chosentype
 	var/chosensuff
@@ -82,28 +87,37 @@
 	switch(stage)
 		if(1)
 			if(prob(10))
-				to_chat(twisted, "<span class='notice'>You feel awkward.</span>")
+				to_chat(twisted, SPAN_NOTICE("You feel awkward."))
 		if(2)
 			if(prob(10))
-				to_chat(twisted, "<span class='danger'>You itch.</span>")
+				to_chat(twisted, SPAN_DANGER("You itch."))
 		if(3)
 			if(prob(10))
-				to_chat(twisted, "<span class='danger'>Your skin starts to flake!</span>")
+				to_chat(twisted, SPAN_DANGER("Your skin starts to flake!"))
 		if(4)
 			if(!prob(5))
 				return
 
 			if(!istype(twisted.dna.species, chosentype))
 				twisted.visible_message(
-					"<span class='danger'>[twisted]'s skin splits and form contorts!</span>",
-					"<span class='userdanger'>Your body mutates into a [initial(chosentype.name)]!</span>"
+					SPAN_DANGER("[twisted]'s skin splits and form contorts!"),
+					SPAN_USERDANGER("Your body mutates into a [initial(chosentype.name)]!")
 				)
+				var/datum/species/old_species = twisted.dna.species
+				var/old_body_color = twisted.skin_colour
+				if(old_species.bodyflags & (HAS_SKIN_TONE|HAS_ICON_SKIN_TONE))
+					old_body_color = twisted.s_tone
 				twisted.set_species(chosentype, retain_damage = TRUE, keep_missing_bodyparts = TRUE)
+				if(twisted.dna.species.bodyflags & (HAS_SKIN_TONE|HAS_ICON_SKIN_TONE))
+					twisted.s_tone = twisted.dna.species.convert_skin(old_species, old_body_color)
+				else
+					twisted.skin_colour = twisted.dna.species.convert_skin(old_species, old_body_color)
+				twisted.regenerate_icons()
 				return
 
 			twisted.visible_message(
-				"<span class='danger'>[twisted] scratches at their skin!</span>",
-				"<span class='userdanger'>You scratch your skin to try not to itch!</span>"
+				SPAN_DANGER("[twisted] scratches at their skin!"),
+				SPAN_USERDANGER("You scratch your skin to try not to itch!")
 			)
 			twisted.adjustBruteLoss(5)
 			twisted.adjustStaminaLoss(5)

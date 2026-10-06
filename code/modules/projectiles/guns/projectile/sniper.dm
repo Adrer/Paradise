@@ -2,7 +2,8 @@
 	name = "\improper SR-31C sniper rifle"
 	desc = "A powerful anti-materiel rifle produced by Aussec Armory, chambered in devastating .50 BMG."
 	icon_state = "sniper"
-	item_state = "sniper"
+	worn_icon_state = "sniper"
+	inhand_icon_state = "sniper"
 	recoil = 2
 	weapon_weight = WEAPON_HEAVY
 	mag_type = /obj/item/ammo_box/magazine/sniper_rounds
@@ -23,10 +24,10 @@
 		AddComponent(/datum/component/scope, range_modifier = 2, flags = SCOPE_TURF_ONLY | SCOPE_NEED_ACTIVE_HAND)
 
 /obj/item/gun/projectile/automatic/sniper_rifle/process_fire(atom/target, mob/living/user, message = TRUE, params, zone_override, bonus_spread = 0)
-	if(istype(chambered.BB, /obj/item/projectile/bullet/sniper) && !HAS_TRAIT(user, TRAIT_SCOPED))
-		var/obj/item/projectile/bullet/sniper/S = chambered.BB
+	if(istype(chambered.BB, /obj/projectile/bullet/sniper) && !HAS_TRAIT(user, TRAIT_SCOPED))
+		var/obj/projectile/bullet/sniper/S = chambered.BB
 		if(S.non_zoom_spread)
-			to_chat(user, "<span class='warning'>[src] must be zoomed in to fire this ammunition accurately!</span>")
+			to_chat(user, SPAN_WARNING("[src] must be zoomed in to fire this ammunition accurately!"))
 			bonus_spread += S.non_zoom_spread
 	return ..()
 
@@ -41,9 +42,10 @@
 	else
 		icon_state = "sniper"
 
-//Normal Boolets
+// MARK: Ball ammo
 /obj/item/ammo_box/magazine/sniper_rounds
-	name = "sniper rounds (.50)"
+	name = "SR-31C sniper rifle magazine (.50 BMG)"
+	desc = "A 6-round magazine for the SR-31C sniper rifle that holds .50 BMG rounds."
 	icon_state = ".50mag"
 	origin_tech = "combat=6;syndicate=2"
 	ammo_type = /obj/item/ammo_casing/point50
@@ -61,47 +63,49 @@
 	desc = "A .50 BMG rifle cartridge, commonly used in anti-materiel rifles and heavy machine guns."
 	icon_state = "heavy_steel"
 	caliber = ".50"
-	projectile_type = /obj/item/projectile/bullet/sniper
+	projectile_type = /obj/projectile/bullet/sniper
 	muzzle_flash_strength = MUZZLE_FLASH_STRENGTH_STRONG
 	muzzle_flash_range = MUZZLE_FLASH_RANGE_STRONG
 
-/obj/item/projectile/bullet/sniper
+/obj/projectile/bullet/sniper
 	damage = 70
 	weaken = 10 SECONDS
-	armour_penetration_flat = 70
+	armor_penetration_flat = 70
 	forced_accuracy = TRUE
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE | PASSGIRDER
 	speed = 0.5
 	var/non_zoom_spread = 0
 
+// MARK: HE ammo
 /obj/item/ammo_box/magazine/sniper_rounds/antimatter
-	name = "sniper rounds (Antimatter)"
-	desc = "Antimatter sniper rounds, for when you really don't like something. Requires zooming in to fire accurately."
+	name = "SR-31C sniper rifle magazine (.50 BMG HE)"
+	desc = "A 6-round magazine for the SR-31C sniper rifle that holds .50 BMG rounds. Pre-loaded with high explosive rounds that can destroy armoured limbs."
 	icon_state = "antimatter"
 	ammo_type = /obj/item/ammo_casing/antimatter
 
 /obj/item/ammo_casing/antimatter
-	name = ".50 BMG anti-matter round"
-	desc = "A .50 BMG high-explosive cartridge. Does not actually contain antimatter."
+	name = ".50 BMG high-explosive round"
+	desc = "A .50 BMG cartridge filled with high-explosive."
 	icon_state = "heavy_steel_incin"
 	caliber = ".50"
-	projectile_type = /obj/item/projectile/bullet/sniper/antimatter
+	projectile_type = /obj/projectile/bullet/sniper/antimatter
 
-/obj/item/projectile/bullet/sniper/antimatter
+/obj/projectile/bullet/sniper/antimatter
 	name = "antimatter bullet"
 	dismemberment = 50
 	non_zoom_spread = 60
 
-/obj/item/projectile/bullet/sniper/antimatter/on_hit(atom/target, blocked = 0, hit_zone)
+/obj/projectile/bullet/sniper/antimatter/on_hit(atom/target, blocked = 0, hit_zone)
 	if((blocked != 100) && (!ismob(target)))
 		target.ex_act(rand(1,2))
 
 	return ..()
 
-//Sleepy ammo
+// MARK: Sleep ammo
 /obj/item/ammo_box/magazine/sniper_rounds/soporific
-	name = "sniper rounds (Zzzzz)"
-	desc = "Soporific sniper rounds, designed for happy days and dead quiet nights..."
+	name = "SR-31C sniper rifle magazine (.50 BMG Soporific)"
+	desc = "A 3-round magazine for the SR-31C sniper rifle that holds .50 BMG rounds. \
+	Pre-loaded with special low-power hypodermic rounds filled with fast-acting soporific drugs that will instantly put a target to sleep without causing damage."
 	icon_state = "soporific"
 	origin_tech = "combat=6;syndicate=3"
 	ammo_type = /obj/item/ammo_casing/soporific
@@ -112,25 +116,25 @@
 	desc = "A .50 BMG hypodermic cartridge, loaded with sedatives for instant incapacitation."
 	icon_state = "heavy_steel_rubber"
 	caliber = ".50"
-	projectile_type = /obj/item/projectile/bullet/sniper/soporific
+	projectile_type = /obj/projectile/bullet/sniper/soporific
 	harmful = FALSE
 
-/obj/item/projectile/bullet/sniper/soporific
-	armour_penetration_flat = 0
-	nodamage = 1
+/obj/projectile/bullet/sniper/soporific
+	armor_penetration_flat = 0
+	nodamage = TRUE
 	weaken = 0
 
-/obj/item/projectile/bullet/sniper/soporific/on_hit(atom/target, blocked = 0, hit_zone)
+/obj/projectile/bullet/sniper/soporific/on_hit(atom/target, blocked = 0, hit_zone)
 	if((blocked != 100) && isliving(target))
 		var/mob/living/L = target
 		L.SetSleeping(40 SECONDS)
 
 	return ..()
 
-//hemorrhage ammo
+// MARK: Bleed ammo
 /obj/item/ammo_box/magazine/sniper_rounds/haemorrhage
-	name = "sniper rounds (Bleed)"
-	desc = "Haemorrhage sniper rounds, leaves your target in a pool of crimson pain."
+	name = "SR-31C sniper rifle magazine (.50 BMG Shredder)"
+	desc = "A 5-round magazine for the SR-31C sniper rifle that holds .50 BMG rounds. Pre-loaded with serrated rounds designed to cause major bleeding."
 	icon_state = "haemorrhage"
 	ammo_type = /obj/item/ammo_casing/haemorrhage
 	max_ammo = 5
@@ -140,37 +144,38 @@
 	desc = "A .50 BMG 'Shredder' cartridge, with a heavily serrated bullet intended to cause massive blood loss."
 	icon_state = "heavy_steel_hollow"
 	caliber = ".50"
-	projectile_type = /obj/item/projectile/bullet/sniper/haemorrhage
+	projectile_type = /obj/projectile/bullet/sniper/haemorrhage
 
-/obj/item/projectile/bullet/sniper/haemorrhage
-	armour_penetration_flat = 25
+/obj/projectile/bullet/sniper/haemorrhage
+	armor_penetration_flat = 25
 	damage = 45
 	weaken = 6 SECONDS
 
-/obj/item/projectile/bullet/sniper/haemorrhage/on_hit(atom/target, blocked = 0, hit_zone)
+/obj/projectile/bullet/sniper/haemorrhage/on_hit(atom/target, blocked = 0, hit_zone)
 	if((blocked != 100) && iscarbon(target))
 		var/mob/living/carbon/C = target
 		C.bleed(150)
 
 	return ..()
 
-//penetrator ammo
+// MARK: X-ray ammo
 /obj/item/ammo_box/magazine/sniper_rounds/penetrator
-	name = "sniper rounds (penetrator)"
-	desc = "An extremely powerful round capable of passing straight through cover and anyone unfortunate enough to be behind it."
+	name = "SR-31C sniper rifle magazine (.50 BMG SAP)"
+	desc = "A 5-round magazine for the SR-31C sniper rifle that holds .50 BMG rounds. Pre-loaded with tungsten penetrator rounds wrapped with a plastic sabot. \
+	Capable of passing through multiple targets, glass, walls, and basically anything else."
 	icon_state = "penetrator"
 	ammo_type = /obj/item/ammo_casing/penetrator
 	origin_tech = "combat=6;syndicate=3"
 	max_ammo = 5
 
 /obj/item/ammo_casing/penetrator
-	name = ".50 BMG sabot round"
-	desc = "A .50 BMG Sabot Penetrator cartridge, capable of punching through just about anything."
+	name = ".50 BMG SAP round"
+	desc = "A .50 BMG Sabot Armor Penetrator cartridge, capable of punching through just about anything."
 	icon_state = "heavy_steel_ap"
 	caliber = ".50"
-	projectile_type = /obj/item/projectile/bullet/sniper/penetrator
+	projectile_type = /obj/projectile/bullet/sniper/penetrator
 
-/obj/item/projectile/bullet/sniper/penetrator
+/obj/projectile/bullet/sniper/penetrator
 	icon_state = "gauss"
 	name = "penetrator round"
 	damage = 60
@@ -179,9 +184,10 @@
 	speed = 0.75
 	pass_flags = PASSTABLE //damage glass
 
-//toy magazine
+// MARK: Toy ammo
 /obj/item/ammo_box/magazine/toy/sniper_rounds
-	name = "donksoft Sniper magazine"
+	name = "\improper Donksoft Sniper magazine"
+	desc = "A 6-round magazine for a Donksoft sniper rifle. While the design is based off the SR-31C sniper rifle, it can neither accept real .50 BMG rounds, nor will it fit inside a real SR-31C sniper rifle. "
 	icon_state = ".50mag"
 	ammo_type = /obj/item/ammo_casing/caseless/foam_dart/sniper/riot
 	max_ammo = 6

@@ -1,7 +1,8 @@
 /obj/item/storage/firstaid/freegolem
 	name = "golem emergency treatment kit"
 	desc = "A box of essential medical supplies, formulated for golems' hard skin."
-	icon_state = "medbriefcase"
+	icon_state = "firstaid_freegolem"
+	inhand_icon_state = "firstaid_freegolem"
 
 /obj/item/storage/firstaid/freegolem/populate_contents()
 	new /obj/item/healthanalyzer(src)
@@ -34,7 +35,7 @@
   */
 /obj/machinery/mineral/ore_redemption/golem
 	req_access = list(ACCESS_FREE_GOLEMS)
-	req_access_claim = ACCESS_FREE_GOLEMS
+	req_access_claim = list(ACCESS_FREE_GOLEMS)
 
 /obj/machinery/mineral/ore_redemption/golem/Initialize(mapload)
 	. = ..()
@@ -119,19 +120,19 @@
 	name = "Golem Ship Console"
 	desc = "Used to control the Golem Ship."
 	circuit = /obj/item/circuitboard/shuttle/golem_ship
-	shuttleId = "freegolem"
-	possible_destinations = "freegolem_lavaland;freegolem_space;freegolem_ussp"
+	shuttleIds = list("freegolem")
+	possibleDestinations2 = alist("freegolem" = list("freegolem_lavaland", "freegolem_space", "freegolem_ussp"))
 
 /obj/machinery/computer/shuttle/golem_ship/attack_hand(mob/user)
 	if(!isgolem(user) && !isobserver(user))
-		to_chat(user, "<span class='notice'>The console is unresponsive. Seems only golems can use it.</span>")
+		to_chat(user, SPAN_NOTICE("The console is unresponsive. Seems only golems can use it."))
 		return
 	..()
 
 /obj/machinery/computer/shuttle/golem_ship/recall
 	name = "golem ship recall terminal"
 	desc = "Used to recall the Golem Ship."
-	possible_destinations = "freegolem_lavaland"
+	possibleDestinations2 = alist("freegolem" = list("freegolem_lavaland"))
 	resistance_flags = INDESTRUCTIBLE
 
 #define FREE_GOLEM_SHIP_WIDTH 18
@@ -139,7 +140,7 @@
 
 /obj/docking_port/mobile/free_golem
 	name = "Free Golem Ship"
-	dir = 8
+	dir = WEST
 	id = "freegolem"
 	dwidth = FREE_GOLEM_SHIP_WIDTH / 2
 	height = FREE_GOLEM_SHIP_HEIGHT
@@ -148,7 +149,7 @@
 	port_direction = SOUTH
 
 /obj/docking_port/stationary/golem
-	dir = 8
+	dir = WEST
 	height = FREE_GOLEM_SHIP_HEIGHT
 	width = FREE_GOLEM_SHIP_WIDTH
 	dwidth = FREE_GOLEM_SHIP_WIDTH / 2

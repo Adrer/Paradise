@@ -1,15 +1,17 @@
 /obj/item/disk
 	icon = 'icons/obj/module.dmi'
-	w_class = WEIGHT_CLASS_TINY
-	item_state = "card-id"
 	icon_state = "datadisk0"
+	inhand_icon_state = "card-id"
 	drop_sound = 'sound/items/handling/disk_drop.ogg'
 	pickup_sound =  'sound/items/handling/disk_pickup.ogg'
+	w_class = WEIGHT_CLASS_TINY
+	materials = list(MAT_METAL = 300, MAT_GLASS = 100)
+	new_attack_chain = TRUE
 
 /obj/item/disk/data
 	name = "Cloning Data Disk"
 	var/datum/dna2_record/buf = null
-	var/read_only = FALSE //Well,it's still a floppy disk
+	var/read_only = FALSE // Well, it's still a floppy disk.
 
 /obj/item/disk/data/proc/initialize_data()
 	buf = new
@@ -23,7 +25,7 @@
 	name = "data disk - 'God Emperor of Mankind'"
 	read_only = TRUE
 
-/obj/item/disk/data/demo/New()
+/obj/item/disk/data/demo/Initialize(mapload)
 	. = ..()
 	initialize_data()
 	buf.types = DNA2_BUF_UE|DNA2_BUF_UI
@@ -40,7 +42,7 @@
 	name = "data disk - 'Mr. Muggles'"
 	read_only = 1
 
-/obj/item/disk/data/monkey/New()
+/obj/item/disk/data/monkey/Initialize(mapload)
 	. = ..()
 	initialize_data()
 	buf.types = DNA2_BUF_SE
@@ -51,14 +53,18 @@
 	buf.dna.SetSEValueRange(GLOB.monkeyblock, 0xDAC, 0xFFF)
 
 //Disk stuff.
-/obj/item/disk/data/New()
+/obj/item/disk/data/Initialize(mapload)
 	. = ..()
 	var/diskcolor = pick(0, 1, 2, 3, 4, 5)
 	icon_state = "datadisk[diskcolor]"
 
-/obj/item/disk/data/attack_self__legacy__attackchain(mob/user)
+/obj/item/disk/data/activate_self(mob/user)
+	if(..())
+		return ITEM_INTERACT_COMPLETE
 	read_only = !read_only
-	to_chat(user, "You flip the write-protect tab to [read_only ? "protected" : "unprotected"].")
+	add_fingerprint(user)
+	to_chat(user, SPAN_NOTICE("You flip the write-protect tab to [read_only ? "protected" : "unprotected"]."))
+	return ITEM_INTERACT_COMPLETE
 
 /obj/item/disk/data/examine(mob/user)
 	. = ..()
@@ -71,3 +77,6 @@
 /obj/item/storage/box/disks/populate_contents()
 	for(var/i in 1 to 7)
 		new /obj/item/disk/data(src)
+
+/obj/item/storage/box/disks/empty/populate_contents()
+	return

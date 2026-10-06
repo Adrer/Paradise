@@ -22,7 +22,7 @@
 
 /obj/machinery/atmospherics/pipe/manifold4w/examine(mob/user)
 	. = ..()
-	. += "<span class='notice'>This is a normal pipe with 4 connecting ends.</span>"
+	. += SPAN_NOTICE("This is a normal pipe with 4 connecting ends.")
 
 /obj/machinery/atmospherics/pipe/manifold4w/pipeline_expansion()
 	return list(node1, node2, node3, node4)
@@ -173,8 +173,8 @@
 
 /obj/machinery/atmospherics/pipe/manifold4w/visible/scrubbers/examine(mob/user)
 	. = ..()
-	. += "<span class='notice'>This is a special 'scrubber' pipe, which does not connect to 'normal' pipes.  If you want to connect it, use \
-	a Universal Adapter pipe.</span>"
+	. += SPAN_NOTICE("This is a special 'scrubber' pipe, which does not connect to 'normal' pipes.  If you want to connect it, use \
+	a Universal Pipe Adapter.")
 
 /obj/machinery/atmospherics/pipe/manifold4w/visible/supply
 	name="4-way air supply pipe manifold"
@@ -188,8 +188,8 @@
 
 /obj/machinery/atmospherics/pipe/manifold4w/visible/supply/examine(mob/user)
 	. = ..()
-	. += "<span class='notice'>This is a special 'supply' pipe, which does not connect to 'normal' pipes.  If you want to connect it, use \
-	a Universal Adapter pipe.</span>"
+	. += SPAN_NOTICE("This is a special 'supply' pipe, which does not connect to 'normal' pipes.  If you want to connect it, use \
+	a Universal Pipe Adapter.")
 
 /obj/machinery/atmospherics/pipe/manifold4w/visible/yellow
 	color = PIPE_COLOR_YELLOW
@@ -220,8 +220,8 @@
 
 /obj/machinery/atmospherics/pipe/manifold4w/hidden/scrubbers/examine(mob/user)
 	. = ..()
-	. += "<span class='notice'>This is a special 'scrubber' pipe, which does not connect to 'normal' pipes.  If you want to connect it, use \
-	a Universal Adapter pipe.</span>"
+	. += SPAN_NOTICE("This is a special 'scrubber' pipe, which does not connect to 'normal' pipes.  If you want to connect it, use \
+	a Universal Pipe Adapter.")
 
 /obj/machinery/atmospherics/pipe/manifold4w/hidden/supply
 	name = "4-way air supply pipe manifold"
@@ -235,8 +235,8 @@
 
 /obj/machinery/atmospherics/pipe/manifold4w/hidden/supply/examine(mob/user)
 	. = ..()
-	. += "<span class='notice'>This is a special 'supply' pipe, which does not connect to 'normal' pipes.  If you want to connect it, use \
-	a Universal Adapter pipe.</span>"
+	. += SPAN_NOTICE("This is a special 'supply' pipe, which does not connect to 'normal' pipes.  If you want to connect it, use \
+	a Universal Pipe Adapter.")
 
 /obj/machinery/atmospherics/pipe/manifold4w/hidden/yellow
 	color = PIPE_COLOR_YELLOW

@@ -8,13 +8,14 @@
 	desc = "The incomplete body of a golem. Add ten sheets of any mineral to finish."
 	var/shell_type = /obj/effect/mob_spawn/human/alive/golem
 	w_class = WEIGHT_CLASS_BULKY
+	materials = list(MAT_METAL = 40000)
+	new_attack_chain = TRUE
 
 /obj/item/golem_shell/servant
 	name = "incomplete servant golem shell"
 	shell_type = /obj/effect/mob_spawn/human/alive/golem/servant
 
-/obj/item/golem_shell/attackby__legacy__attackchain(obj/item/I, mob/user, params)
-	..()
+/obj/item/golem_shell/item_interaction(mob/living/user, obj/item/used, list/modifiers)
 	var/static/list/golem_shell_species_types = list(
 		/obj/item/stack/sheet/metal						= /datum/species/golem,
 		/obj/item/stack/sheet/glass						= /datum/species/golem/glass,
@@ -39,22 +40,27 @@
 		/obj/item/stack/sheet/mineral/adamantine		= /datum/species/golem/adamantine,
 		/obj/item/stack/sheet/plastic					= /datum/species/golem/plastic)
 
-	if(istype(I, /obj/item/stack))
-		if(!ishuman(user))
-			to_chat(user, "<span class='warning'>You don't have the dexterity to do this!</span>")
-			return
+	if(!istype(used, /obj/item/stack))
+		return ..()
+	if(!ishuman(user))
+		to_chat(user, SPAN_WARNING("You don't have the dexterity to do this!"))
+		return ITEM_INTERACT_COMPLETE
 
-		var/obj/item/stack/O = I
-		var/species = golem_shell_species_types[O.merge_type]
-		if(species)
-			if(O.use(10))
-				to_chat(user, "You finish up the golem shell with ten sheets of [O].")
-				new shell_type(get_turf(src), species, user)
-				qdel(src)
-			else
-				to_chat(user, "You need at least ten sheets to finish a golem.")
-		else
-			to_chat(user, "You can't build a golem out of this kind of material.")
+	var/obj/item/stack/mineral_stack = used
+	var/species = golem_shell_species_types[mineral_stack.merge_type]
+	if(!species)
+		to_chat(user, "You can't build a golem out of this kind of material.")
+		return ITEM_INTERACT_COMPLETE
+
+	if(!mineral_stack.use(10))
+		to_chat(user, "You need at least ten sheets to finish a golem.")
+		return ITEM_INTERACT_COMPLETE
+
+	to_chat(user, "You finish up the golem shell with ten sheets of [mineral_stack].")
+	new shell_type(get_turf(src), species, user)
+	qdel(src)
+	return ITEM_INTERACT_COMPLETE
+
 
 /obj/effect/mob_spawn/human/alive/golem
 	name = "inert free golem shell"
@@ -87,10 +93,10 @@
 	var/area/A = get_area(src)
 	if(!mapload && A)
 		if(COOLDOWN_FINISHED(src, ghost_flash_cooldown))
-			notify_ghosts("\A [initial(species.prefix)] golem shell has been completed in [A.name].", source = src)
+			notify_ghosts("\A [initial(species.prefix)] golem shell has been completed in [A.name].", source = src, role = ROLE_GOLEM)
 			COOLDOWN_START(src, ghost_flash_cooldown, 20 MINUTES)
 		else
-			notify_ghosts("\A [initial(species.prefix)] golem shell has been completed in [A.name].", source = src, flashwindow = FALSE)
+			notify_ghosts("\A [initial(species.prefix)] golem shell has been completed in [A.name].", source = src, role = ROLE_GOLEM, flashwindow = FALSE)
 	if(has_owner && creator)
 		important_info = "Serve your creator, even if they are an antag."
 		flavour_text = "You are a golem created to serve your creator."
@@ -102,12 +108,12 @@
 	var/datum/species/golem/X = mob_species
 	to_chat(new_spawn, "[initial(X.info_text)]")
 	if(!owner)
-		to_chat(new_spawn, "<big><span class='warning'>You are not an antagonist, do not build an AI without explicit admin permission. Do not board the station without explicit admin permission.</span><big>")
-		to_chat(new_spawn, "<span class='notice'>It is common in free golem societies to respect Adamantine golems as elders, however you do not have to obey them. \
-		Adamantine golems are the only golems that can resonate to all golems.</span>")
+		to_chat(new_spawn, "<big>[SPAN_WARNING("You are not an antagonist, do not build an AI without explicit admin permission. Do not board the station without explicit admin permission.")]<big>")
+		to_chat(new_spawn, SPAN_NOTICE("It is common in free golem societies to respect Adamantine golems as elders, however you do not have to obey them. \
+			Adamantine golems are the only golems that can resonate to all golems."))
 		to_chat(new_spawn, "Build golem shells in the autolathe, and feed refined mineral sheets to the shells to bring them to life! You are generally a peaceful group unless provoked.")
-		to_chat(new_spawn, "<span class='warning'>You may interact or trade with crew you come across, aswell as defend yourself and your ship \
-		but avoid actively interfering with the station, you are required to adminhelp and request permission to board the main station.</span>")
+		to_chat(new_spawn, SPAN_WARNING("You may interact or trade with crew you come across, aswell as defend yourself and your ship \
+		but avoid actively interfering with the station, you are required to adminhelp and request permission to board the main station."))
 	else
 		new_spawn.mind.store_memory("<b>Serve [owner.real_name], your creator.</b>")
 		if(owner.mind.special_role)
@@ -158,7 +164,7 @@
 		if(QDELETED(src) || uses <= 0)
 			return
 		log_game("[key_name(user)] golem-swapped into [src]")
-		user.visible_message("<span class='notice'>A faint light leaves [user], moving to [src] and animating it!</span>","<span class='notice'>You leave your old body behind, and transfer into [src]!</span>")
+		user.visible_message(SPAN_NOTICE("A faint light leaves [user], moving to [src] and animating it!"),SPAN_NOTICE("You leave your old body behind, and transfer into [src]!"))
 		create(ckey = user.ckey, name = user.real_name)
 		user.death()
 
@@ -180,15 +186,15 @@
 			has_owner = FALSE
 			owner = null
 	flavour_text = null
-	user.visible_message("<span class='notice'>As [user] applies the potion on the golem shell, a faint light leaves them, moving to [src] and animating it!</span>",
-	"<span class='notice'>You apply the potion to [src], feeling your mind leave your body!</span>")
+	user.visible_message(SPAN_NOTICE("As [user] applies the potion on the golem shell, a faint light leaves them, moving to [src] and animating it!"),
+	SPAN_NOTICE("You apply the potion to [src], feeling your mind leave your body!"))
 	message_admins("[key_name(user)] used [I] to transfer their mind into [src]")
 	var/mob/living/carbon/human/g = create() //Create the golem and prep mind transfer stuff
 	user.mind.transfer_to(g)
 	g.real_name = user.real_name
 	g.faction = user.faction
 	user.death()  //Keeps brain intact to prevent forcing redtext
-	to_chat(g, "<span class='warning'>You have become the [g.dna.species]. Your allegiances, alliances, and roles are still the same as they were prior to using [I]!</span>")
+	to_chat(g, SPAN_WARNING("You have become the [g.dna.species]. Your allegiances, alliances, and roles are still the same as they were prior to using [I]!"))
 	qdel(I)
 
 /obj/effect/mob_spawn/human/alive/golem/servant

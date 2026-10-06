@@ -2,6 +2,7 @@
 	origin_tech = "biotech=3"
 	force = 1
 	w_class = WEIGHT_CLASS_SMALL
+	max_damage = 60
 	var/slot
 	// DO NOT add slots with matching names to different zones - it will break internal_organs_slot list!
 	var/non_primary = 0
@@ -15,29 +16,35 @@
 	/// How much is this organ worth in the xenobiology organ analyzer?
 	var/analyzer_price = 10
 	/// what quality is this organ? Only useful for xeno organs
-	var/organ_quality = ORGAN_NORMAL
+	var/organ_quality = ORGAN_PRISTINE
 	/// Does this organ originate from the xenobiology dissection loop?
 	var/is_xeno_organ = FALSE
 	/// Does this organ give a warning upon being inserted?
 	var/warning = FALSE
+	/// The icon file for the augment that shows outside the mob, if any.
+	var/augment_icon = null
+	/// The icon state for the augment that shows outside the mob, if any.
+	var/augment_state = null
+	/// Does this organ have a extra render mechanic?
+	var/do_extra_render = FALSE
+	/// Does this organ ignore skin covers?
+	var/always_show_augment = FALSE
+	/// Does this organ have augmented skin to apply to the user on install? If so, apply it to the user and remove it.
+	var/self_augmented_skin_level = 0
 
-/obj/item/organ/internal/New(mob/living/carbon/holder)
-	..()
+/obj/item/organ/internal/Initialize(mapload, mob/living/carbon/holder)
+	. = ..()
+	if(organ_datums)
+		var/list/temp_list = organ_datums.Copy()
+		organ_datums = list()
+		for(var/path in temp_list)
+			var/datum/organ/organ_datum = new path(src)
+			if(!organ_datum.organ_tag)
+				stack_trace("There was an organ datum [organ_datum] ([organ_datum.type]), that had no organ tag.")
+				continue
+			organ_datums[organ_datum.organ_tag] = organ_datum
 	if(istype(holder))
 		insert(holder)
-
-/obj/item/organ/internal/Initialize(mapload)
-	. = ..()
-	if(!organ_datums)
-		return
-	var/list/temp_list = organ_datums.Copy()
-	organ_datums = list()
-	for(var/path in temp_list)
-		var/datum/organ/organ_datum = new path(src)
-		if(!organ_datum.organ_tag)
-			stack_trace("There was an organ datum [organ_datum] ([organ_datum.type]), that had no organ tag.")
-			continue
-		organ_datums[organ_datum.organ_tag] = organ_datum
 
 /obj/item/organ/internal/Destroy()
 	if(owner) // we have to remove BEFORE organ_datums are qdel'd, or we can just live even if our heart organ got deleted
@@ -48,7 +55,9 @@
 /obj/item/organ/internal/examine(mob/user)
 	. = ..()
 	if(is_xeno_organ)
-		. += "<span class='info'>It looks like it would replace \the [slot]."
+		. += SPAN_INFO("It looks like it would replace \the [slot].")
+	if(self_augmented_skin_level)
+		. += SPAN_INFO("It seems to have level-[self_augmented_skin_level] synthetic skin applied.")
 
 /obj/item/organ/internal/proc/insert(mob/living/carbon/M, special = 0, dont_remove_slot = 0)
 	if(!iscarbon(M) || owner == M)
@@ -80,6 +89,9 @@
 			stack_trace("[src] attempted to insert into a [parent_organ], but [parent_organ] wasn't an organ! [atom_loc_line(M)]")
 		else
 			parent.internal_organs |= src
+		if(self_augmented_skin_level)
+			parent.apply_augmented_skin(self_augmented_skin_level)
+			self_augmented_skin_level = 0
 	loc = null
 	for(var/X in actions)
 		var/datum/action/A = X
@@ -90,6 +102,7 @@
 	if(owner.stat == DEAD)
 		ADD_TRAIT(src, TRAIT_ORGAN_INSERTED_WHILE_DEAD, "[UID()]")
 		RegisterSignal(owner, COMSIG_LIVING_DEFIBBED, PROC_REF(on_revival))
+	SEND_SIGNAL(src, COMSIG_ORGAN_IMPLANTED, owner)
 
 
 // Removes the given organ from its owner.
@@ -98,7 +111,8 @@
 /obj/item/organ/internal/remove(mob/living/carbon/M, special = 0)
 	if(!owner)
 		stack_trace("\'remove\' called on [src] without an owner! Mob: [M], [atom_loc_line(M)]")
-	SEND_SIGNAL(owner, COMSIG_CARBON_LOSE_ORGAN)
+	SEND_SIGNAL(owner, COMSIG_CARBON_LOSE_ORGAN, src)
+	SEND_SIGNAL(src, COMSIG_ORGAN_REMOVED, owner)
 	REMOVE_TRAIT(src, TRAIT_ORGAN_INSERTED_WHILE_DEAD, "[UID()]")
 	UnregisterSignal(owner, COMSIG_LIVING_DEFIBBED)
 
@@ -163,6 +177,8 @@
 	switch(severity)
 		if(EMP_HEAVY)
 			receive_damage(20, 1)
+		if(EMP_RESIST_ORGAN)
+			receive_damage(12, 1)
 		if(EMP_LIGHT)
 			receive_damage(7, 1)
 		if(EMP_WEAKENED)
@@ -218,22 +234,52 @@
 
 // Rendering!
 /obj/item/organ/internal/proc/render()
-	return
+	if(!augment_state || !augment_icon || !owner)
+		return FALSE
+	var/obj/item/organ/external/our_parent = owner.get_organ(parent_organ)
+	if(!our_parent) // I don't know how you pulled that off, let us be safe.
+		return FALSE
+	if(our_parent.augmented_skin_cover_level && !always_show_augment)
+		return FALSE
 
-/obj/item/organ/internal/attack__legacy__attackchain(mob/living/carbon/M, mob/user)
-	if(M == user && ishuman(user))
-		var/mob/living/carbon/human/H = user
-		if(is_xeno_organ)
-			to_chat(user, "<span class='warning'>It wouldnt be a very good idea to eat this.</span>")
-			return ..()
-		var/obj/item/food/S = prepare_eat()
-		if(S)
-			H.drop_item()
-			H.put_in_active_hand(S)
-			S.interact_with_atom(H, H)
-			qdel(src)
-	else
-		..()
+	var/mutable_appearance/default_appearance = mutable_appearance(augment_icon, augment_state, layer = -INTORGAN_LAYER)
+	return default_appearance
+
+// An extra render used in certain situations.
+/obj/item/organ/internal/proc/extra_render()
+	if(!augment_state || !augment_icon || !owner || !do_extra_render)
+		return FALSE
+	var/obj/item/organ/external/our_parent = owner.get_organ(parent_organ)
+	if(!our_parent) // I don't know how you pulled that off, let us be safe.
+		return FALSE
+	if(our_parent.augmented_skin_cover_level && !always_show_augment)
+		return FALSE
+
+	var/mutable_appearance/default_appearance = mutable_appearance(augment_icon, augment_state, layer = -INTORGAN_LAYER)
+	return default_appearance
+
+/obj/item/organ/internal/interact_with_atom(atom/target, mob/living/carbon/human/user, list/modifiers)
+	if(!(target == user && ishuman(user)))
+		return ..()
+	if(is_xeno_organ)
+		to_chat(user, SPAN_WARNING("It wouldnt be a very good idea to eat this."))
+		return ITEM_INTERACT_COMPLETE
+	var/obj/item/food/organ_to_eat = prepare_eat()
+	if(organ_to_eat)
+		user.drop_item()
+		user.put_in_active_hand(organ_to_eat)
+		organ_to_eat.interact_with_atom(user, user)
+		qdel(src)
+
+/obj/item/organ/internal/item_interaction(mob/living/user, obj/item/used, list/modifiers)
+	if(!(is_robotic() && istype(used, /obj/item/stack/synthetic_skin)))
+		return ..()
+	var/obj/item/stack/synthetic_skin/skin = used
+	skin.use(1)
+	self_augmented_skin_level = skin.skin_level
+	to_chat(user, SPAN_NOTICE("You apply [skin] to [src]."))
+	return ITEM_INTERACT_COMPLETE
+
 
 /****************************************************
 				INTERNAL ORGANS DEFINES

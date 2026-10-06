@@ -42,15 +42,15 @@
 	if(client)
 		if(!check_rights(R_ADMIN, FALSE))
 			if(!GLOB.dsay_enabled)
-				to_chat(src, "<span class='danger'>Deadchat is globally muted.</span>")
+				to_chat(src, SPAN_DANGER("Deadchat is globally muted."))
 				return
 
 		if(check_mute(client.ckey, MUTE_DEADCHAT))
-			to_chat(src, "<span class='warning'>You cannot talk in deadchat (muted).</span>")
+			to_chat(src, SPAN_WARNING("You cannot talk in deadchat (muted)."))
 			return
 
 		if(!(client.prefs.toggles & PREFTOGGLE_CHAT_DEAD))
-			to_chat(src, "<span class='danger'>You have deadchat muted.</span>")
+			to_chat(src, SPAN_DANGER("You have deadchat muted."))
 			return
 
 		if(client.handle_spam_prevention(message, MUTE_DEADCHAT))
@@ -65,7 +65,7 @@
 		create_log(DEADCHAT_LOG, message)
 		return
 
-	say_dead_direct("[pick("complains", "moans", "whines", "laments", "blubbers", "salts", "copes", "seethes", "malds")], <span class='message'>\"[message]\"</span>", src, raw_message=message)
+	say_dead_direct("[pick("complains", "moans", "whines", "laments", "blubbers", "salts", "copes", "seethes", "malds")], [SPAN_MESSAGE("\"[message]\"")]", src, raw_message=message)
 	create_log(DEADCHAT_LOG, message)
 	log_ghostsay(message, src)
 
@@ -142,8 +142,24 @@
 		return standard_mode
 
 	if(length(message) >= 2)
-		var/channel_prefix = copytext_char(message, 1, 3)
-		return GLOB.department_radio_keys[channel_prefix]
+		var/channel_prefix_long = trim_right(copytext_char(message, 1, 4))
+		var/channel_prefix_short = trim_right(copytext_char(message, 1, 3))
+
+		// Check languages first. Deconflict your language/radio keys if this causes problems.
+		var/datum/language/L = GLOB.language_keys[channel_prefix_long]
+		if(L != null && can_speak_language(L))
+			return null
+		L = GLOB.language_keys[channel_prefix_short]
+		if(L != null && can_speak_language(L))
+			return null
+
+		// Now check radio keys.
+		var/radio_key = GLOB.department_radio_keys[channel_prefix_long]
+		if(radio_key != null)
+			return radio_key
+		radio_key = GLOB.department_radio_keys[channel_prefix_short]
+		if(radio_key != null)
+			return radio_key
 
 	return null
 

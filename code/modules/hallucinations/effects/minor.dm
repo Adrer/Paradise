@@ -173,7 +173,7 @@
 
 /obj/effect/hallucination/fake_danger/Initialize(mapload, mob/living/carbon/target)
 	. = ..()
-	to_chat(target, "<span class='userdanger'>[pick(messages)]</span>")
+	to_chat(target, SPAN_USERDANGER("[pick(messages)]"))
 
 /**
   * # Hallucination - Fake Health
@@ -194,6 +194,30 @@
 /obj/effect/hallucination/fake_health/Destroy()
 	target?.health_hud_override = HEALTH_HUD_OVERRIDE_NONE
 	target?.update_health_hud()
+	return ..()
+
+/**
+  * # Hallucination - Fake Hunger
+  *
+  * Visually changes the target's nutrition status to something it shouldn't be.
+  */
+/obj/effect/hallucination/fake_nutrition
+	duration = list(10 SECONDS, 25 SECONDS)
+
+/obj/effect/hallucination/fake_nutrition/Initialize(mapload, mob/living/carbon/human/target)
+	. = ..()
+	if(target.nutrition > NUTRITION_LEVEL_FED)
+		target.nutrition_hud_override = pick(NUTRITION_HUD_OVERRIDE_HUNGRY, NUTRITION_HUD_OVERRIDE_STARVING)
+	else
+		target.nutrition_hud_override = pick(NUTRITION_HUD_OVERRIDE_FAT, NUTRITION_HUD_OVERRIDE_FULL) // You think you're full, but you're not.
+	if(istype(target))
+		target.handle_nutrition_alerts()
+
+/obj/effect/hallucination/fake_nutrition/Destroy()
+	target?.nutrition_hud_override = NUTRITION_HUD_OVERRIDE_NONE
+	if(ishuman(target))
+		var/mob/living/carbon/human/human_target = target
+		human_target?.handle_nutrition_alerts()
 	return ..()
 
 /**

@@ -100,7 +100,7 @@
 
 /obj/item/food/sliced/hawaiian_pizza
 	name = "hawaiian pizza slice"
-	desc = "A slice of polarising pizza."
+	desc = "A slice of polarizing pizza."
 	icon = 'icons/obj/food/pizza.dmi'
 	icon_state = "hawaiianpizzaslice"
 	filling_color = "#e5b437"
@@ -278,6 +278,7 @@
 	desc = "A box suited for pizzas."
 	icon = 'icons/obj/food/pizza.dmi'
 	icon_state = "pizzabox1"
+	new_attack_chain = TRUE
 
 	var/open = FALSE // Is the box open?
 	var/is_messy = FALSE // Fancy mess on the lid
@@ -287,6 +288,7 @@
 	var/box_tag = ""
 	/// The type of pizza that's spawned in the box.
 	var/pizza_type
+	materials = list(MAT_CARDBOARD = 2000)
 
 /obj/item/pizzabox/Initialize(mapload)
 	. = ..()
@@ -343,9 +345,13 @@
 /obj/item/pizzabox/attack_hand(mob/user)
 	if(open && pizza)
 		user.put_in_hands(pizza)
-		to_chat(user, "<span class='warning'>You take [pizza] out of [src].</span>")
+		user.visible_message(
+			SPAN_NOTICE("[user] takes [pizza] out of [src]."),
+			SPAN_NOTICE("You take [pizza] out of [src].")
+		)
 		pizza = null
 		update_appearance(UPDATE_DESC|UPDATE_ICON)
+		add_fingerprint(user) // Make the detective investigate who took the last slice of pizza. That'll end well.
 		return
 
 	if(length(boxes) > 0)
@@ -355,9 +361,10 @@
 		var/obj/item/pizzabox/box = boxes[length(boxes)]
 		boxes -= box
 		user.put_in_hands(box)
-		to_chat(user, "<span class='warning'>You remove the topmost [src] from your hand.</span>")
+		to_chat(user, SPAN_NOTICE("You remove the topmost [src] from your hand."))
 		box.update_appearance(UPDATE_DESC|UPDATE_ICON)
 		update_appearance(UPDATE_DESC|UPDATE_ICON)
+		add_fingerprint(user)
 		return
 	..()
 
@@ -368,63 +375,83 @@
 	open = !open
 	update_appearance(UPDATE_DESC|UPDATE_ICON)
 
-/obj/item/pizzabox/attack_self__legacy__attackchain(mob/user)
+/obj/item/pizzabox/activate_self(mob/user)
+	if(..())
+		return ITEM_INTERACT_COMPLETE
+
 	if(length(boxes) > 0)
-		return
+		return ITEM_INTERACT_COMPLETE
+
 	open = !open
 	if(open && pizza)
 		is_messy = TRUE
 	update_appearance(UPDATE_DESC|UPDATE_ICON)
+	add_fingerprint(user)
+	return ITEM_INTERACT_COMPLETE
 
-/obj/item/pizzabox/attackby__legacy__attackchain(obj/item/I, mob/user, params)
-	if(istype(I, /obj/item/pizzabox/))
-		var/obj/item/pizzabox/box = I
-		if(!box.open && !open)
-			// Make a list of all boxes to be added
-			var/list/boxestoadd = list()
-			boxestoadd += box
-			for(var/obj/item/pizzabox/i in box.boxes)
-				boxestoadd += i
-			if((boxes.len+1) + length(boxestoadd) <= 5)
-				user.drop_item()
-				box.loc = src
-				box.boxes = list() // Clear the box boxes so we don't have boxes inside boxes. - Xzibit
-				boxes.Add(boxestoadd)
-				box.update_appearance(UPDATE_DESC|UPDATE_ICON)
-				update_appearance(UPDATE_DESC|UPDATE_ICON)
-				to_chat(user, "<span class='warning'>You put [box] on top of [src]!</span>")
-			else
-				to_chat(user, "<span class='warning'>The stack is too high!</span>")
-		else
-			to_chat(user, "<span class='warning'>Close [box] first!</span>")
-		return
+/obj/item/pizzabox/item_interaction(mob/user, obj/item/used, list/modifiers)
+	if(istype(used, /obj/item/pizzabox/))
+		var/obj/item/pizzabox/box = used
+		if(box.open || open)
+			to_chat(user, SPAN_WARNING("Close [open ? src : box] first!"))
+			return ITEM_INTERACT_COMPLETE
 
-	if(istype(I, /obj/item/food/sliceable/pizza)) // Long ass fucking object name
+		// Make a list of all boxes to be added.
+		var/list/boxestoadd = list()
+		boxestoadd += box
+		for(var/obj/item/pizzabox/i in box.boxes)
+			boxestoadd += i
+		if((boxes.len + 1) + length(boxestoadd) > 5)
+			to_chat(user, SPAN_WARNING("The stack is too high!"))
+			return ITEM_INTERACT_COMPLETE
+
+		user.drop_item()
+		box.forceMove(src)
+		box.boxes = list() // Clear the box boxes so we don't have boxes inside boxes. - Xzibit
+		boxes.Add(boxestoadd)
+		box.update_appearance(UPDATE_DESC|UPDATE_ICON)
+		update_appearance(UPDATE_DESC|UPDATE_ICON)
+		to_chat(user, SPAN_NOTICE("You put [box] on top of [src]."))
+		add_fingerprint(user)
+		return ITEM_INTERACT_COMPLETE
+
+	if(istype(used, /obj/item/food/sliceable/pizza))
+		if(!open)
+			to_chat(user, SPAN_WARNING("You try to push [used] through the lid but it doesn't work!"))
+			return ITEM_INTERACT_COMPLETE
+
+		if(pizza)
+			to_chat(user, SPAN_WARNING("There's already \a [pizza] inside [src]!"))
+			return ITEM_INTERACT_COMPLETE
+
+		user.drop_item()
+		used.forceMove(src)
+		pizza = used
+
+		update_appearance(UPDATE_DESC|UPDATE_ICON)
+
+		to_chat(user, SPAN_NOTICE("You put [used] in [src]."))
+		add_fingerprint(user)
+		return ITEM_INTERACT_COMPLETE
+
+	if(is_pen(used))
 		if(open)
-			user.drop_item()
-			I.loc = src
-			pizza = I
+			to_chat(user, SPAN_WARNING("You can't label [src] while it's open!"))
+			return ITEM_INTERACT_COMPLETE
 
-			update_appearance(UPDATE_DESC|UPDATE_ICON)
+		var/new_text = tgui_input_text(usr, "Enter what you want to set the tag to:", "Write")
+		if(!new_text)
+			return ITEM_INTERACT_COMPLETE
 
-			to_chat(user, "<span class='warning'>You put [I] in [src]!</span>")
-		else
-			to_chat(user, "<span class='warning'>You try to push [I] through the lid but it doesn't work!</span>")
-		return
-
-	if(is_pen(I))
-		if(open)
-			return
-		var/t = tgui_input_text(usr, "Enter what you want to set the tag to:", "Write")
-		if(!t)
-			return
 		var/obj/item/pizzabox/boxtotagto = src
 		if(length(boxes) > 0)
 			boxtotagto = boxes[length(boxes)]
-		boxtotagto.box_tag = copytext("[t]", 1, 30)
+		boxtotagto.box_tag = copytext(new_text, 1, 30)
 		update_appearance(UPDATE_DESC|UPDATE_ICON)
-		return
-	..()
+		add_fingerprint(user)
+		return ITEM_INTERACT_COMPLETE
+
+	return ..()
 
 /obj/item/pizzabox/margherita
 	pizza_type = /obj/item/food/sliceable/pizza/margheritapizza
@@ -518,9 +545,12 @@
 			icon_state = "pizzabox_bomb"
 
 /obj/item/pizzabox/pizza_bomb/AltClick(mob/user)
-	attack_self__legacy__attackchain(user)
+	activate_self(user)
 
-/obj/item/pizzabox/pizza_bomb/attack_self__legacy__attackchain(mob/user)
+/obj/item/pizzabox/pizza_bomb/activate_self(mob/user)
+	if(!user)
+		return ..()
+
 	if(pizza_bomb_status == PIZZA_BOMB_NOT_ARMED)
 		open = TRUE
 		update_appearance(UPDATE_NAME|UPDATE_DESC|UPDATE_ICON)
@@ -529,12 +559,12 @@
 		if(isnull(new_timer) || !in_range(src, user) || issilicon(user) || HAS_TRAIT(user, TRAIT_HANDS_BLOCKED) || user.restrained())
 			open = FALSE
 			update_appearance(UPDATE_NAME|UPDATE_DESC|UPDATE_ICON)
-			return
+			return ITEM_INTERACT_COMPLETE
 
 		timer = new_timer SECONDS
 		pizza_bomb_status = PIZZA_BOMB_TIMER_SET
 		armer = user
-		to_chat(user, "<span class='notice'>You set the timer to [timer / 10] before activating the payload and closing [src].")
+		to_chat(user, SPAN_NOTICE("You set the timer to [timer / 10] before activating the payload and closing [src]."))
 
 		message_admins("[key_name_admin(usr)] has set a timer on a pizza bomb to [timer/10] seconds at [ADMIN_JMP(loc)].")
 		log_game("[key_name(usr)] has set the timer on a pizza bomb to [timer / 10] seconds ([loc.x],[loc.y],[loc.z]).")
@@ -543,21 +573,23 @@
 
 		open = FALSE
 		update_appearance(UPDATE_NAME|UPDATE_DESC|UPDATE_ICON)
-		return
+		add_fingerprint(user)
+		return ITEM_INTERACT_COMPLETE
 
 	if(pizza_bomb_status != PIZZA_BOMB_TIMER_SET)
 		if(pizza_bomb_status != PIZZA_BOMB_PRIMED)
-			// Can only toggle disarmed boxes
+			// Can only toggle disarmed boxes.
 			open = !open
 			update_appearance(UPDATE_NAME|UPDATE_DESC|UPDATE_ICON)
-		return
+			add_fingerprint(user)
+		return ITEM_INTERACT_COMPLETE
 
 	open = TRUE
 	opener = user
 
-	audible_message("<span class='warning'>[bicon(src)] *beep* *beep* *beep*</span>")
+	audible_message(SPAN_WARNING("[bicon(src)] *beep* *beep* *beep*"))
 	playsound(src, 'sound/machines/triple_beep.ogg', 40, extrarange = -10)
-	to_chat(user, "<span class='danger'>That's no pizza! That's a bomb!</span>")
+	to_chat(user, SPAN_USERDANGER("That's no pizza! That's a bomb!"))
 	if(HAS_TRAIT(src, TRAIT_CMAGGED))
 		atom_say("Pizza time!")
 		playsound(src, 'sound/voice/pizza_time.ogg', 50, FALSE) ///Sound effect made by BlackDog
@@ -570,14 +602,15 @@
 	pizza_bomb_status = PIZZA_BOMB_PRIMED
 	update_appearance(UPDATE_NAME|UPDATE_DESC|UPDATE_ICON)
 	addtimer(CALLBACK(src, PROC_REF(go_boom)), timer)
-
+	add_fingerprint(user) // Good luck getting this fingerprint before it explodes, though.
+	return ITEM_INTERACT_COMPLETE
 
 /obj/item/pizzabox/pizza_bomb/proc/go_boom()
 	if(pizza_bomb_status == PIZZA_BOMB_DISARMED)
-		visible_message("<span class='danger'>[bicon(src)] Sparks briefly jump out of the [correct_wire] wire on [src], but it's disarmed!</span>")
+		visible_message(SPAN_DANGER("[bicon(src)] Sparks briefly jump out of the [correct_wire] wire on [src], but it's disarmed!"))
 		return
 	atom_say("Enjoy the pizza!")
-	visible_message("<span class='userdanger'>[src] violently explodes!</span>")
+	visible_message(SPAN_USERDANGER("[src] violently explodes!"))
 	message_admins("A pizza bomb set by [key_name_admin(armer)] and opened by [key_name_admin(opener)] has detonated at [ADMIN_JMP(loc)].")
 	log_game("Pizza bomb set by [key_name(armer)] and opened by [key_name(opener)]) detonated at ([loc.x],[loc.y],[loc.z]).")
 	explosion(loc, 1, 2, 4, flame_range = 2, cause = "Pizza bomb") //Identical to a minibomb
@@ -585,47 +618,61 @@
 
 /obj/item/pizzabox/pizza_bomb/cmag_act(mob/user)
 	if(!HAS_TRAIT(src, TRAIT_CMAGGED))
-		to_chat(user, "<span class='notice'>You smear the bananium ooze all over the pizza bomb's internals! You think you smell a bit of tomato sauce.</span>")
+		to_chat(user, SPAN_NOTICE("You smear the bananium ooze all over the pizza bomb's internals! You think you smell a bit of tomato sauce."))
 		ADD_TRAIT(src, TRAIT_CMAGGED, CLOWN_EMAG)
 		return TRUE
 	return FALSE
 
-/obj/item/pizzabox/pizza_bomb/attackby__legacy__attackchain(obj/item/I, mob/user, params)
+/obj/item/pizzabox/pizza_bomb/item_interaction(mob/user, obj/item/used, list/modifiers)
 	if(!open)
-		return
-	. = TRUE
+		return ITEM_INTERACT_COMPLETE
+
 	if(pizza_bomb_status == PIZZA_BOMB_PRIMED)
-		to_chat(user, "<span class='danger'>Oh God, what wire do you cut?!</span>")
+		to_chat(user, SPAN_DANGER("Oh God, what wire do you cut?!"))
 		var/chosen_wire = tgui_input_list(user, "OH GOD OH GOD", "WHAT WIRE?!", wires)
-		if(!in_range(src, user) || issilicon(usr) || HAS_TRAIT(user, TRAIT_HANDS_BLOCKED) || user.restrained() || !chosen_wire)
-			return
-		playsound(src, I.usesound, 50, TRUE, 1)
-		user.visible_message("<span class='warning'>[user] cuts the [chosen_wire] wire!</span>", "<span class='danger'>You cut the [chosen_wire] wire!</span>")
+		if(!in_range(src, user) || issilicon(user) || HAS_TRAIT(user, TRAIT_HANDS_BLOCKED) || user.restrained() || !chosen_wire)
+			return ITEM_INTERACT_COMPLETE
+
+		playsound(src, used.usesound, 50, TRUE, 1)
+		user.visible_message(
+			SPAN_WARNING("[user] cuts the [chosen_wire] wire!"),
+			SPAN_DANGER("You cut the [chosen_wire] wire!"),
+			SPAN_HEAR("You hear a wire snip!")
+		)
 		if(chosen_wire == correct_wire)
-			audible_message("<span class='warning'>[bicon(src)] [src] suddenly stops beeping and seems lifeless.</span>")
-			to_chat(user, "<span class='notice'>You did it!</span>")
+			audible_message(SPAN_WARNING("[bicon(src)] [src] suddenly stops beeping and seems lifeless."))
+			to_chat(user, SPAN_NOTICE("You did it!"))
 
 			pizza_bomb_status = PIZZA_BOMB_DISARMED
 			update_appearance(UPDATE_NAME|UPDATE_DESC|UPDATE_ICON)
-			return
-		else
-			to_chat(user, "<span class='userdanger'>WRONG WIRE!</span>")
-			go_boom()
-			return
+			add_fingerprint(user)
+			return ITEM_INTERACT_COMPLETE
+
+		to_chat(user, SPAN_USERDANGER("WRONG WIRE!"))
+		go_boom()
+		return ITEM_INTERACT_COMPLETE
 
 	if(pizza_bomb_status == PIZZA_BOMB_DISARMED)
 		if(!in_range(user, src))
-			to_chat(user, "<span class='warning'>You can't see the box well enough to cut the wires out.</span>")
-			return
-		user.visible_message("<span class='notice'>[user] starts removing the payload and wires from [src].</span>")
-		if(I.use_tool(src, user, 4 SECONDS, volume = 50))
-			user.unequip(src)
-			user.visible_message("<span class='notice'>[user] removes the insides of [src]!</span>")
-			var/obj/item/stack/cable_coil/C = new /obj/item/stack/cable_coil(src.loc)
-			C.amount = 3
-			new /obj/item/bombcore/miniature(loc)
-			new /obj/item/pizzabox(loc)
-			qdel(src)
+			to_chat(user, SPAN_WARNING("You can't see the box well enough to cut the wires out!"))
+			return ITEM_INTERACT_COMPLETE
+
+		user.visible_message(SPAN_NOTICE("[user] starts removing the payload and wires from [src]."))
+		if(!used.use_tool(src, user, 4 SECONDS, volume = 50))
+			return ITEM_INTERACT_COMPLETE
+
+		user.unequip(src)
+		user.visible_message(SPAN_NOTICE("[user] removes the insides of [src]!"))
+		var/obj/item/stack/cable_coil/C = new /obj/item/stack/cable_coil(src.loc)
+		C.amount = 3
+		C.add_fingerprint(user)
+		var/obj/item/bombcore/miniature/minibomb = new(loc)
+		minibomb.add_fingerprint(user)
+		var/obj/item/pizzabox/plain_box = new(loc)
+		transfer_fingerprints_to(plain_box)
+		plain_box.add_fingerprint(user)
+		qdel(src)
+		return ITEM_INTERACT_COMPLETE
 
 /obj/item/pizzabox/pizza_bomb/autoarm
 	pizza_bomb_status = PIZZA_BOMB_TIMER_SET

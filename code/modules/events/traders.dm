@@ -4,6 +4,10 @@ GLOBAL_LIST_INIT(unused_trade_stations, list("sol"))
 // Heavily copy-pasted from "heist" gamemode.
 
 /datum/event/traders
+	name = "Traders"
+	role_weights = list(ASSIGNMENT_CREW = 0.5)
+	role_requirements = list(ASSIGNMENT_CREW = 30)
+	nominal_severity = EVENT_LEVEL_MAJOR
 	var/success_spawn = 0
 	var/station = null
 	var/spawn_count = 2
@@ -81,6 +85,7 @@ GLOBAL_LIST_INIT(unused_trade_stations, list("sol"))
 			M.ckey = C.ckey // must be before equipOutfit, or that will runtime due to lack of mind
 			dust_if_respawnable(C)
 			M.equipOutfit(T.trader_outfit)
+			M.add_language("Tradeband")
 			M.dna.species.after_equip_job(null, M)
 			for(var/datum/objective/O in trader_objectives)
 				M.mind.objective_holder.add_objective(O) // traders dont have a team, so we manually have to add this objective to all of their minds, without setting an owner
@@ -108,7 +113,7 @@ GLOBAL_LIST_INIT(unused_trade_stations, list("sol"))
 
 /datum/event/traders/proc/greet_trader(mob/living/carbon/human/M, datum/traders/T)
 	var/list/messages = list()
-	messages.Add("<span class='boldnotice'>You are a trader!</span> <span class='notice'>You are currently docked at [T.dock_site].<br>You are about to trade with [station_name()].</span><br>")
+	messages.Add("[SPAN_BOLDNOTICE("You are a trader!")] [SPAN_NOTICE("You are currently docked at [T.dock_site].<br>You are about to trade with [station_name()].")]<br>")
 	messages.Add(M.mind.prepare_announce_objectives())
 	to_chat(M, chat_box_green(messages.Join("<br>")))
 	M.create_log(MISC_LOG, "[M] was made into a [T.trader_type] Trader")

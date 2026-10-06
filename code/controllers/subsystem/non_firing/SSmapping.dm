@@ -8,14 +8,28 @@ SUBSYSTEM_DEF(mapping)
 	var/datum/map/next_map
 	/// What map was used last round?
 	var/datum/map/last_map
+	/// The trader shuttle to load at Centcom in late_mapping.
+	var/datum/map_template/shuttle/trader_shuttle_id = /datum/map_template/shuttle/trader/synthetic
+	/// The Gamma Armory shuttle to load at Centcom in late_mapping.
+	var/gamma_armory_shuttle_id = "gamma_armory_base"
+	/// The emergency shuttle to load at Centcom in late_mapping
+	var/emergency_shuttle_id = "emergency_cyb"
 	/// List of all areas that can be accessed via IC means
 	var/list/teleportlocs
 	/// List of all areas that can be accessed via IC and OOC means
 	var/list/ghostteleportlocs
 	///List of areas that exist on the station this shift
 	var/list/existing_station_areas
-	///What do we have as the lavaland theme today?
+	/// Types of areas that exist on the station this shift
+	var/list/existing_station_areas_types
+
+	/// The type of the Lavaland theme for the next round, if selected.
+	var/next_lavaland_theme
+	/// The type of the current Lavaland theme.
+	var/current_lavaland_theme
+	/// The [/datum/lavaland_theme] instantiated for the current round.
 	var/datum/lavaland_theme/lavaland_theme
+
 	///What primary cave theme we have picked for cave generation today.
 	var/datum/caves_theme/caves_theme
 	// Tells if all maintenance airlocks have emergency access enabled
@@ -67,6 +81,13 @@ SUBSYSTEM_DEF(mapping)
 		fdel("data/last_map.txt") // Remove to avoid the same map existing forever
 	else
 		last_map = new /datum/map/cerestation // Assume cerestation if non-existent
+	if(fexists("data/next_lavaland_theme.txt"))
+		var/list/lines = file2list("data/next_lavaland_theme.txt")
+		try
+			current_lavaland_theme = text2path(lines[1])
+		catch
+			log_startup_progress("invalid data/next_lavaland_theme.txt, choosing randomly on init")
+		fdel("data/next_lavaland_theme.txt")
 
 /datum/controller/subsystem/mapping/Shutdown()
 	if(next_map) // Save map for next round
@@ -75,7 +96,9 @@ SUBSYSTEM_DEF(mapping)
 	if(map_datum) // Save which map was this round as the last map
 		var/F = file("data/last_map.txt")
 		F << map_datum.type
-
+	if(next_lavaland_theme)
+		var/F = file("data/next_lavaland_theme.txt")
+		F << "[next_lavaland_theme]"
 
 /datum/controller/subsystem/mapping/Initialize()
 	environments = list()
@@ -83,11 +106,13 @@ SUBSYSTEM_DEF(mapping)
 	environments[ENVIRONMENT_TEMPERATE] = create_environment(oxygen = MOLES_O2STANDARD, nitrogen = MOLES_N2STANDARD, temperature = T20C)
 	environments[ENVIRONMENT_COLD] = create_environment(oxygen = MOLES_O2STANDARD, nitrogen = MOLES_N2STANDARD, temperature = 180)
 
-	var/datum/lavaland_theme/lavaland_theme_type = pick(subtypesof(/datum/lavaland_theme))
-	ASSERT(lavaland_theme_type)
-	lavaland_theme = new lavaland_theme_type
+	if(!current_lavaland_theme)
+		current_lavaland_theme = pick(subtypesof(/datum/lavaland_theme))
+
+	ASSERT(current_lavaland_theme)
+	lavaland_theme = new current_lavaland_theme
 	log_startup_progress("We're in the mood for [lavaland_theme.name] today...") //We load this first. In the event some nerd ever makes a surface map, and we don't have it in lavaland in the event lavaland is disabled.
-	SSblackbox.record_feedback("text", "procgen_settings", 1, "[lavaland_theme_type]")
+	SSblackbox.record_feedback("text", "procgen_settings", 1, "[current_lavaland_theme]")
 
 	var/caves_theme_type = pick(subtypesof(/datum/caves_theme))
 	ASSERT(caves_theme_type)
@@ -155,6 +180,7 @@ SUBSYSTEM_DEF(mapping)
 
 	// Now we make a list of areas that exist on the station. Good for if you don't want to select areas that exist for one station but not others. Directly references
 	existing_station_areas = list()
+	existing_station_areas_types = list()
 	for(var/area/AR as anything in all_areas)
 		var/list/pickable_turfs = list()
 		for(var/turf/turfs in AR)
@@ -163,6 +189,7 @@ SUBSYSTEM_DEF(mapping)
 		var/turf/picked = safepick(pickable_turfs)
 		if(picked && is_station_level(picked.z))
 			existing_station_areas += AR
+			existing_station_areas_types += AR.type
 		CHECK_TICK
 
 	// World name
@@ -309,12 +336,12 @@ SUBSYSTEM_DEF(mapping)
 		if(map_datum_path)
 			map_datum = new map_datum_path
 		else
-			to_chat(world, "<span class='narsie'>ERROR: The map datum specified to load is invalid. Falling back to... cyberiad probably?</span>")
+			to_chat(world, SPAN_NARSIE("ERROR: The map datum specified to load is invalid. Falling back to... cyberiad probably?"))
 
 	ASSERT(map_datum.map_path)
 	if(!fexists(map_datum.map_path))
 		// Make a VERY OBVIOUS error
-		to_chat(world, "<span class='narsie'>ERROR: The path specified for the map to load is invalid. No station has been loaded!</span>")
+		to_chat(world, SPAN_NARSIE("ERROR: The path specified for the map to load is invalid. No station has been loaded!"))
 		return
 
 	var/watch = start_watch()

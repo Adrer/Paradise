@@ -3,13 +3,15 @@
 	desc = "Used to modify bio-chips."
 	icon = 'icons/obj/bio_chips.dmi'
 	icon_state = "implantpad-off"
-	item_state = "electronic"
+	inhand_icon_state = "electronic"
 	throw_speed = 3
 	throw_range = 5
 	w_class = WEIGHT_CLASS_SMALL
+	materials = list(MAT_METAL = 2000, MAT_GLASS = 1000)
 
 	var/obj/item/bio_chip_case/case
 	var/static/list/cached_base64_icons = list()
+	new_attack_chain = TRUE
 
 /obj/item/bio_chip_pad/Destroy()
 	if(case)
@@ -18,7 +20,7 @@
 
 /obj/item/bio_chip_pad/examine(mob/user)
 	. = ..()
-	. += "<span class='notice'>You can <b>Alt-Click</b> [src] to remove it's stored implant.</span>"
+	. += SPAN_NOTICE("You can <b>Alt-Click</b> [src] to remove it's stored implant.")
 
 /obj/item/bio_chip_pad/update_icon_state()
 	if(case)
@@ -26,24 +28,31 @@
 	else
 		icon_state = "implantpad-off"
 
-/obj/item/bio_chip_pad/attack_self__legacy__attackchain(mob/user)
-	ui_interact(user)
+/obj/item/bio_chip_pad/activate_self(mob/user)
+	if(..())
+		return ITEM_INTERACT_COMPLETE
 
-/obj/item/bio_chip_pad/attackby__legacy__attackchain(obj/item/bio_chip_case/C, mob/user)
-	if(istype(C))
-		addcase(user, C)
-	else
+	ui_interact(user)
+	add_fingerprint(user)
+	return ITEM_INTERACT_COMPLETE
+
+/obj/item/bio_chip_pad/item_interaction(mob/living/user, obj/item/used, list/modifiers)
+	if(!istype(used, /obj/item/bio_chip_case))
 		return ..()
+
+	addcase(user, used)
+	return ITEM_INTERACT_COMPLETE
 
 /obj/item/bio_chip_pad/proc/addcase(mob/user, obj/item/bio_chip_case/C)
 	if(!user || !C)
 		return
 	if(case)
-		to_chat(user, "<span class='warning'>There's already a bio-chip in the pad!</span>")
+		to_chat(user, SPAN_WARNING("There's already a bio-chip in the pad!"))
 		return
 	user.unequip(C)
 	C.forceMove(src)
 	case = C
+	add_fingerprint(user)
 	update_icon(UPDATE_ICON_STATE)
 	SStgui.update_uis(src)
 

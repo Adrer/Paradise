@@ -11,9 +11,10 @@
 	w_class = WEIGHT_CLASS_SMALL
 	attack_verb = list("bashed", "battered", "judged", "whacked")
 	resistance_flags = FLAMMABLE
+	new_attack_chain = TRUE
 
 /obj/item/gavelhammer/suicide_act(mob/user)
-	user.visible_message("<span class='suicide'>[user] has sentenced [user.p_themselves()] to death with [src]! It looks like [user.p_theyre()] trying to commit suicide!</span>")
+	user.visible_message(SPAN_SUICIDE("[user] has sentenced [user.p_themselves()] to death with [src]! It looks like [user.p_theyre()] trying to commit suicide!"))
 	playsound(loc, 'sound/items/gavel.ogg', 50, TRUE, -1)
 	return BRUTELOSS
 
@@ -26,11 +27,20 @@
 	w_class = WEIGHT_CLASS_TINY
 	resistance_flags = FLAMMABLE
 	var/next_gavel_hit
+	new_attack_chain = TRUE
 
-/obj/item/gavelblock/attackby__legacy__attackchain(obj/item/I, mob/user, params)
-	if(!istype(I, /obj/item/gavelhammer))
-		return
+/obj/item/gavelblock/item_interaction(mob/living/user, obj/item/used, list/modifiers)
+	if(!istype(used, /obj/item/gavelhammer))
+		return ..()
 	if(world.time > next_gavel_hit)
 		playsound(loc, 'sound/items/gavel.ogg', 100, 1)
 		next_gavel_hit = world.time + 5 SECONDS
-		user.visible_message("<span class='warning'>[user] strikes \the [src] with \the [I].</span>")
+		user.visible_message(
+			SPAN_WARNING("[user] strikes [src] with [used]!"),
+			SPAN_NOTICE("You strike [src] with [used]."),
+			SPAN_HEAR("You hear a gavel banging!")
+		)
+		add_fingerprint(user)
+		used.add_fingerprint(user)
+		return ITEM_INTERACT_COMPLETE
+

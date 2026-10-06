@@ -1,7 +1,7 @@
 // Examples
 /*
 	-- Will call the proc for all computers in the world, thats dir is 2.
-	CALL ex_act(1) ON /obj/machinery/computer IN world WHERE dir == 2
+	CALL ex_act(1) ON /obj/machinery/computer IN world WHERE dir == SOUTH
 	-- Will open a window with a list of all the closets in the world, with a link to VV them.
 	SELECT /obj/structure/closet/secure_closet/security/cargo IN world WHERE icon_off == "secoff"
 	-- Will change all the tube lights to green
@@ -15,24 +15,22 @@
 
 */
 
-/client/proc/SDQL2_query()
-	set category = "Debug"
-
-	if(!check_rights(R_PROCCALL))  //Shouldn't happen... but just to be safe.
-		message_admins("<span class='danger'>ERROR: Non-admin [key_name_admin(usr)] attempted to execute a SDQL query!</span>")
-		log_admin("Non-admin [key_name(usr)] attempted to execute a SDQL query!")
+USER_VERB(execute_sdql2_query, R_PROCCALL, "SDQL2 Query", "Run an SDQL query", VERB_CATEGORY_DEBUG)
+	if(!check_rights_client(R_PROCCALL, FALSE, client))  //Shouldn't happen... but just to be safe.
+		message_admins(SPAN_DANGER("ERROR: Non-admin [key_name_admin(client)] attempted to execute a SDQL query!"))
+		log_admin("Non-admin [key_name(client)] attempted to execute a SDQL query!")
 		return
 
-	var/query_text = input("SDQL2 query") as message
+	var/query_text = input(client, "SDQL2 query") as message
 
 	if(!query_text || length(query_text) < 1)
 		return
 
-	run_sdql2_query(query_text)
+	client.run_sdql2_query(query_text)
 
 /client/proc/run_sdql2_query(query_text)
 	if(!check_rights(R_PROCCALL))  //Shouldn't happen... but just to be safe.
-		message_admins("<span class='danger'>ERROR: Non-admin [key_name_admin(usr)] attempted to execute an SDQL query!</span>")
+		message_admins(SPAN_DANGER("ERROR: Non-admin [key_name_admin(usr)] attempted to execute an SDQL query!"))
 		log_admin("Non-admin [key_name(usr)] attempted to execute an SDQL query: [query_text]")
 		return
 
@@ -144,12 +142,18 @@
 											to_chat(usr, "[temp] rejected your varedit.")
 										break
 									if(temp.vars.Find(v) && (istype(temp.vars[v], /datum) || isclient(temp.vars[v])))
+										if(!temp.can_vv_get(v))
+											to_chat(usr, SPAN_DANGER("You are not allowed to read that variable with SDQL"))
+											message_admins("[SPAN_DANGER("ALERT")] - [key_name_admin(usr)] attempted to read protected variables with SDQL!")
+											log_admin("[key_name_log(usr)] attempted to read protected variables with SDQL!")
+											return null
+
 										temp = temp.vars[v]
 									else
 										break
 
 	catch(var/exception/e)
-		to_chat(usr, "<span class='danger'>An exception has occurred during the execution of your query and your query has been aborted.</span>")
+		to_chat(usr, SPAN_DANGER("An exception has occurred during the execution of your query and your query has been aborted."))
 		to_chat(usr, "  [e.name]")
 		to_chat(usr, "  at: [e.file]:[e.line]")
 
@@ -177,7 +181,7 @@
 				querys[querys_pos] = parsed_tree
 				querys_pos++
 			else //There was an error so don't run anything, and tell the user which query has errored.
-				to_chat(usr, "<span class='danger'>Parsing error on [querys_pos]\th query. Nothing was executed.</span>")
+				to_chat(usr, SPAN_DANGER("Parsing error on [querys_pos]\th query. Nothing was executed."))
 				return list()
 			query_tree = list()
 			do_parse = 0
@@ -334,7 +338,7 @@
 				if("or", "||")
 					result = (result || val)
 				else
-					to_chat(usr, "<span class='danger'>SDQL2: Unknown op [op]</span>")
+					to_chat(usr, SPAN_DANGER("SDQL2: Unknown op [op]"))
 					result = null
 		else
 			result = val
@@ -398,15 +402,21 @@
 
 	if(expression[start] == "\[" && long)
 		if(lowertext(copytext(expression[start + 1], 1, 3)) != "0x")
-			to_chat(usr, "<span class='danger'>Invalid ref syntax: [expression[start + 1]]</span>")
+			to_chat(usr, SPAN_DANGER("Invalid ref syntax: [expression[start + 1]]"))
 			return null
 		v = locate("\[[expression[start + 1]]\]")
 		if(!v)
-			to_chat(usr, "<span class='danger'>Invalid ref: [expression[start + 1]]</span>")
+			to_chat(usr, SPAN_DANGER("Invalid ref: [expression[start + 1]]"))
 			return null
 		start++
 
 	else if((!long || expression[start + 1] == "." || expression[start + 1] == "\[") && (expression[start] in object.vars))
+		if(!object.can_vv_get(expression[start]))
+			to_chat(usr, SPAN_DANGER("You are not allowed to read that variable with SDQL"))
+			message_admins("[SPAN_DANGER("ALERT")] - [key_name_admin(usr)] attempted to read protected variables with SDQL!")
+			log_admin("[key_name_log(usr)] attempted to read protected variables with SDQL!")
+			return null
+
 		v = object.vars[expression[start]]
 
 	else if(long && expression[start + 1] == ":" && hascall(object, expression[start]))
@@ -440,7 +450,7 @@
 			var/list/L = v
 			var/index = SDQL_expression(source, expression[start + 2])
 			if(isnum(index) && (!ISINTEGER(index) || length(L) < index))
-				to_chat(world, "<span class='danger'>Invalid list index: [index]</span>")
+				to_chat(world, SPAN_DANGER("Invalid list index: [index]"))
 				return null
 			return L[index]
 
@@ -501,7 +511,7 @@
 
 		else if(char == "'")
 			if(word != "")
-				to_chat(usr, "<span class='danger'>SDQL2: You have an error in your SDQL syntax, unexpected ' in query: \"<font color=gray>[query_text]</font>\" following \"<font color=gray>[word]</font>\". Please check your syntax, and try again.</span>")
+				to_chat(usr, SPAN_DANGER("SDQL2: You have an error in your SDQL syntax, unexpected ' in query: \"<font color=gray>[query_text]</font>\" following \"<font color=gray>[word]</font>\". Please check your syntax, and try again."))
 				return null
 
 			word = "'"
@@ -521,7 +531,7 @@
 					word += char
 
 			if(i > len)
-				to_chat(usr, "<span class='danger'>SDQL2: You have an error in your SDQL syntax, unmatched ' in query: \"<font color=gray>[query_text]</font>\". Please check your syntax, and try again.</span>")
+				to_chat(usr, SPAN_DANGER("SDQL2: You have an error in your SDQL syntax, unmatched ' in query: \"<font color=gray>[query_text]</font>\". Please check your syntax, and try again."))
 				return null
 
 			query_list += "[word]'"
@@ -529,7 +539,7 @@
 
 		else if(char == "\"")
 			if(word != "")
-				to_chat(usr, "<span class='danger'>SDQL2: You have an error in your SDQL syntax, unexpected \" in query: \"<font color=gray>[query_text]</font>\" following \"<font color=gray>[word]</font>\". Please check your syntax, and try again.</span>")
+				to_chat(usr, SPAN_DANGER("SDQL2: You have an error in your SDQL syntax, unexpected \" in query: \"<font color=gray>[query_text]</font>\" following \"<font color=gray>[word]</font>\". Please check your syntax, and try again."))
 				return null
 
 			word = "\""
@@ -549,7 +559,7 @@
 					word += char
 
 			if(i > len)
-				to_chat(usr, "<span class='danger'>SDQL2: You have an error in your SDQL syntax, unmatched \" in query: \"<font color=gray>[query_text]</font>\". Please check your syntax, and try again.</span>")
+				to_chat(usr, SPAN_DANGER("SDQL2: You have an error in your SDQL syntax, unmatched \" in query: \"<font color=gray>[query_text]</font>\". Please check your syntax, and try again."))
 				return null
 
 			query_list += "[word]\""

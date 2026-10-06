@@ -41,6 +41,8 @@
 	/// Whether the container is in "mini" mode, that is, placed on a cooking machine and rendered
 	/// with its smaller icons
 	var/mini = FALSE
+	/// References the current surface the container is inside.
+	var/datum/cooking_surface/surface
 
 /obj/item/reagent_containers/cooking/Initialize(mapload)
 	. = ..()
@@ -62,7 +64,7 @@
 	. = ..()
 	if(length(contents))
 		. += get_content_info()
-	. += "<span class='notice'><b>Alt-Click</b> to remove all items and reagents from this.</span>"
+	. += SPAN_NOTICE("<b>Alt-Click</b> to remove all items and reagents from this.")
 
 /obj/item/reagent_containers/cooking/build_reagent_description(mob/user)
 	. = list()
@@ -70,10 +72,10 @@
 		return
 	var/one_percent = reagents.total_volume / 100
 	if(length(reagents.reagent_list))
-		. += "<span class='notice'>It contains:</span>"
+		. += SPAN_NOTICE("It contains:")
 	for(var/I in reagents.reagent_list)
 		var/datum/reagent/R = I
-		. += "<span class='notice'>[R.volume] units of [R] ([round(R.volume / one_percent)]%)</span>"
+		. += SPAN_NOTICE("[R.volume] units of [R] ([round(R.volume / one_percent)]%)")
 
 /obj/item/reagent_containers/cooking/proc/get_content_info()
 	return "It contains [english_list(contents)]."
@@ -87,8 +89,14 @@
 /obj/item/reagent_containers/cooking/item_interaction(mob/living/user, obj/item/used, list/modifiers)
 	if(istype(used, /obj/item/autochef_remote))
 		return
-
-	process_item(user, used)
+	if(istype(used, /obj/item/disk/nuclear))
+		used.visible_message(SPAN_DANGER("[used] disappears as soon as it touches the scalding oil!"))
+		qdel(used)
+		return ITEM_INTERACT_COMPLETE
+	if(surface)
+		process_item(user, used, surface.frier_bypass)
+	else
+		process_item(user, used, FALSE)
 
 	return ITEM_INTERACT_COMPLETE
 
@@ -98,7 +106,7 @@
 /// machine, such as an oven or stove. So in some cases `used` will be something
 /// like a food item, and in other cases `used` will be an
 /// [/obj/machinery/cooking].
-/obj/item/reagent_containers/cooking/proc/process_item(mob/user, obj/used)
+/obj/item/reagent_containers/cooking/proc/process_item(mob/user, obj/used, fryer_bypass = FALSE)
 	if(!istype(used))
 		return PCWJ_NO_STEPS
 
@@ -116,9 +124,10 @@
 			tracker.recipes_last_completed_step[recipe] = 0
 
 	if(!tracker && (length(contents) || reagents.total_volume != 0))
-		to_chat(user, "<span class='notice'>\The [src] is full. Empty its contents first.</span>")
+		to_chat(user, SPAN_NOTICE("\The [src] is full. Empty its contents first."))
 		return PCWJ_CONTAINER_FULL
 
+	tracker.frying_exception = fryer_bypass
 	var/process_reaction = tracker.process_item_wrap(user, used)
 	react_to_process(process_reaction, user, used)
 	return process_reaction
@@ -139,27 +148,27 @@
 			return
 
 		if(tracker.step_reaction_message)
-			to_chat(user, "<span class='notice'>[tracker.step_reaction_message]</span>")
+			to_chat(user, SPAN_NOTICE("[tracker.step_reaction_message]"))
 			tracker.step_reaction_message = null
 		else
-			to_chat(user, "<span class='notice'>You don't know what you'd begin to make with this.</span>")
+			to_chat(user, SPAN_NOTICE("You don't know what you'd begin to make with this."))
 
 		return
 
 	switch(reaction_status)
 		if(PCWJ_NO_RECIPES)
-			to_chat(user, "<span class='notice'>You don't know what you'd begin to make with this.</span>")
+			to_chat(user, SPAN_NOTICE("You don't know what you'd begin to make with this."))
 		if(PCWJ_NO_STEPS)
-			to_chat(user, "<span class='notice'>You get a feeling this wouldn't improve the recipe.</span>")
+			to_chat(user, SPAN_NOTICE("You get a feeling this wouldn't improve the recipe."))
 		if(PCWJ_SUCCESS, PCWJ_PARTIAL_SUCCESS)
 			if(tracker.step_reaction_message && ismob(user))
-				to_chat(user, "<span class='notice'>[tracker.step_reaction_message]</span>")
+				to_chat(user, SPAN_NOTICE("[tracker.step_reaction_message]"))
 
 			update_appearance(UPDATE_ICON)
 		if(PCWJ_COMPLETE)
 			if(tracker.step_reaction_message && ismob(user))
-				to_chat(user, "<span class='notice'>[tracker.step_reaction_message]</span>")
-				to_chat(user, "<span class='notice'>You finish cooking with [src].</span>")
+				to_chat(user, SPAN_NOTICE("[tracker.step_reaction_message]"))
+				to_chat(user, SPAN_NOTICE("You finish cooking with [src]."))
 			QDEL_NULL(tracker)
 			clear_cooking_data()
 			update_appearance(UPDATE_ICON)
@@ -195,7 +204,7 @@
 				AM.forceMove(get_turf(target))
 
 		if(ismob(user))
-			to_chat(user, "<span class='notice'>You remove everything from [src].</span>")
+			to_chat(user, SPAN_NOTICE("You remove everything from [src]."))
 
 	if(reagent_clear)
 		reagents.clear_reagents()
@@ -208,7 +217,7 @@
 
 /obj/item/reagent_containers/cooking/wash(mob/user, atom/source)
 	if(reagents.total_volume >= volume)
-		to_chat(user, "<span class='warning'>[src] is full.</span>")
+		to_chat(user, SPAN_WARNING("[src] is full."))
 	else
 		var/obj/item/reagent_containers/temp/temp_container = new()
 		process_item(user, temp_container)
@@ -311,9 +320,9 @@
 	name = "cutting board"
 	desc = "Good for making sandwiches on, too."
 	icon_state = "cutting_board"
-	item_state = "cutting_board"
+	inhand_icon_state = "clipboard" // huh
 	preposition = "On"
-	materials = list(MAT_WOOD = 5)
+	materials = list(MAT_WOOD = 10000)
 
 /obj/item/reagent_containers/cooking/sushimat
 	name = "Sushi Mat"
@@ -422,7 +431,7 @@
 	name = "prep bowl"
 	desc = "A bowl for mixing, or tossing a salad. Not to be eaten out of"
 	icon_state = "bowl"
-	materials = list(MAT_PLASTIC = 500)
+	materials = list(MAT_METAL = 400, MAT_GLASS = 100)
 	removal_penalty = 2
 
 /obj/item/reagent_containers/cooking/icecream_bowl

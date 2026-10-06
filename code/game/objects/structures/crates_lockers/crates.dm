@@ -47,7 +47,8 @@
 			if(L.electrocute_act(17, src))
 				do_sparks(5, 1, src)
 				return 2
-
+	if(climbable)
+		structure_shaken()
 	playsound(loc, open_sound, open_sound_volume, TRUE, -3)
 	for(var/obj/O in src) //Objects
 		O.forceMove(loc)
@@ -55,9 +56,6 @@
 		M.forceMove(loc)
 	icon_state = icon_opened
 	opened = TRUE
-
-	if(climbable)
-		structure_shaken()
 
 	return TRUE
 
@@ -74,9 +72,9 @@
 			break
 		if(O.density || O.anchored || istype(O,/obj/structure/closet))
 			continue
-		if(ismob(O) && !HAS_TRAIT(O, TRAIT_CONTORTED_BODY))
+		if(ismob(O) && !(HAS_TRAIT(O, TRAIT_CONTORTED_BODY) || HAS_TRAIT(O, TRAIT_SKITTISH)))
 			continue
-		if(O.has_buckled_mobs()) // You can't put mobs into crates, so naturally if a mob is attached to something, it shouldn't be able to go in the crate
+		if(O.has_buckled_mobs()) // You can't put (most) mobs into crates, so naturally if a mob is attached to something, it shouldn't be able to go in the crate
 			continue
 		O.forceMove(src)
 		itemcount++
@@ -85,33 +83,33 @@
 	opened = FALSE
 	return TRUE
 
-/obj/structure/closet/crate/attackby__legacy__attackchain(obj/item/W, mob/user, params)
+/obj/structure/closet/crate/item_interaction(mob/living/user, obj/item/W, list/modifiers)
 	if(!opened && try_rig(W, user))
-		return
+		return ITEM_INTERACT_COMPLETE
 	return ..()
 
 /obj/structure/closet/crate/toggle(mob/user, by_hand = FALSE)
 	if(!(opened ? close() : open(by_hand)))
-		to_chat(user, "<span class='notice'>It won't budge!</span>")
+		to_chat(user, SPAN_NOTICE("It won't budge!"))
 
 /obj/structure/closet/crate/proc/try_rig(obj/item/W, mob/user)
 	if(istype(W, /obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/C = W
 		if(rigged)
-			to_chat(user, "<span class='notice'>[src] is already rigged!</span>")
+			to_chat(user, SPAN_NOTICE("[src] is already rigged!"))
 			return TRUE
 		if(C.use(15))
-			to_chat(user, "<span class='notice'>You rig [src].</span>")
+			to_chat(user, SPAN_NOTICE("You rig [src]."))
 			rigged = TRUE
 		else
-			to_chat(user, "<span class='warning'>You need at least 15 wires to rig [src]!</span>")
+			to_chat(user, SPAN_WARNING("You need at least 15 wires to rig [src]!"))
 		return TRUE
 	if(istype(W, /obj/item/electropack))
 		if(rigged)
 			if(!user.drop_item())
-				to_chat(user, "<span class='warning'>[W] seems to be stuck to your hand!</span>")
+				to_chat(user, SPAN_WARNING("[W] seems to be stuck to your hand!"))
 				return TRUE
-			to_chat(user, "<span class='notice'>You attach [W] to [src].</span>")
+			to_chat(user, SPAN_NOTICE("You attach [W] to [src]."))
 			W.forceMove(src)
 		return TRUE
 
@@ -122,17 +120,28 @@
 		return
 
 	if(I.use_tool(src, user))
-		to_chat(user, "<span class='notice'>You cut away the wiring.</span>")
+		to_chat(user, SPAN_NOTICE("You cut away the wiring."))
 		playsound(loc, I.usesound, 100, 1)
 		rigged = FALSE
 		return TRUE
 
-/obj/structure/closet/crate/welder_act()
-	return
+/obj/structure/closet/crate/welder_act(mob/user, obj/item/I)
+	. = TRUE
+	if(!opened && user.loc == src)
+		to_chat(user, SPAN_WARNING("You can't weld [src] from inside!"))
+		return
+	if(!I.tool_enabled && opened) // If the welder isn't on, just put it in the open closet.
+		return FALSE
+	if(!I.tool_use_check(user, 0) || !opened)
+		return
+	WELDER_ATTEMPT_SLICING_MESSAGE
+	if(I.use_tool(src, user, 40, volume = I.tool_volume))
+		WELDER_SLICING_SUCCESS_MESSAGE
+		deconstruct(TRUE)
 
 /obj/structure/closet/crate/attack_hand(mob/user)
 	if(manifest)
-		to_chat(user, "<span class='notice'>You tear the manifest off of the crate.</span>")
+		to_chat(user, SPAN_NOTICE("You tear the manifest off of the crate."))
 		playsound(loc, 'sound/items/poster_ripped.ogg', 75, TRUE)
 		manifest.forceMove(loc)
 		if(ishuman(user))
@@ -198,7 +207,7 @@
 
 /obj/structure/closet/crate/secure/proc/boom(mob/user)
 	if(user)
-		to_chat(user, "<span class='danger'>The crate's anti-tamper system activates!</span>")
+		to_chat(user, SPAN_DANGER("The crate's anti-tamper system activates!"))
 		investigate_log("[key_name(user)] has detonated a [src]", INVESTIGATE_BOMB)
 		add_attack_logs(user, src, "has detonated", ATKLOG_MOST)
 	for(var/atom/movable/AM in src)
@@ -211,18 +220,21 @@
 
 /obj/structure/closet/crate/secure/proc/togglelock(mob/user)
 	if(opened)
-		to_chat(user, "<span class='notice'>Close the crate first.</span>")
+		to_chat(user, SPAN_NOTICE("Close the crate first."))
 		return FALSE
 	if(broken)
-		to_chat(user, "<span class='warning'>The crate appears to be broken.</span>")
+		to_chat(user, SPAN_WARNING("The crate appears to be broken."))
+		return FALSE
+	if(user.loc == src)
+		to_chat(user, SPAN_NOTICE("You can't reach the lock from inside."))
 		return FALSE
 	if(allowed(user))
 		locked = !locked
-		visible_message("<span class='notice'>The crate has been [locked ? null : "un"]locked by [user].</span>")
+		visible_message(SPAN_NOTICE("The crate has been [locked ? null : "un"]locked by [user]."))
 		update_icon()
 		return TRUE
 	else
-		to_chat(user, "<span class='notice'>Access Denied.</span>")
+		to_chat(user, SPAN_NOTICE("Access Denied."))
 		return FALSE
 
 /obj/structure/closet/crate/secure/AltClick(mob/user)
@@ -236,7 +248,7 @@
 
 /obj/structure/closet/crate/secure/attack_hand(mob/user)
 	if(manifest)
-		to_chat(user, "<span class='notice'>You tear the manifest off of the crate.</span>")
+		to_chat(user, SPAN_NOTICE("You tear the manifest off of the crate."))
 		playsound(loc, 'sound/items/poster_ripped.ogg', 75, 1)
 		manifest.forceMove(loc)
 		if(ishuman(user))
@@ -258,7 +270,7 @@
 		broken = TRUE
 		update_icon()
 		do_sparks(2, TRUE, src)
-		to_chat(user, "<span class='notice'>You unlock \the [src].</span>")
+		to_chat(user, SPAN_NOTICE("You unlock \the [src]."))
 		return TRUE
 
 /obj/structure/closet/crate/secure/emp_act(severity)
@@ -311,31 +323,31 @@
 		return FALSE
 	return TRUE
 
-/obj/structure/closet/crate/secure/personal/attackby__legacy__attackchain(obj/item/I, mob/user, params)
+/obj/structure/closet/crate/secure/personal/item_interaction(mob/living/user, obj/item/I, list/modifiers)
 	if(opened || !istype(I, /obj/item/card/id))
 		return ..()
 
 	if(broken)
-		to_chat(user, "<span class='warning'>It appears to be broken.</span>")
-		return FALSE
+		to_chat(user, SPAN_WARNING("It appears to be broken."))
+		return ITEM_INTERACT_COMPLETE
 
 	var/obj/item/card/id/id = I
 	if(!is_usable_id(id))
-		to_chat(user, "<span class='warning'>Invalid identification card.</span>")
-		return FALSE
+		to_chat(user, SPAN_WARNING("Invalid identification card."))
+		return ITEM_INTERACT_COMPLETE
 
 	if(registered_name && allowed(user))
 		return ..()
 
 	if(!registered_name)
 		registered_name = id.registered_name
-		to_chat(user, "<span class='notice'>Crate reserved</span>")
-		return TRUE
+		to_chat(user, SPAN_NOTICE("Crate reserved"))
+		return ITEM_INTERACT_COMPLETE
 
 	if(registered_name == id.registered_name)
 		return ..()
 
-	return FALSE
+	return ITEM_INTERACT_COMPLETE
 
 /obj/structure/closet/crate/plastic
 	name = "plastic crate"
@@ -460,13 +472,6 @@
 		return
 	default_unfasten_wrench(user, I, 40)
 
-/obj/structure/closet/crate/radiation
-	desc = "A crate with a radiation sign on it."
-	name = "radioactive gear crate"
-	icon_state = "radiation"
-	icon_opened = "radiation_open"
-	icon_closed = "radiation"
-
 /obj/structure/closet/crate/secure/weapon
 	desc = "A secure weapons crate."
 	name = "weapons crate"
@@ -494,6 +499,13 @@
 	icon_state = "hydrosecurecrate"
 	icon_opened = "hydrosecurecrate_open"
 	icon_closed = "hydrosecurecrate"
+
+/obj/structure/closet/crate/secure/medisec
+	desc = "A secure medical crate."
+	name = "secure medical crate"
+	icon_state = "medicalsecurecrate"
+	icon_opened = "medicalsecurecrate_open"
+	icon_closed = "medicalsecurecrate"
 
 /obj/structure/closet/crate/secure/bin
 	desc = "A secure bin."
@@ -557,23 +569,58 @@
 /obj/structure/closet/crate/engineering
 	name = "engineering crate"
 	desc = "An engineering crate."
-	icon_state = "engicrate"
-	icon_opened = "engicrate_open"
-	icon_closed = "engicrate"
+	icon_state = "engi_crate"
+	icon_opened = "engi_crate_open"
+	icon_closed = "engi_crate"
 
 /obj/structure/closet/crate/secure/engineering
 	name = "secure engineering crate"
 	desc = "A crate with a lock on it, painted in the scheme of the station's engineers."
-	icon_state = "engisecurecrate"
-	icon_opened = "engisecurecrate_open"
-	icon_closed = "engisecurecrate"
+	icon_state = "engi_crate_secure"
+	icon_opened = "engi_crate_secure_open"
+	icon_closed = "engi_crate_secure"
+
+/obj/structure/closet/crate/radiation
+	desc = "A crate with a radiation symbol on it."
+	name = "radioactive gear crate"
+	icon_state = "radiation"
+	icon_opened = "radiation_open"
+	icon_closed = "radiation"
+
+/obj/structure/closet/crate/secure/radiation
+	desc = "A crate with a lock on it, painted in the scheme of the station's engineers. It has a radiation symbol on it."
+	name = "radioactive gear crate"
+	icon_state = "radiation_secure"
+	icon_opened = "radiation_secure_open"
+	icon_closed = "radiation_secure"
 
 /obj/structure/closet/crate/engineering/electrical
 	name = "electrical engineering crate"
 	desc = "An electrical engineering crate."
-	icon_state = "electricalcrate"
-	icon_opened = "electricalcrate_open"
-	icon_closed = "electricalcrate"
+	icon_state = "electrical_crate"
+	icon_opened = "electrical_crate_open"
+	icon_closed = "electrical_crate"
+
+/obj/structure/closet/crate/secure/electrical
+	name = "secure electrical engineering crate"
+	desc = "A crate with a lock on it, painted in the scheme of the station's engineers. It has an electrical symbol on it."
+	icon_state = "electrical_crate_secure"
+	icon_opened = "electrical_crate_secure_open"
+	icon_closed = "electrical_crate_secure"
+
+/obj/structure/closet/crate/nanotrasen
+	name = "corporate crate"
+	desc = "A Nanotrasen crate."
+	icon_state = "nanotrasen"
+	icon_opened = "nanotrasen_open"
+	icon_closed = "nanotrasen"
+
+/obj/structure/closet/crate/secure/nanotrasen
+	name = "secure corporate crate"
+	desc = "A crate with a lock on it, painted in the scheme of Nanotrasen. Whatever's in here is probably above your pay grade."
+	icon_state = "nanotrasensecure"
+	icon_opened = "nanotrasensecure_open"
+	icon_closed = "nanotrasensecure"
 
 /obj/structure/closet/crate/mail
 	name = "mail crate"
@@ -584,21 +631,16 @@
 	icon_closed = "mailsealed"
 	material_drop = /obj/item/stack/sheet/plastic
 	material_drop_amount = 4
-	var/list/possible_contents = list(/obj/item/envelope/security,
-										/obj/item/envelope/science,
-										/obj/item/envelope/supply,
-										/obj/item/envelope/medical,
-										/obj/item/envelope/engineering,
-										/obj/item/envelope/bread,
-										/obj/item/envelope/circuses,
-										/obj/item/envelope/command,
-										/obj/item/envelope/misc)
+	var/list/envelope_types = list()
+
+/obj/structure/closet/crate/mail/Initialize(mapload, envelope_types_)
+	envelope_types = envelope_types_
+	. = ..()
 
 /obj/structure/closet/crate/mail/populate_contents()
 	. = ..()
-	for(var/i in 1 to rand(5, 10))
-		var/item = pick(possible_contents)
-		new item(src)
+	for(var/envelope_type in envelope_types)
+		new envelope_type(src)
 
 /obj/structure/closet/crate/tape/populate_contents()
 	if(prob(10))
@@ -639,11 +681,12 @@
 /obj/structure/closet/crate/surplus/Initialize(mapload, obj/item/uplink/U, crate_value, cost, mob/user)
 	. = ..()
 	var/list/temp_uplink_list = get_uplink_items(U, user)
+	var/list/temp_buyable_items = list() // Extra safety so we don't even have the items with no surplus in the final list
 	var/list/buyable_items = list()
 	for(var/category in temp_uplink_list)
-		buyable_items += temp_uplink_list[category]
+		temp_buyable_items += temp_uplink_list[category]
 
-	for(var/datum/uplink_item/uplink_item in buyable_items)
+	for(var/datum/uplink_item/uplink_item in temp_buyable_items)
 		if(!uplink_item.surplus) // Otherwise we'll just have an element with a weight of 0 in our weighted list
 			continue
 		buyable_items[uplink_item] = uplink_item.surplus
@@ -735,7 +778,7 @@
 	if(!istype(keycard))
 		return
 
-	to_chat(user, "<span class='notice'>You swipe [keycard] in [src]'s keycard slot.</span>")
+	to_chat(user, SPAN_NOTICE("You swipe [keycard] in [src]'s keycard slot."))
 	return TRUE
 
 /obj/item/card/sec_shuttle_ruin
